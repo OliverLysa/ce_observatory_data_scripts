@@ -3,7 +3,6 @@
 # Purpose:
 # Inputs:
 # Required updates and frequency: 
-# The URL to download from
 
 # *******************************************************************************
 # Packages
@@ -25,9 +24,13 @@ packages <- c("magrittr",
               "RCurl",
               "curl",
               "future",
-              "furr",
+              "furrr",
               "targets",
-              "renv")
+              "renv",
+              # "odbc",
+              "DBI",
+              # "RMySQL",
+              "RPostgres")
 
 # Install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
@@ -39,7 +42,7 @@ if (any(installed_packages == FALSE)) {
 invisible(lapply(packages, library, character.only = TRUE))
 
 # *******************************************************************************
-# Functions and options
+# Functions, options and connections
 # *******************************************************************************
 # Import functions
 source("./scripts/Functions.R", 
@@ -47,6 +50,15 @@ source("./scripts/Functions.R",
 
 # Stop scientific notation of numeric values
 options(scipen = 999)
+
+# https://github.com/r-dbi/RPostgres
+# Connect to supabase
+con <- dbConnect(RPostgres::Postgres(),
+                 dbname = 'postgres', 
+                 host = 'db.qcgyyjjmwydekbxsjjbx.supabase.co',
+                 port = 5432,
+                 user = 'postgres',
+                 password = rstudioapi::askForPassword("Database password"))
 
 # *******************************************************************************
 # Linking datasets through classification matching
@@ -64,6 +76,8 @@ WOT_UNU_CN8 <-
 # Write file
 write_xlsx(WOT_UNU_CN8, 
            "./classifications/concordance_tables/WOT_UNU_CN8_PCC_SIC.xlsx")
+
+DBI::dbWriteTable(con, "WOT_UNU_CN8", WOT_UNU_CN8)
 
 # *******************************************************************************
 # ## OLD METHOD
