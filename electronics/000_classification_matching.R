@@ -15,21 +15,7 @@ packages <- c("magrittr",
               "tidyverse", 
               "readODS", 
               "data.table", 
-              "RSelenium", 
-              "netstat", 
-              "uktrade", 
-              "httr",
-              "jsonlite",
-              "mixdist",
-              "RCurl",
-              "curl",
-              "future",
-              "furrr",
-              "targets",
-              "renv",
-              # "odbc",
               "DBI",
-              # "RMySQL",
               "RPostgres")
 
 # Install packages not yet installed
@@ -42,10 +28,10 @@ if (any(installed_packages == FALSE)) {
 invisible(lapply(packages, library, character.only = TRUE))
 
 # *******************************************************************************
-# Functions, options and connections
+# Import functions, options and connections
 # *******************************************************************************
 # Import functions
-source("./scripts/Functions.R", 
+source("functions.R", 
        local = knitr::knit_global())
 
 # Stop scientific notation of numeric values
@@ -73,10 +59,11 @@ WOT_UNU_CN8 <-
   mutate(SIC2 = substr(PCC, 1, 2),
          SIC4 = substr(PCC, 1, 4))
 
-# Write file
+# Write file locally
 write_xlsx(WOT_UNU_CN8, 
            "./classifications/concordance_tables/WOT_UNU_CN8_PCC_SIC.xlsx")
 
+# Write file to database
 DBI::dbWriteTable(con, "WOT_UNU_CN8", WOT_UNU_CN8)
 
 # *******************************************************************************

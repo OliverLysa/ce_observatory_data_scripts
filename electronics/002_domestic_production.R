@@ -225,7 +225,7 @@ prodcom_all_numeric <-
     use.names = TRUE
   ) %>%
   na.omit() %>%
-  filter(Variable == "Volume (Number of items)") %>%
+  # filter(Variable == "Volume (Number of items)") %>%
   mutate_at(c('Value'), as.numeric)
 
 # Write summary file
@@ -233,17 +233,24 @@ write_xlsx(prodcom_all_numeric,
            "./cleaned_data/Prodcom_data_all.xlsx")
 
 # Read in UNU - prodcom concordance table
-UNU_CN_PRODCOM <- read_xlsx("./classifications/concordance_tables/UNU_CN_PRODCOM_SIC.xlsx") %>%
-  select(c(1,7)) %>%
-  distinct()
+UNU_PRODCOM <- 
+  read_xlsx("./classifications/concordance_tables/WOT_UNU_CN8_PCC_SIC.xlsx") %>%
+  select(c(1,3,4)) %>%
+  distinct() %>%
+  mutate_at(c(1), as.character)
 
 # Merge prodcom data with UNU classification, summarise by UNU Key and filter volume rows not expressed in number of units
-Prodcom_data_UNU <- left_join(prodcom_all_numeric,
-                              UNU_CN_PRODCOM,
-                              by=c("Code" = "PRCCODE")) %>%
+Prodcom_data_UNU <- inner_join(
+  prodcom_all_numeric,
+  UNU_PRODCOM,
+  join_by("Code" == "PCC",
+          "Year" == "Year")) %>%
   na.omit() %>%
-  group_by(`UNU KEY`, Year) %>%
+  group_by(UNU, Year) %>%
   summarise(Value = sum(Value))
+
+# Do the same for 2017 onwards
+
 
 # Write summary file
 write_xlsx(Prodcom_data_UNU, 
