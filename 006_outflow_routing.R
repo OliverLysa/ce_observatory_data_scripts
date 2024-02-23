@@ -242,8 +242,8 @@ collected_all <-
     use.names = FALSE)
 
 # Write output to xlsx form
-# write_xlsx(collected_all, 
-#           "./cleaned_data/electronics_collected_all.xlsx")
+write_xlsx(collected_all,
+          "./cleaned_data/electronics_collected_all.xlsx")
 
 # Prepare for converting from UKU 14 to UNU-54
 collected_all_summarised <- collected_all %>%
@@ -315,8 +315,8 @@ write_xlsx(collected_all_54,
 # Amount of WEEE that AATFs have reused themselves and sent onto others for reuse.
 
 # Apply download.file function in R
-# download.file("https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/1160180/WEEE_received_at_an_approved_authorised_treatment_facility.ods",
-#              "./raw_data/WEEE_received_AATF.ods")
+download.file("https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/1160180/WEEE_received_at_an_approved_authorised_treatment_facility.ods",
+             "./raw_data/WEEE_received_AATF.ods")
 
 # Extract and list all sheet names 
 received_AATF_sheet_names <- list_ods_sheets(
@@ -367,8 +367,8 @@ received_AATF_data <- received_AATF_data %>%
     values_to = "value")
 
 # Write output to xlsx form
-# write_xlsx(received_AATF_data, 
-#           "./cleaned_data/received_AATF_data.xlsx")
+write_xlsx(received_AATF_data,
+          "./cleaned_data/received_AATF_data.xlsx")
 
 # filter to reuse
 received_AATF_reuse <- received_AATF_data %>%
@@ -691,6 +691,9 @@ WEEE_received_export_data <- WEEE_received_export_data %>%
     product),
     names_to = "route", 
     values_to = "value")
+
+write_xlsx(WEEE_received_export_data, 
+           "./cleaned_data/WEEE_received_export_data.xlsx")
 
 # Prepare for converting from UKU 14 to UNU-54
 received_export_data_summarised <-WEEE_received_export_data %>%

@@ -32,6 +32,15 @@ source("./scripts/functions.R",
 # Stop scientific notation of numeric values
 options(scipen = 999)
 
+
+# Connect to supabase
+con <- dbConnect(RPostgres::Postgres(),
+                 dbname = 'postgres', 
+                 host = 'aws-0-eu-west-2.pooler.supabase.com',
+                 port = 5432,
+                 user = 'postgres.qowfjhidbxhtdgvknybu',
+                 password = rstudioapi::askForPassword("Database password"))
+
 # *******************************************************************************
 # Chart construction
 # *******************************************************************************
@@ -66,8 +75,7 @@ outflow_routing_weights <- read_excel(
 # Merge outflow routing with outflow routing weights
 outflow_routing_weighted <- merge(outflow_routing,
                                   outflow_routing_weights,
-                                  by.x=c("route"),
-                                  by.y=c("route")) %>%
+                                  by = "route") %>%
   mutate(route_score = score*percentage) %>%
   group_by(scenario,product, year) %>%
   summarise(ce_score = sum(route_score))
@@ -86,9 +94,15 @@ REE_chart_bubble <- merge(REE_chart_bubble,
                           by = c("product", 
                                  "scenario", 
                                  "year")) %>%
-  select(-c(aggregation, variable, unit)) %>%
+  select(-c(variable)) %>%
   rename(mass = value)
 
 # Write file
 write_csv(REE_chart_bubble,
           "./cleaned_data/REE_chart_bubble.csv")
+
+# Write file to database
+DBI::dbWriteTable(con, 
+                  "REE_chart_bubble", 
+                  REE_chart_bubble,
+                  overwrite = TRUE)

@@ -46,6 +46,10 @@ source("./scripts/functions.R",
 # Stop scientific notation of numeric values
 options(scipen = 999)
 
+# Read UNU colloquial
+UNU_colloquial <- 
+  read_xlsx("./classifications/classifications/UNU_colloquial.xlsx")
+
 # *******************************************************************************
 # Extract BoM data from Babbitt 2019 - to get material formulation and component stages
 # *******************************************************************************
@@ -227,7 +231,6 @@ BoM_BEIS_absolute$UNU <- str_pad(BoM_BEIS_absolute$UNU, 4, pad = "0")
 # UNU codes to remove due to overlapping with Babbit (Babbit prioritised due to providing specific models)
 remove <- c("0408", 
             "0309", 
-            "0102",
             "0304")
 
 # Pivot longer and filter
