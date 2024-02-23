@@ -14,8 +14,6 @@ A collection of scripts to:
 
 Data outputs from these scripts are used to populate the ce-observatory - a dashboard providing for specific resource-product-industry categories, a detailed description using high-quality data of current baseline material and monetary flows as well as wider impacts and alongside the means to make comparison with alternative circular economy configurations.
 
-<https://newdevsguide.com/2023/04/08/creating-erds-with-mermaid/>
-
 # How to use
 
 ## Software requirements and setup
