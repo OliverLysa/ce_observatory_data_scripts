@@ -56,10 +56,7 @@ options(scipen = 999)
 Prodcom_data_UNU <-
   read_excel("./cleaned_data/Prodcom_data_UNU.xlsx")  %>%
   as.data.frame() %>%
-  rename(UNU = 1)
-
-# Filter prodcom variable column and mutate variable names to match the trade data
-Prodcom_data_UNU <- Prodcom_data_UNU %>%
+  rename(UNU = 1) %>%
   mutate(FlowTypeDescription = "domestic production")
 
 # Import trade UNU data if not in global environment
@@ -91,13 +88,9 @@ complete_inflows_long <- complete_inflows_wide %>%
   mutate(
     total_imports = eu_imports + non_eu_imports,
     total_exports = eu_exports + non_eu_exports,
-    net_trade_balance = total_exports - total_imports,
     # equivalent of domestic material consumption at national level
     apparent_consumption = domestic_production + total_imports - total_exports,
-    # production perspective - issue of duplication
-    apparent_output = domestic_production + total_exports,
-    apparent_input = domestic_production + total_imports,
-    import_dependency = (total_imports / (total_imports + total_exports))) %>%
+    import_dependency = total_imports / apparent_consumption) %>%
   pivot_longer(-c(unu,
                   year),
                names_to = "indicator",

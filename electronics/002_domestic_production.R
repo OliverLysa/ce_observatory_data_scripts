@@ -1,6 +1,4 @@
-##### **********************
 # Author: Oliver Lysaght
-# Purpose: See Github read me for more information. 
 
 # *******************************************************************************
 # Packages
@@ -259,46 +257,47 @@ Trade_prodcom <- inner_join(Trade_prodcom,
 # Calculate sum of units for all years in which data is available
 # Trade
 Grouped_trade <- Trade_prodcom %>%
-  group_by(PRCCODE) %>%
-  summarise(Trade = sum(Trade)) 
+  group_by(PCC) %>%
+  summarise(Trade = sum(Trade))
 
 # Domestic production
 Grouped_domestic <- Trade_prodcom %>%
-  na.omit() %>%
-  group_by(PRCCODE) %>%
-  summarise(Domestic = sum(Domestic_numeric)) 
+  group_by(PCC) %>%
+  summarise(Domestic = sum(Domestic_numeric,  na.rm = TRUE)) 
 
 # Match trade data with prodcom code lookup and calculate ratio between units
 Grouped_all <- merge(Grouped_trade,
                      Grouped_domestic,
-                     by=c("PRCCODE")) %>%
+                     by=c("PCC")) %>%
   mutate(ratio = Domestic/Trade) %>%
   filter(ratio != c("Inf")) %>%
-  filter(ratio != c("NaN"))
+  filter(ratio != c("NaN")) %>%
+  select(1,4)
 
 # Attach this ratio to dataframe with all exports
 Grouped_all <- left_join(Trade_prodcom,
                          Grouped_all,
-                         by=c("PRCCODE")) 
+                         by=c("PCC")) 
 
 # Estimate missing number of units with the calculated ratio
 Grouped_all <- Grouped_all %>%
-  mutate(estimated = if_else(`Domestic.x` == "S", Trade.x*ratio, Domestic_numeric)) %>%
-  mutate(flag = if_else(`Domestic.x` == "S", "estimated", "actual")) %>%
-  select(c("PRCCODE", "Year", "estimated", "flag")) %>%
+  mutate(estimated = if_else(`Domestic` == "S", Trade*ratio, Domestic_numeric)) %>%
+  mutate(flag = if_else(`Domestic` == "S", "estimated", "actual")) %>%
+  select(c("PCC", "Year", "estimated", "flag")) %>%
   rename(Value = estimated) %>%
   distinct()
 
-UNU_CN_PRODCOM <- read_xlsx("./classifications/concordance_tables/UNU_CN_PRODCOM_SIC.xlsx") %>%
-  select(c(1,7)) %>%
-  distinct()
+# Import UNU CN8 correspondence correspondence table again (or unlist)
+WOT_UNU_PCC <-
+  read_xlsx("./classifications/concordance_tables/WOT_UNU_CN8_PCC_SIC.xlsx") %>%
+  mutate_at(c("CN"), as.character) %>%
+  select(1,3,4)
 
 # Merge prodcom data with UNU classification, summarise by UNU Key and filter volume rows not expressed in number of units
-Prodcom_data_UNU <- left_join(Grouped_all,
-                              UNU_CN_PRODCOM,
-                              by="PRCCODE") %>%
-  na.omit() %>%
-  group_by(`UNU KEY`, Year) %>%
+Prodcom_data_UNU <- inner_join(Grouped_all,
+                               WOT_UNU_PCC,
+                               join_by("PCC", "Year")) %>%
+  group_by(UNU, Year) %>%
   summarise(Value = sum(Value))
 
 # Write summary file

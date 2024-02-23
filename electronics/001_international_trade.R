@@ -1,9 +1,4 @@
-##### **********************
 # Author: Oliver Lysaght
-# Purpose:
-# Inputs:
-# Required annual updates:
-# The URL to download from
 
 # *******************************************************************************
 # Packages
