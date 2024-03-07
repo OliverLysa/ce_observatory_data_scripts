@@ -1,6 +1,5 @@
 ##### **********************
 # Author: Oliver Lysaght
-# Required annual updates:
 
 # *******************************************************************************
 # Packages
@@ -14,18 +13,7 @@ packages <- c(
   "dplyr",
   "tidyverse",
   "readODS",
-  "data.table",
-  "RSelenium",
-  "netstat",
-  "uktrade",
-  "httr",
-  "jsonlite",
-  "mixdist",
-  "janitor",
-  "forecast",
-  "lmtest",
-  "zoo",
-  "naniar"
+  "data.table"
 )
 
 # Install packages not yet installed

@@ -95,7 +95,10 @@ REE_chart_bubble <- merge(REE_chart_bubble,
                                  "scenario", 
                                  "year")) %>%
   select(-c(variable)) %>%
-  rename(mass = value)
+  rename(mass = value) %>%
+  filter(! year > 2040,
+         ! year < 1990) %>%
+  mutate(material = "Neodymium")
 
 # Write file
 write_csv(REE_chart_bubble,
@@ -106,3 +109,15 @@ DBI::dbWriteTable(con,
                   "REE_chart_bubble", 
                   REE_chart_bubble,
                   overwrite = TRUE)
+
+# KPIs
+REE_KPIs <- REE_chart_bubble %>%
+  filter(filter == "Total") %>%
+  select(-filter)
+
+# Write file to database
+DBI::dbWriteTable(con, 
+                  "REE_KPIs", 
+                  REE_KPIs,
+                  overwrite = TRUE)
+

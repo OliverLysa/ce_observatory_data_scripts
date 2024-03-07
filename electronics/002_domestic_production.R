@@ -189,6 +189,9 @@ prodcom_all <-
     use.names = TRUE
   )
 
+write_xlsx(prodcom_all,
+           "./cleaned_data/prodcom_all.xlsx")
+
 # Estimation of suppressed values
 # *******************************************************************************
 

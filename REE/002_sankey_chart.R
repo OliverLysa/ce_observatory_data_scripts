@@ -40,12 +40,28 @@ options(scipen = 999)
 # *******************************************************************************
 # REE
 
+cols <- c("source", "target")
+
 # REE Data input
 REE_sankey_links <- read_xlsx("./intermediate_data/REE_sankey_links.xlsx") %>%
   mutate(across(c('value'), round, 2)) %>%
-  filter(!year < 2007 | product != "BEV") %>%
+  mutate(value = gsub("-", "", value)) %>%
+  # filter(!year < 2007 | product != "BEV") %>%
   filter(target != "Lost") %>%
-  mutate(value = gsub("-", "", value))
+  mutate_at(vars(cols), ~ str_replace(., "_", " ")) %>%
+  mutate_at(vars(cols), ~ str_replace(., "Retail distribute", "Retail")) %>%
+  mutate_at(vars(cols), ~ str_replace(., "Consume", "Use")) %>%
+  mutate_at(vars(cols), ~ str_replace(., "Dispose", "Disposal")) %>%
+  mutate_at(vars(cols), ~ str_replace(., "Recycle", "Recycling")) %>%
+  filter(! year > 2040,
+         ! year < 1990) %>%
+  mutate(material = "Neodymium")
+
+# Write file to database
+DBI::dbWriteTable(con, 
+                  "REE_sankey_links", 
+                  REE_sankey_links,
+                  overwrite = TRUE)
 
 # Write CSV
 write_csv(REE_sankey_links,

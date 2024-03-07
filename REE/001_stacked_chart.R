@@ -130,8 +130,17 @@ REE_stacked_area <-
   right_join(filter_lookup, by = c("variable")) 
 
 REE_stacked_area <- REE_stacked_area %>%
-  mutate(across(everything(), ~ replace(., . == "Inflow (virgin)", "Inflow")))
+  mutate(across(everything(), ~ replace(., . == "Inflow (virgin)", "Inflow"))) %>%
+  filter(! year > 2040,
+         ! year < 1990) %>%
+  mutate(material = "Neodymium")
   
+# Write file to database
+DBI::dbWriteTable(con, 
+                  "REE_chart_stacked_area", 
+                  REE_stacked_area,
+                  overwrite = TRUE)
+
 # Write csv file
 write_csv(REE_stacked_area,
           "./cleaned_data/REE_chart_stacked_area.csv")

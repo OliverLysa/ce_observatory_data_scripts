@@ -158,7 +158,7 @@ trade_combined <-
 # Write xlsx file of trade data (imports and exports, summarised by UNU)
 write_xlsx(trade_combined, 
            "./cleaned_data/summary_trade_CN.xlsx")
-
+    
 # Summarise by UNU
 trade_combined_UNU <- trade_combined %>%
   group_by(UNU, 
