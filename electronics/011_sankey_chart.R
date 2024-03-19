@@ -36,7 +36,7 @@ source("./scripts/functions.R",
 options(scipen = 999)
 
 # *******************************************************************************
-# Proportional data
+# Proportional and mass data
 # *******************************************************************************
 
 # Read proportion data
@@ -45,16 +45,64 @@ BoM_percentage_UNU <- read_xlsx(
   "./cleaned_data/BoM_percentage_UNU.xlsx") %>%
   mutate_at(c('material'), trimws)
 
-# *******************************************************************************
-# Extraction > Refinement
-# *******************************************************************************
+# Import average mass data by UNU from WOT project
+UNU_mass <- read_csv(
+  "./cleaned_data/htbl_Key_Weight.csv") %>%
+  clean_names() %>%
+  group_by(unu_key, year) %>%
+  summarise(value = mean(average_weight)) %>%
+  rename(unu =1)
 
 # *******************************************************************************
-# Refinement > Material formulation
+# Trade
 # *******************************************************************************
 
+trade_combined_UNU <-
+  read_xlsx("./cleaned_data/summary_trade_UNU.xlsx") %>%
+  mutate(FlowTypeDescription = gsub("Non-EU ", "", FlowTypeDescription),
+         FlowTypeDescription = gsub("EU", "", FlowTypeDescription)) %>%
+  mutate_at(c('FlowTypeDescription'), trimws) %>%
+  group_by(Year,
+           FlowTypeDescription,
+           Variable,
+           UNU) %>%
+  summarise(value = sum(Value)) %>%
+  clean_names() %>%
+  filter(variable == "Units") %>%
+  select(1,2,4,5) %>%
+  mutate_at(c("year"), as.numeric)
+  
+# Join by unu key and closest year
+# For each value in inflow_indicators year column, find the closest value in UNU_mass that is less than or equal to that x value
+by <- join_by(unu, closest(year >= year))
+# Join
+trade_mass <- left_join(trade_combined_UNU, UNU_mass, by) %>%
+  mutate_at(c("value.y"), as.numeric) %>%
+  mutate(mass = (value.x*value.y)/1000) %>%
+  select(c(2,3,4,8))
+
 # *******************************************************************************
-# Material formulation > Component manufacture
+# Domestic production
+# *******************************************************************************
+
+# Write summary file
+domestic_production_UNU <-
+  read_xlsx("./cleaned_data/Prodcom_data_UNU.xlsx") %>%
+  clean_names()
+
+# Join by unu key and closest year
+# For each value in inflow_indicators year column, find the closest value in UNU_mass that is less than or equal to that x value
+by <- join_by(unu, closest(year >= year))
+# Join
+domestic_production_mass <- left_join(domestic_production_UNU, UNU_mass, by) %>%
+  mutate_at(c("value.y"), as.numeric) %>%
+  mutate(mass = (value.x*value.y)/1000) 
+
+%>%
+  select(c(2,3,4,8))
+
+# *******************************************************************************
+# Apparent consumption
 # *******************************************************************************
 
 # Import interpolated inflow mass data
@@ -84,7 +132,7 @@ material_formulation <- right_join(BoM_percentage_UNU, inflows,
          target = "component_manufacture")
 
 # *******************************************************************************
-# Component manufacture > product assembly
+# Stock
 # *******************************************************************************
 
 # Duplicates the first file and renames columns to create the next sankey link through making long-format the BoM
@@ -93,25 +141,7 @@ component_manufacture <- material_formulation %>%
          target = "product_assembly")
 
 # *******************************************************************************
-# Product assembly > retail/distribute 
-# *******************************************************************************
-
-# Duplicates the first file and renames columns to create the next sankey link through making long-format the BoM
-product_assembly <- material_formulation %>% 
-  mutate(source = "product_assembly",
-         target = "retail_distribute")
-
-# *******************************************************************************
-# Retail/distribute > consume
-# *******************************************************************************
-
-# Duplicates the first file and renames columns to create the next sankey link through making long-format the BoM
-retail_distribute <- material_formulation %>% 
-  mutate(source = "retail_distribute",
-         target = "consume")
-
-# *******************************************************************************
-# Consume > repair/maintenance
+# Use > repair/maintenance
 # *******************************************************************************
 
 # Read open repair data in 
@@ -139,7 +169,7 @@ repair <- rbindlist(
   use.names = TRUE)
 
 # *******************************************************************************
-# Consume > Collection 
+# Use > Collection 
 # *******************************************************************************
 
 # Import collected data
@@ -249,16 +279,6 @@ recycling_received_AATF_54_material <- right_join(BoM_percentage_UNU, recycling_
   mutate(source = "collection",
          target = "recycle")
 
-# Needs to then be duplicated and combined to create remainder of the reuse loop
-recycling_return <- recycling_received_AATF_54_material %>%
-  mutate(source = "recycle",
-         target = "material_formulation")
-
-recycle <- rbindlist(
-  list(
-    recycling_received_AATF_54_material,
-    recycling_return),
-  use.names = TRUE)
 
 # *******************************************************************************
 # Collection > refurbishment
@@ -274,6 +294,10 @@ recycle <- rbindlist(
 
 # *******************************************************************************
 # Collection > Disposal
+# *******************************************************************************
+
+# *******************************************************************************
+# Combine
 # *******************************************************************************
 
 # Binds the sankey flows together

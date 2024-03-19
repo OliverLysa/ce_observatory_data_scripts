@@ -261,8 +261,7 @@ BoM_BEIS_percentage <- left_join(BoM_BEIS_percentage,
   mutate(
     material = gsub("Electronics", 'Electronics incl. PCB', material),
     material = gsub("Aluminum", 'Aluminium', material)) %>%
-  mutate_at(c('material'), trimws) %>%
-  rename(product = unu_description)
+  mutate_at(c('material'), trimws) 
 
 # Drop unu_key column
 BoM_BEIS_percentage <- BoM_BEIS_percentage[-1]
@@ -300,8 +299,8 @@ BoM_BEIS_proportions_long <- left_join(BoM_BEIS_proportions_long,
   mutate(
     material = gsub("Electronics", 'Electronics incl. PCB', material),
     material = gsub("Aluminum", 'Aluminium', material)) %>%
-  mutate_at(c('material'), trimws)  %>%
-  rename(product = unu_description)
+  mutate_at(c('material'), trimws) %>%
+  rename(product = )
 
 # Bind Babbit and BEIS sources
 BoM_percentage_UNU <-
@@ -313,7 +312,8 @@ BoM_percentage_UNU <-
     ),
     use.names = TRUE
   ) %>%
-  mutate_at(c('material'), trimws)
+  mutate_at(c('material'), trimws) %>%
+  mutate(across(c('freq'), round, 2))
 
 BoM_percentage_UNU$material <-
   str_remove_all(BoM_percentage_UNU$material, "[^A-z|0-9|-|(|)|[:punct:]|\\s]")
@@ -363,13 +363,14 @@ UNU_mass <- read_csv(
   summarise(value = mean(average_weight)) %>%
   rename(unu =1)
 
-# Read in interpolated inflow data and filter to consumption of units to then multiply by mass
+# Read in interpolated inflow data and filter to consumption of units
 inflow_indicators <-
-  read_xlsx("./cleaned_data/inflow_indicators.xlsx") %>%
+  read_xlsx("./cleaned_data/inflow_indicators_interpolated.xlsx") %>%
   mutate_at(c('year'), as.numeric) %>%
-  filter(indicator == "apparent_consumption") %>%
+  # filter(indicator == "apparent_consumption") %>%
   na.omit() %>%
-  mutate(variable = "inflow")
+  mutate(variable = "inflow") %>%
+  rename(unu = unu_key)
 
 # Join by unu key and closest year
 # For each value in inflow_indicators year column, find the closest value in UNU_mass that is less than or equal to that x value

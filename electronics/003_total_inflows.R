@@ -103,23 +103,22 @@ inflow_wide_outlier_replaced_NA <-
   clean_names() %>%
   mutate_at(c('year'), as.numeric) %>%
   arrange(year) %>%
-  select(-year) %>%
-  mutate_at(
-    .vars = vars(contains("x")),
-    .funs = ~ ifelse(abs(.) > median(.) + 5 * mad(., constant = 1), NA, .),
-    ~ ifelse(abs(.) > median(.) - 5 * mad(., constant = 1), NA, .)
-  )
+  select(-year) # %>%
+  # mutate_at(
+  #   .vars = vars(contains("x")),
+  #   .funs = ~ ifelse(abs(.) > median(.) + 5 * mad(., constant = 1), NA, .),
+  #   ~ ifelse(abs(.) > median(.) - 5 * mad(., constant = 1), NA, .))
 
 # Replace outliers (now NAs) by column/UNU across whole dataframe using straight-line interpolation
 inflow_wide_outlier_replaced_interpolated <-
   na.approx(inflow_wide_outlier_replaced_NA,
             # as na.approx by itself only covers interpolation and not extrapolation (i.e. misses end values),
             # also performs extrapolation with rule parameter where end-values are missing through using constant (i.e. last known value)
-            rule = 2,
+            rule = 1,
             maxgap = 10) %>%
   as.data.frame() %>%
-  mutate(year = c(2001:2022), .before = x0101) %>%
-  pivot_longer(-year, 
+  mutate(year = c(2001:2022), .before = x0001) %>%
+  pivot_longer(-year,
                names_to = "unu_key",
                values_to = "value") %>%
   mutate(`unu_key` = gsub("x", "", `unu_key`))
@@ -143,7 +142,7 @@ inflow_wide_outlier_replaced_spline <-
 # augmented dickeyfuller unit root test, # plot autocorrelation function and partial acf to get correct order
 
 # Produce forecast of sales - arima with economic variable externally (per capita GDP)
-# Hierarchical time-series with bottom up aggregation approach to forecast construction
+# Hierarchical time-series with bottom up aggregation approach to forecast
 
 # https://stackoverflow.com/questions/67564279/looping-with-arima-in-r
 # https://stackoverflow.com/questions/40195505/fitting-arima-model-to-multiple-time-series-and-storing-forecast-into-a-matrix

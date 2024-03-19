@@ -187,7 +187,8 @@ prodcom_all <-
       prodcom_21_on
     ),
     use.names = TRUE
-  )
+  ) %>%
+  mutate_at(c('Code'), trimws)
 
 write_xlsx(prodcom_all,
            "./cleaned_data/prodcom_all.xlsx")
@@ -206,8 +207,20 @@ write_xlsx(prodcom_all,
 # [c] = confidential data suppressed to avoid disclosure - estimated 
 # [a] = data is suppressed to avoid disclosure and aggregated within the UK Manufacturer Sales of "Other" products - estimated
 
+# Import UNU CN8 correspondence correspondence table
+WOT_UNU_PCC <-
+  read_xlsx("./classifications/concordance_tables/WOT_UNU_CN8_PCC_SIC.xlsx") %>%
+  mutate_at(c("CN"), as.character) %>%
+  distinct() %>%
+  select(3) %>%
+  rename(Code = PCC)
+
+# Filter to products of interest
+prodcom_filtered <- prodcom_all %>%
+  filter(Code %in% WOT_UNU_PCC$Code)
+
 # Pivot, filter out N/A and mutate to get prodcom data 2008-20 including suppressed values
-prodcom_all_suppressed <- prodcom_all %>%
+prodcom_all_suppressed <- prodcom_filtered %>%
   filter(Value != "N/A",
          Value != "\\[x]",
          Variable == "Volume (Number of items)") %>%
@@ -231,7 +244,8 @@ trade_data <-
   filter(FlowTypeDescription == "Exports") %>%
   filter(Variable == "sum(SuppUnit)") %>%
   select(1,3,5,6) %>%
-  mutate_at(c("Year"), as.numeric)
+  mutate_at(c("Year"), as.numeric) %>%
+  rename(CN = 2)
 
 # Import prodcom CN correspondence
 PRODCOM_CN <- 
@@ -239,12 +253,15 @@ PRODCOM_CN <-
   select(1:3) %>%
   mutate_at(c("CN"), as.character)
 
-# Match trade data with prodcom code lookup
-Trade_prodcom <- inner_join(
+by <- join_by(CN, closest(Year >= Year))
+
+# Match trade data with prodcom code
+Trade_prodcom <- left_join(
   trade_data,
   PRODCOM_CN,
-  join_by("CommodityId" == "CN", 
-          "Year" == "Year"))
+  by) %>%
+  select(1:3, 6) %>%
+  rename(Year = 1)
 
 # Match trade data with prodcom data based on the previous lookup
 Trade_prodcom <- inner_join(Trade_prodcom,
