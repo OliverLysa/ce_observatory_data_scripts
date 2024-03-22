@@ -177,7 +177,11 @@ prodcom_21_on <-
     `Code`,
     `Variable`),
     names_to = "Year",
-    values_to = "Value")
+    values_to = "Value") %>%
+  mutate(Value = gsub("\\[","", Value)) %>%
+  mutate(Value = gsub("\\]","", Value)) %>%
+  mutate(Value = gsub("a","S", Value)) %>%
+  mutate(Value = gsub("c","S", Value))
 
 # Bind the extracted data to create a complete dataset
 prodcom_all <-
@@ -201,7 +205,7 @@ write_xlsx(prodcom_all,
 # N/A = Data not available - removed once pivotted
 # S/S* = Suppressed (* included in other SIC4 aggregate) - estimated
 
-# 2021 onwards notation
+# Notation corresponds to 2021 onwards
 # [x] = data not available; - removed once pivoted
 # [e] = data has low response, and therefore a high level of estimation, which may impact on the quality of the estimate - taken at face value
 # [c] = confidential data suppressed to avoid disclosure - estimated 
@@ -215,14 +219,14 @@ WOT_UNU_PCC <-
   select(3) %>%
   rename(Code = PCC)
 
-# Filter to products of interest
+# Filter to products of interest for UNU scope
 prodcom_filtered <- prodcom_all %>%
   filter(Code %in% WOT_UNU_PCC$Code)
 
 # Pivot, filter out N/A and mutate to get prodcom data 2008-20 including suppressed values
 prodcom_all_suppressed <- prodcom_filtered %>%
   filter(Value != "N/A",
-         Value != "\\[x]",
+         Value != "x",
          Variable == "Volume (Number of items)") %>%
   mutate(Value = gsub(" ","", Value),
          # Remove letter E in the value column
@@ -272,6 +276,7 @@ Trade_prodcom <- inner_join(Trade_prodcom,
          Domestic = Value.y) %>%
   mutate(Domestic_numeric = Domestic) %>%
   mutate(Domestic_numeric = gsub("S","", Domestic_numeric)) %>%
+  mutate(Domestic_numeric = gsub("[c]","", Domestic_numeric)) %>%
   mutate_at(c('Domestic_numeric'), as.numeric)
 
 # Calculate sum of units for all years in which data is available
@@ -285,7 +290,7 @@ Grouped_domestic <- Trade_prodcom %>%
   group_by(PCC) %>%
   summarise(Domestic = sum(Domestic_numeric,  na.rm = TRUE)) 
 
-# Match trade data with prodcom code lookup and calculate ratio between units
+# Match trade data with prodcom code lookup and calculate ratio between units - - check why so many Inf
 Grouped_all <- merge(Grouped_trade,
                      Grouped_domestic,
                      by=c("PCC")) %>%
@@ -299,7 +304,7 @@ Grouped_all <- left_join(Trade_prodcom,
                          Grouped_all,
                          by=c("PCC")) 
 
-# Estimate missing number of units with the calculated ratio
+# Estimate missing number of units with the calculated ratio - sequential if else
 Grouped_all <- Grouped_all %>%
   mutate(estimated = if_else(`Domestic` == "S", Trade*ratio, Domestic_numeric)) %>%
   mutate(flag = if_else(`Domestic` == "S", "estimated", "actual")) %>%
@@ -307,21 +312,25 @@ Grouped_all <- Grouped_all %>%
   rename(Value = estimated) %>%
   distinct()
 
-# Import UNU CN8 correspondence correspondence table again (or unlist)
+# Import UNU CN8 correspondence correspondence table
 WOT_UNU_PCC <-
   read_xlsx("./classifications/concordance_tables/WOT_UNU_CN8_PCC_SIC.xlsx") %>%
-  mutate_at(c("CN"), as.character) %>%
-  select(1,3,4)
+  mutate_at(c("CN"), as.character)
 
-# Merge prodcom data with UNU classification, summarise by UNU Key and filter volume rows not expressed in number of units
-Prodcom_data_UNU <- inner_join(Grouped_all,
+# Merge prodcom data with UNU classification, summarise by UNU Key
+by <- join_by(PCC, closest(Year >= Year))
+
+Prodcom_data_UNU <- left_join(Grouped_all,
                                WOT_UNU_PCC,
-                               join_by("PCC", "Year")) %>%
-  group_by(UNU, Year) %>%
-  summarise(Value = sum(Value))
+                               by) %>%
+  group_by(UNU, Year.x) %>%
+  summarise(Value = sum(na.omit(Value))) %>%
+  clean_names() %>%
+  rename(year= 2)
+
+# CHECK WHY TRADE DATA MISSING FOR SOME PRODCOM CODES - COULD USE STRAIGHT LINE INTERPOLATION
 
 # Write summary file
 write_xlsx(Prodcom_data_UNU, 
            "./cleaned_data/Prodcom_data_UNU.xlsx")
-
 

@@ -50,21 +50,21 @@ options(scipen = 999)
 # *******************************************************************************
 #
 
-##  Allows for codes to vary by year 2001-16, then uses 2016 codes for years thereafter
+##  Allows for code concordances to vary by year 2001-16, then uses 2016 codes (last year in concordance table) for years thereafter
 
 # Read list of CN codes from WOT (downloads data for all unique codes across all years)
 trade_terms <- 
   read_xlsx("./classifications/concordance_tables/WOT_UNU_CN8_PCC_SIC.xlsx") %>%
-  # Filter out codes which do not appear in the period the UKTrade Data API covers
+  # Filter out codes which do not appear in the period the UKTrade Data API covers (these are then sourced from COMTRADE)
   filter(Year > 2001) %>%
   # Select the CN code column
   select(CN) %>%
   # Filters
-  filter(! CN %in% c("85281081", 
-                     "85273999", 
-                     "85287235",
-                     "85287251",
-                     "85203211")) %>%
+  # filter(! CN %in% c("85281081", 
+  #                    "85273999", 
+  #                    "85287235",
+  #                    "85287251",
+  #                    "85203211")) %>%
   # Take unique codes
   unique() %>%
   # Unlist
@@ -135,7 +135,7 @@ WOT_UNU_CN8_2016_on <- WOT_UNU_CN8 %>%
   filter(Year == 2016) %>%
   select(2, 4)
 
-# Then filter the data to 2017 on
+# Then filter the trade data to 2017 on
 trade_filtered_2017_on <- summary_trade_no_country %>%
   mutate_at(c('Year'), as.numeric) %>%
   filter(Year >= 2017) 
@@ -145,7 +145,7 @@ trade_filtered_2017_on <- inner_join(
   WOT_UNU_CN8_2016_on,
   join_by("CommodityId" == "CN")) 
 
-# Produce trade combined at level of trade codes
+# Combined trade data at CN level
 trade_combined <-
   rbindlist(
     list(
@@ -155,7 +155,7 @@ trade_combined <-
     use.names = TRUE
   )
 
-# Write xlsx file of trade data (imports and exports, summarised by UNU)
+# Write xlsx file of trade data (imports and exports, summarised by UNU) - to export to DB
 write_xlsx(trade_combined, 
            "./cleaned_data/summary_trade_CN.xlsx")
     
@@ -184,3 +184,5 @@ string <- "http://comtrade.un.org/data/cache/partnerAreas.json"
 reporters <- fromJSON(file=string)
 reporters <- as.data.frame(t(sapply(reporters$results,rbind)))
 reporters <- reporters[reporters[[2]] == "United Kingdom",]
+
+# Update in Python
