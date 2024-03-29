@@ -39,32 +39,32 @@ invisible(lapply(packages, library, character.only = TRUE))
 # Functions and options
 # *******************************************************************************
 # Import functions
-source("./scripts/Functions.R", 
+source("Functions.R", 
        local = knitr::knit_global())
 
 # Stop scientific notation of numeric values
 options(scipen = 999)
 
+con <- dbConnect(RPostgres::Postgres(),
+                      dbname = 'postgres', 
+                      host = 'aws-0-eu-west-2.pooler.supabase.com',
+                      port = 5432,
+                      user = 'postgres.qcgyyjjmwydekbxsjjbx',
+                      password = rstudioapi::askForPassword("Database password"))
+
 # *******************************************************************************
 # Data extraction and tidying
 # *******************************************************************************
 #
-
 ##  Allows for code concordances to vary by year 2001-16, then uses 2016 codes (last year in concordance table) for years thereafter
 
 # Read list of CN codes from WOT (downloads data for all unique codes across all years)
 trade_terms <- 
   read_xlsx("./classifications/concordance_tables/WOT_UNU_CN8_PCC_SIC.xlsx") %>%
-  # Filter out codes which do not appear in the period the UKTrade Data API covers (these are then sourced from COMTRADE)
+  # Filter out codes which do not appear in the period the UKTrade Data API covers
   filter(Year > 2001) %>%
   # Select the CN code column
   select(CN) %>%
-  # Filters
-  # filter(! CN %in% c("85281081", 
-  #                    "85273999", 
-  #                    "85287235",
-  #                    "85287251",
-  #                    "85203211")) %>%
   # Take unique codes
   unique() %>%
   # Unlist
@@ -84,7 +84,7 @@ for (i in seq_along(trade_terms)) {
 bind <- 
   dplyr::bind_rows(res)
 
-# If you have not used the in-built lookup codes in the uktrade R package, describe the flow-types
+# If you have not used the in-built lookup codes in the uktrade R package, describe the flow-types for subsequent aggregation
 bind <- bind %>%
   mutate(FlowTypeId = gsub(1, 'EU Imports', FlowTypeId),
          FlowTypeId = gsub(2, 'EU Exports', FlowTypeId),
@@ -115,7 +115,7 @@ summary_trade_no_country <- bind %>%
   # Convert trade code to character
   mutate_at(c(3), as.character)
 
-# Import UNU CN8 correspondence correspondence table again (or unlist)
+# Import UNU CN8 correspondence correspondence table in tabular form
 WOT_UNU_CN8 <-
   read_xlsx("./classifications/concordance_tables/WOT_UNU_CN8_PCC_SIC.xlsx") %>%
   mutate_at(c("CN", "Year"), as.character)
@@ -128,7 +128,7 @@ trade_filtered_pre_2017 <- inner_join(
           "Year" == "Year")) %>%
   select(c(1:5, 7))
 
-# Add in 2017 onwards data and bind
+# Add in 2017 onwards data and bind (takes the 2016 codes and onwards)
 
 # First filter to codes for 2016 only
 WOT_UNU_CN8_2016_on <- WOT_UNU_CN8 %>%
@@ -171,9 +171,14 @@ trade_combined_UNU <- trade_combined %>%
          Variable = gsub("sum\\(Value)", 'Value', Variable),
          Variable = gsub("sum\\(SuppUnit)", 'Units', Variable))
 
+# We can use the mass data in combination with BOM data
+
 # Write xlsx file of trade data (imports and exports, summarised by UNU)
 write_xlsx(trade_combined_UNU, 
            "./cleaned_data/summary_trade_UNU.xlsx")
+
+# Write file to database
+DBI::dbWriteTable(con, "electronics_trade_UNU", trade_combined_UNU)
 
 # *******************************************************************************
 # For trade data pre-dating the UK trade API, we use comtrade

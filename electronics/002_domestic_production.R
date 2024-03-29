@@ -33,6 +33,14 @@ source("./scripts/Functions.R",
 # Stop scientific notation of numeric values
 options(scipen = 999)
 
+# Connect to supabase
+con <- dbConnect(RPostgres::Postgres(),
+                 dbname = 'postgres', 
+                 host = 'db.qcgyyjjmwydekbxsjjbx.supabase.co',
+                 port = 5432,
+                 user = 'postgres',
+                 password = rstudioapi::askForPassword("Database password"))
+
 # *******************************************************************************
 # Data download
 # *******************************************************************************
@@ -334,3 +342,5 @@ Prodcom_data_UNU <- left_join(Grouped_all,
 write_xlsx(Prodcom_data_UNU, 
            "./cleaned_data/Prodcom_data_UNU.xlsx")
 
+# Write file to database
+DBI::dbWriteTable(con, "electronics_prodcom_UNU", Prodcom_data_UNU)
