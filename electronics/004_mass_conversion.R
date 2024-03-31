@@ -1,6 +1,6 @@
 ##### **********************
 # Author: Oliver Lysaght
-# Purpose:
+# Purpose: Extract data from various sources on material composition of final products
 
 # *******************************************************************************
 # Packages
@@ -13,18 +13,9 @@ packages <- c("magrittr",
               "tidyverse", 
               "readODS", 
               "data.table", 
-              "RSelenium", 
-              "netstat", 
-              "uktrade", 
-              "httr",
-              "jsonlite",
-              "mixdist",
               "janitor",
               "devtools",
-              "roxygen2",
-              "testthat",
-              "knitr",
-              "reshape2")
+              "knitr")
 
 # Install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
@@ -40,11 +31,19 @@ invisible(lapply(packages, library, character.only = TRUE))
 # *******************************************************************************
 
 # Import functions
-source("./scripts/functions.R", 
+source("functions.R", 
        local = knitr::knit_global())
 
 # Stop scientific notation of numeric values
 options(scipen = 999)
+
+# Connect to supabase
+con <- dbConnect(RPostgres::Postgres(),
+                 dbname = 'postgres', 
+                 host = 'aws-0-eu-west-2.pooler.supabase.com',
+                 port = 5432,
+                 user = 'postgres.qcgyyjjmwydekbxsjjbx',
+                 password = rstudioapi::askForPassword("Database password"))
 
 # *******************************************************************************
 # Extract BoM data from Babbitt 2019 - to get material formulation and component stages
@@ -60,15 +59,12 @@ download.file(
 BoM_sheet_names_Babbit <- readxl::excel_sheets(
   "./raw_data/Product_BOM_Babbit.xlsx")
 
-# Import data mapped to sheet name 
+# Import data mapped to sheet name and tidy
 BoM_data_Babbit <- purrr::map_df(BoM_sheet_names_Babbit, 
                           ~dplyr::mutate(readxl::read_excel(
                             "./raw_data/Product_BOM_Babbit.xlsx", 
                             sheet = .x), 
-                            sheetname = .x))
-
-# Convert the list of dataframes to a single dataframe, rename columns and filter
-BoM_data_bound_Babbit <- BoM_data_Babbit %>%
+                            sheetname = .x)) %>%
   drop_na(2) %>%
   tidyr::fill(1) %>%
   select(-c(`Data From literature`,
@@ -97,7 +93,8 @@ BoM_data_bound_Babbit <- BoM_data_Babbit %>%
   drop_na(value) %>%
   separate(model, c("model", "year"), "\\(") %>%
   mutate(year = gsub("\\)","", year)) %>%
-  mutate_at(c('product'), trimws)
+  mutate_at(c('product'), trimws) %>%
+  select(product, year, model, component, material, value)
 
 # Create filter of products for which we have data
 BoM_filter_list_Babbit <- c("CRT Monitors",
@@ -105,7 +102,7 @@ BoM_filter_list_Babbit <- c("CRT Monitors",
                      "CRT TVs",
                      "Desktop PCs",
                      "Small Household Items",
-                     "Laptops",
+                     "Laptops & Tablets",
                      "Flat Screen Monitors",
                      "Flat Screen TVs",
                      "Portable Audio",
@@ -117,16 +114,15 @@ BoM_filter_list_Babbit <- c("CRT Monitors",
                      "Gaming console",
                      "Cameras")
 
-# TO REDO as external lookup table
-# Rename products to match the UNU colloquial classification, group by product, component and material to average across models and years, then filter to products for which data is held
-BoM_data_UNU_Babbit <- BoM_data_bound_Babbit %>%
+# Rename products to match the UNU colloquial classification, then filter to products for which data is held
+BoM_data_UNU_Babbit <- BoM_data_Babbit %>%
   mutate(
     product = gsub("Blu-ray player", 'Video & DVD', product),
     product = gsub("CRT monitor", 'CRT Monitors', product),
     product = gsub("CRT TV", 'CRT TVs', product),
     product = gsub("Traditional desktop", 'Desktop PCs', product),
     product = gsub("Fitness tracker", 'Small Household Items', product),
-    product = gsub("Laptop", 'Laptops', product),
+    product = gsub("Laptop", 'Laptops & Tablets', product),
     product = gsub("LCD monitor", 'Flat Screen Monitors', product),
     product = gsub("LCD TV", 'Flat Screen TVs', product),
     product = gsub("MP3 player", 'Portable Audio', product),
@@ -139,7 +135,7 @@ BoM_data_UNU_Babbit <- BoM_data_bound_Babbit %>%
   ) %>%
   # filter to products of interest
   filter(product %in% BoM_filter_list_Babbit) %>%
-  # simplify compositional breakdown
+  # simplify compositional breakdown - redo as external lookup
   mutate(across(everything(), ~ replace(., . == "Case", "Body"))) %>%
     mutate(across(everything(), ~ replace(., . == "Casing", "Body"))) %>%
     mutate(across(everything(), ~ replace(., . == "Main body", "Body"))) %>%
@@ -177,15 +173,7 @@ BoM_data_UNU_Babbit <- BoM_data_bound_Babbit %>%
     mutate(across(everything(), ~ replace(., . == "Heat sink", "Fan and heat sink"))) %>%
     mutate_at(c('value', 'year'), as.numeric)
 
-# Done separate due to issue with special character
-BoM_data_UNU_Babbit$product <- gsub("Laptops", "Laptops & Tablets",
-                             BoM_data_UNU_Babbit$product)
-
-# Write data file
-write_xlsx(BoM_data_UNU_Babbit, 
-           "./cleaned_data/BoM_data_UNU.xlsx")
-
-# Return most recent model within each product group
+# Return most recent model within each product group - can adopt a different approach here e.g. averaging across years or matching flow data to most recent year in database
 BoM_data_UNU_Babbit_latest <- BoM_data_UNU_Babbit %>%
   # remove non-numeric entries in year column to then be able to select the latest
   mutate_at(c('year'), trimws) %>%
@@ -218,13 +206,14 @@ BoM_data_UNU_Babbit_latest_percentage <- BoM_data_UNU_Babbit_latest %>%
 # Extract BoM data from BEIS ICF Ecodesign report
 # *******************************************************************************
 
+# Import manually extracted data - can redo with PDF reader
 BoM_BEIS_absolute <- 
   read_xlsx("./cleaned_data/BoM_manual.xlsx", sheet = 1)
 
 # Add leading 0s to unu_key column up to 4 digits to help match to other data
 BoM_BEIS_absolute$UNU <- str_pad(BoM_BEIS_absolute$UNU, 4, pad = "0")
 
-# UNU codes to remove due to overlapping with Babbit (Babbit prioritised due to providing specific models)
+# UNU codes to remove due to overlapping with Babbit (Babbit prioritised due to providing specific models - another way could be to average across sources)
 remove <- c("0408", 
             "0309", 
             "0304")
@@ -302,7 +291,7 @@ BoM_BEIS_proportions_long <- left_join(BoM_BEIS_proportions_long,
   mutate_at(c('material'), trimws) %>%
   rename(product = )
 
-# Bind Babbit and BEIS sources
+# Bind Babbit and BEIS sources - review issue with characters
 BoM_percentage_UNU <-
   rbindlist(
     list(
@@ -313,20 +302,12 @@ BoM_percentage_UNU <-
     use.names = TRUE
   ) %>%
   mutate_at(c('material'), trimws) %>%
-  mutate(across(c('freq'), round, 2))
-
-BoM_percentage_UNU$material <-
-  str_remove_all(BoM_percentage_UNU$material, "[^A-z|0-9|-|(|)|[:punct:]|\\s]")
-
-BoM_percentage_UNU$material <- 
-  gsub('[^[:alnum:] ]','',BoM_percentage_UNU$material)
-
-BoM_percentage_UNU <- BoM_percentage_UNU %>%
+  mutate(across(c('freq'), round, 2)) %>%
   filter(freq != 0,
          material != "Total") %>%
   mutate(material = gsub("Other glass","Glass other", material),
          material = gsub("Flat panel glass","Flatpanelglass", material),
-         material = gsub("Liion battery","Liionbattery", material))
+         material = gsub("Li\\-ion battery","Liion battery", material))
 
 # Write xlsx to the cleaned data folder
 write_xlsx(BoM_percentage_UNU, 
