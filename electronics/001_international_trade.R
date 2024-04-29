@@ -181,13 +181,54 @@ write_xlsx(trade_combined_UNU,
 DBI::dbWriteTable(con, "electronics_trade_UNU", trade_combined_UNU)
 
 # *******************************************************************************
-# For trade data pre-dating the UK trade API, we use comtrade
+# Alternative approach - getting trade data from comtrade
 
-# Import UK partner code
-# https://comtrade.un.org/data/Doc/api/ex/r
-string <- "http://comtrade.un.org/data/cache/partnerAreas.json"
-reporters <- fromJSON(file=string)
-reporters <- as.data.frame(t(sapply(reporters$results,rbind)))
-reporters <- reporters[reporters[[2]] == "United Kingdom",]
+# # Get ISO region code
+# reporters <- country_codes
 
-# Update in Python
+# Function to use the comtrade R package to extract trade data from the Comtrade API
+comtrade_extractor <- function(x) {
+  trade_results <-
+    ct_get_data(
+      reporter =  c('GBR'),
+      flow_direction = "import",
+      partner = "World",
+      start_date = 1989,
+      end_date = 2000,
+      commodity_code = c(x)
+    )
+  trade_results <- trade_results %>%
+    mutate(search_code = x)
+  
+  return(trade_results)
+}
+
+# 
+# # Create a for loop that goes through the trade codes, extracts the data using the extractor function and prints the results to a list of dataframes
+res <- list()
+for (i in seq_along(codes)) {
+  res[[i]] <- comtrade_extractor(codes[i])
+  
+  print(i)
+  
+}
+
+# 
+# # # Bind the list of returned dataframes to a single dataframe
+GBR_89_00 <-
+  dplyr::bind_rows(res)
+
+# 
+
+# Bind datasets 
+GBR_bind <-
+  rbindlist(
+    list(
+      GBR_89_00
+    ),
+    use.names = TRUE
+  )
+
+# Write
+write_xlsx(EU_bind,
+           "./data/EU_imports_all.xlsx")

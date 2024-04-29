@@ -29,7 +29,7 @@ invisible(lapply(packages, library, character.only = TRUE))
 # *******************************************************************************
 
 # Import functions
-source("./scripts/functions.R", 
+source("functions.R", 
        local = knitr::knit_global())
 
 # Stop scientific notation of numeric values
@@ -79,7 +79,30 @@ by <- join_by(unu, closest(year >= year))
 trade_mass <- left_join(trade_combined_UNU, UNU_mass, by) %>%
   mutate_at(c("value.y"), as.numeric) %>%
   mutate(mass = (value.x*value.y)/1000) %>%
-  select(c(2,3,4,8))
+  ungroup() %>%
+  select(c(2,3,4,8)) %>%
+  rename(year = 1,
+         flow_type = 2,
+         value = 4) %>%
+  mutate(source = if_else(flow_type == "Imports", "imports", "Apparent production")) %>%
+  mutate(target = if_else(flow_type == "Imports", "Apparent consumption", "exports")) %>%
+  select(-flow_type)
+
+# Join by material
+
+# Right join the BoM proportion and mass collected per year
+trade_material <- right_join(BoM_percentage_UNU, collected_PCS,
+                        by = c("product")) %>%
+  mutate(mass = freq*value) %>%
+  select("material",
+         "product",
+         "year",
+         "mass",
+         "source",
+         "target") %>%
+  rename(value = mass) %>%
+  mutate(source = "consume",
+         target = "collection")
 
 # *******************************************************************************
 # Domestic production
@@ -96,9 +119,7 @@ by <- join_by(unu, closest(year >= year))
 # Join
 domestic_production_mass <- left_join(domestic_production_UNU, UNU_mass, by) %>%
   mutate_at(c("value.y"), as.numeric) %>%
-  mutate(mass = (value.x*value.y)/1000) 
-
-%>%
+  mutate(mass = (value.x*value.y)/1000) %>%
   select(c(2,3,4,8))
 
 # *******************************************************************************
@@ -135,10 +156,6 @@ material_formulation <- right_join(BoM_percentage_UNU, inflows,
 # Stock
 # *******************************************************************************
 
-# Duplicates the first file and renames columns to create the next sankey link through making long-format the BoM
-component_manufacture <- material_formulation %>% 
-  mutate(source = target,
-         target = "product_assembly")
 
 # *******************************************************************************
 # Use > repair/maintenance

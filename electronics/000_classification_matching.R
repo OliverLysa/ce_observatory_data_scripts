@@ -34,13 +34,12 @@ source("functions.R",
 # Stop scientific notation of numeric values
 options(scipen = 999)
 
-# Connect to supabase
-con <- dbConnect(RPostgres::Postgres(),
-                 dbname = 'postgres', 
-                 host = 'db.qcgyyjjmwydekbxsjjbx.supabase.co',
-                 port = 5432,
-                 user = 'postgres',
-                 password = rstudioapi::askForPassword("Database password"))
+con_back <- dbConnect(RPostgres::Postgres(),
+                      dbname = 'postgres', 
+                      host = 'aws-0-eu-west-2.pooler.supabase.com',
+                      port = 5432,
+                      user = 'postgres.qcgyyjjmwydekbxsjjbx',
+                      password = rstudioapi::askForPassword("Database password"))
 
 # *******************************************************************************
 # Classification matching

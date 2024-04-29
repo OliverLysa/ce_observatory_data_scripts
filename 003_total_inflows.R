@@ -56,11 +56,9 @@ options(scipen = 999)
 Prodcom_data_UNU <-
   read_excel("./cleaned_data/Prodcom_data_UNU.xlsx")  %>%
   as.data.frame() %>%
-  rename(UNU = 1)
-
-# Filter prodcom variable column and mutate variable names to match the trade data
-Prodcom_data_UNU <- Prodcom_data_UNU %>%
-  mutate(FlowTypeDescription = "domestic production")
+  rename(UNU = 1) %>%
+  mutate(FlowTypeDescription = "domestic production") %>%
+  clean_names() 
 
 # Import trade UNU data if not in global environment
 Summary_trade_UNU <-
@@ -68,7 +66,8 @@ Summary_trade_UNU <-
   as.data.frame() %>%
   filter(Variable == "Units") %>%
   select(-c(Variable)) %>%
-  rename(UNU = 1)
+  rename(UNU = 1) %>%
+  clean_names()
 
 # Bind/append prodcom and trade datasets to create a total inflow dataset
 complete_inflows <- rbindlist(list(Summary_trade_UNU,
@@ -78,8 +77,8 @@ complete_inflows <- rbindlist(list(Summary_trade_UNU,
 # Pivot wide to create aggregate indicators
 # based on https://www.resourcepanel.org/global-material-flows-database
 complete_inflows_wide <- pivot_wider(complete_inflows,
-                                     names_from = FlowTypeDescription,
-                                     values_from = Value) %>%
+                                     names_from = flow_type_description,
+                                     values_from = value) %>%
   clean_names()
 
 # Turn domestic production NA values into a 0
@@ -95,9 +94,7 @@ complete_inflows_long <- complete_inflows_wide %>%
     # equivalent of domestic material consumption at national level
     apparent_consumption = domestic_production + total_imports - total_exports,
     # production perspective - issue of duplication
-    apparent_output = domestic_production + total_exports,
-    apparent_input = domestic_production + total_imports,
-    import_dependency = (total_imports / (total_imports + total_exports))) %>%
+    import_dependency = (total_imports / apparent_consumption)) %>%
   pivot_longer(-c(unu,
                   year),
                names_to = "indicator",
@@ -159,32 +156,35 @@ inflow_wide_outlier_replaced_spline <-
 # *******************************************************************************
 #
 
-# augmented dickeyfuller unit root test, # plot autocorrelation function and partial acf to get correct order
+# We produce a time-series forecast of apparent consumption using an ARIMA model with an external socio-economic variable (GDP per capita projections)
+# A hierarchical time-series approach is used in forecast construction, with bottom up aggregation across UNU-keys
 
-# Produce forecast of sales - arima with economic variable externally (per capita GDP)
-# Hierarchical time-series with bottom up aggregation approach to forecast construction
+# Download OBR GDP data including short-term forecasts
+download.file(
+  "https://obr.uk/download/public-finances-databank-march-2024-2/?tmstv=1711722115",
+  "raw_data/OBR_forecasts.xlsx")
 
-# https://stackoverflow.com/questions/67564279/looping-with-arima-in-r
-# https://stackoverflow.com/questions/40195505/fitting-arima-model-to-multiple-time-series-and-storing-forecast-into-a-matrix
-
-# Import outturn sales data (back to 2001 currently).
-# 22 data point for annual time-step, 264 for monthly
-inflow_wide_outlier_replaced_interpolated <-
-  read_excel("inflow_wide_outlier_replaced_NA.xlsx", sheet = 1)
-
-# Convert to time series format
-apparent_consumption <- ts(inflow_wide_outlier_replaced_interpolated,
-                           start = 2001,
-                           frequency = 1)
-
-# Import forecasted external data
-external_forecasts_1 <-
-  read_excel("gdp_forecast_1.xlsx", sheet = 2)
+# Import outturn and forecasted GDP data
+GDP_outturn <-
+  read_excel("raw_data/OBR_forecasts.xlsx", sheet = 2) %>%
+  select(1,28) %>%
+  na.omit()
 
 # Convert external forecasts to time series format
 gdp_forecast_1 <- ts(external_forecasts_1$gdp_1,
                      start = 2022,
                      frequency = 1)
+
+# Import outturn apparent consumption data (back to 2008 currently across trade and prodcom).
+# 22 data point for annual time-step, 264 for monthly
+# Convert to time series format
+apparent_consumption <- ts(inflow_wide_outlier_replaced_interpolated,
+                           start = 2001,
+                           frequency = 1)
+
+# augmented dickeyfuller unit root test, # plot autocorrelation function and partial acf to get correct order
+# https://stackoverflow.com/questions/67564279/looping-with-arima-in-r
+# https://stackoverflow.com/questions/40195505/fitting-arima-model-to-multiple-time-series-and-storing-forecast-into-a-matrix
 
 # Define arima model of consumption
 arima_consumption <- auto.Arima(
@@ -209,87 +209,3 @@ apparent_consumption_f <- data.frame(year_f,
                                      forecast_com$mean,
                                      forecast_com$lower[, 1],
                                      forecast_com$upper[, 1])
-
-# *******************************************************************************
-# POM method (EA WEEE EPR data)
-# *******************************************************************************
-#
-
-# Download EEE data file from URL at government website
-download.file(
-  "https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/1160182/Electrical_and_electronic_equipment_placed_on_the_UK_market.ods",
-  "./raw_data/EEE_on_the_market.ods"
-)
-
-# Extract and list all sheet names
-POM_sheet_names <- list_ods_sheets("./raw_data/EEE_on_the_market.ods")
-
-# Map sheet names to imported file by adding a column "sheetname" with its name
-POM_data <- purrr::map_df(POM_sheet_names,
-                          ~ dplyr::mutate(
-                            read_ods("./raw_data/EEE_on_the_market.ods",
-                                     sheet = .x),
-                            sheetname = .x
-                          )) %>%
-  # filter out NAs in column 1
-  filter(Var.1 != "NA") %>%
-  # Add column called quarters
-  mutate(quarters = case_when(str_detect(Var.1, "Period covered") ~ Var.1), .before = Var.1) %>%
-  # Fill column
-  tidyr::fill(1) %>%
-  filter(grepl('January - December', quarters)) %>%
-  # make numeric and filter out anything but 1-14 in column 1
-  mutate_at(c('Var.1'), as.numeric) %>%
-  filter(between(Var.1, 1, 14)) %>%
-  select(-c(`Var.1`,
-            Var.5,
-            quarters)) %>%
-  rename(
-    product = 1,
-    household = 2,
-    non_household = 3,
-    year = 4
-  ) %>%
-  mutate(year = gsub("\\_.*", "", year))
-
-# Pivot long to input to charts
-POM_data2 <- POM_data %>%
-  pivot_longer(-c(product,
-                  year),
-               names_to = "end_use",
-               values_to = "value") %>%
-  mutate_at(c('value'), as.numeric)
-
-%>%
-  filter(year == "2022") %>%
-  mutate_at(c('value'), as.numeric) %>%
-  group_by(year) %>%
-  summarise(value = sum(value))
-
-ggplot(POM_data2, aes(fill=end_use, y=value, x = year)) + 
-  geom_bar(position="stack", stat="identity") +
-  facet_wrap(vars(product), nrow = 4) +
-  theme(panel.background = element_rect(fill = "#FFFFFF")) +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
-  ylab("tonnes") +
-  scale_y_continuous(
-    breaks = seq(0, 600000, 100000)
-  )
-
-ggplot(POM_data2, aes(fill=end_use, y=value, x = reorder(product, value, FUN = sum))) + 
-  geom_bar(position="stack", stat="identity") +
-  theme(panel.background = element_rect(fill = "#FFFFFF")) +
-  theme(axis.text.x = element_text(angle = 60, vjust = 1, hjust=1)) +
-  ylab("tonnes") +
-  scale_y_continuous(
-    breaks = seq(0, 800000, 100000),
-    minor_breaks = seq(0 , 800000, 50000),
-    limits=c(0, 700000)) +
-  theme(
-    axis.title.x = element_blank()) +
-  theme(text = element_text(size=16)) +
-  theme(legend.position="top")
-
-# Write output to xlsx form
-write_xlsx(POM_data,
-           "./cleaned_data/electronics_placed_on_market.xlsx")

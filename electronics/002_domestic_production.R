@@ -36,7 +36,7 @@ options(scipen = 999)
 # Connect to supabase
 con <- dbConnect(RPostgres::Postgres(),
                  dbname = 'postgres', 
-                 host = 'db.qcgyyjjmwydekbxsjjbx.supabase.co',
+                 host = 'postgres.qowfjhidbxhtdgvknybu',
                  port = 5432,
                  user = 'postgres',
                  password = rstudioapi::askForPassword("Database password"))
@@ -334,7 +334,13 @@ Prodcom_data_UNU <- left_join(Grouped_all,
   group_by(UNU, Year.x) %>%
   summarise(Value = sum(na.omit(Value))) %>%
   clean_names() %>%
-  rename(year= 2)
+  rename(year= 2) %>%
+  mutate(value = value/1000000)
+  
+ggplot(Prodcom_data_UNU, aes(x = year, y = value, fill = unu)) +
+  theme_light() +
+  geom_col() +
+  labs(x = "Year", y = "Million units")
 
 # CHECK WHY TRADE DATA MISSING FOR SOME PRODCOM CODES - COULD USE STRAIGHT LINE INTERPOLATION
 
@@ -344,3 +350,5 @@ write_xlsx(Prodcom_data_UNU,
 
 # Write file to database
 DBI::dbWriteTable(con, "electronics_prodcom_UNU", Prodcom_data_UNU)
+
+

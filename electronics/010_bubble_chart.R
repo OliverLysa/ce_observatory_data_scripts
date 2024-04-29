@@ -53,7 +53,7 @@ inflow_weibull_chart <- read_xlsx(
 
 # Import data outflow fate (CE-score), pivot longer, filter, drop NA and rename column 'route' 
 outflow_routing <- read_excel(
-  "./cleaned_data/electronics_outflow.xlsx") %>%
+  "./cleaned_data/PDFs_datasets_CDJS.xlsx") %>%
   clean_names() %>%
   pivot_longer(-c(
     `unu_key`,

@@ -40,48 +40,42 @@ options(scipen = 999)
 # *******************************************************************************
 #
 
-# Code for latest publications in xlsx format
+# download.file(
+#   "https://assets.publishing.service.gov.uk/media/660bc0c1e8c4421717220332/Electrical_and_electronic_equipment_placed_on_the_UK_market.ods",
+#   "./raw_data/EEE_on_the_market.ods"
+# )
 
-# Download EEE data file from URL at government website
-download.file(
-  "https://assets.publishing.service.gov.uk/media/65e1a5802f2b3b00117cd7f5/Electrical_and_electronic_equipment_placed_on_the_UK_market.xlsx",
-  "./raw_data/EEE_on_the_market.xlsx"
-)
+# Extract and list all sheet names
+POM_sheet_names <- list_ods_sheets(
+  "./raw_data/EEE_on_the_market.ods")
 
-# Extract all sheets into a list of dataframes
-POM_sheets <- read_excel_allsheets(
-  "./raw_data/EEE_on_the_market.xlsx")
-
-# Bind rows to create one single dataframe, filter, rename, pivot and filter again
-POM_data <-
-  dplyr::bind_rows(POM_sheets) %>%
-  rename(number = 1,
-         number2 = 5,
-         number3 = 7) %>%
+# Map sheet names to imported file by adding a column "sheetname" with its name
+POM_data <- purrr::map_df(POM_sheet_names,
+                          ~ dplyr::mutate(
+                            read_ods("./raw_data/EEE_on_the_market.ods",
+                                     sheet = .x),
+                            sheetname = .x
+                          )) %>%
+  # filter out NAs in column 1
+  filter(Var.1 != "NA") %>%
   # Add column called quarters
-  mutate(quarters = case_when(str_detect(number, "Period covered") ~ number), .before = number) %>%
-  mutate(quarters2 = case_when(str_detect(number2, "Period covered") ~ number2), .before = number) %>%
-  mutate(quarters3 = case_when(str_detect(number3, "Period covered") ~ number3), .before = number) %>%
-  unite(period, c("quarters", "quarters2","quarters3"), na.rm = TRUE) 
-
-# Convert blanks to NAs
-POM_data$period[POM_data$period==""] <- NA
-
-# Tidy dataset
-POM_data <- POM_data %>%
+  mutate(quarters = case_when(str_detect(Var.1, "Period covered") ~ Var.1), .before = Var.1) %>%
   # Fill column
   tidyr::fill(1) %>%
-  filter(grepl('January - December', period)) %>%
-  select(1,3,4,5) %>%
-  na.omit() %>%
+  filter(grepl('January - December', quarters)) %>%
+  # make numeric and filter out anything but 1-14 in column 1
+  mutate_at(c('Var.1'), as.numeric) %>%
+  filter(between(Var.1, 1, 14)) %>%
+  select(-c(`Var.1`,
+            Var.5,
+            quarters)) %>%
   rename(
-    year = 1,
-    product = 2,
-    household = 3,
-    non_household = 4
+    product = 1,
+    household = 2,
+    non_household = 3,
+    year = 4
   ) %>%
-  mutate(year = substr(year, nchar(year)-4+1, nchar(year))) %>%
-  filter(! grepl('Category', product)) %>%
+  mutate(year = gsub("\\_.*", "", year)) %>%
   pivot_longer(-c(product,
                   year),
                names_to = "end_use",
@@ -90,9 +84,59 @@ POM_data <- POM_data %>%
   group_by(year, product, end_use) %>%
   summarise(value = sum(value))
 
-# Write output to xlsx form
-write_xlsx(POM_data,
-           "./cleaned_data/electronics_placed_on_market.xlsx")
+# Code for publications in xlsx format (EA subsequently changed, again)
+
+# Download EEE data file from URL at government website
+# download.file(
+#   "https://assets.publishing.service.gov.uk/media/65e1a5802f2b3b00117cd7f5/Electrical_and_electronic_equipment_placed_on_the_UK_market.xlsx",
+#   "./raw_data/EEE_on_the_market.xlsx"
+# )
+
+# # Extract all sheets into a list of dataframes
+# POM_sheets <- read_excel_allsheets(
+#   "./raw_data/EEE_on_the_market.xlsx")
+# 
+# # Bind rows to create one single dataframe, filter, rename, pivot and filter again
+# POM_data <-
+#   dplyr::bind_rows(POM_sheets) %>%
+#   rename(number = 1,
+#          number2 = 5,
+#          number3 = 7) %>%
+#   # Add column called quarters
+#   mutate(quarters = case_when(str_detect(number, "Period covered") ~ number), .before = number) %>%
+#   mutate(quarters2 = case_when(str_detect(number2, "Period covered") ~ number2), .before = number) %>%
+#   mutate(quarters3 = case_when(str_detect(number3, "Period covered") ~ number3), .before = number) %>%
+#   unite(period, c("quarters", "quarters2","quarters3"), na.rm = TRUE) 
+# 
+# # Convert blanks to NAs
+# POM_data$period[POM_data$period==""] <- NA
+# 
+# # Tidy dataset
+# POM_data <- POM_data %>%
+#   # Fill column
+#   tidyr::fill(1) %>%
+#   filter(grepl('January - December', period)) %>%
+#   select(1,3,4,5) %>%
+#   na.omit() %>%
+#   rename(
+#     year = 1,
+#     product = 2,
+#     household = 3,
+#     non_household = 4
+#   ) %>%
+#   mutate(year = substr(year, nchar(year)-4+1, nchar(year))) %>%
+#   filter(! grepl('Category', product)) %>%
+#   pivot_longer(-c(product,
+#                   year),
+#                names_to = "end_use",
+#                values_to = "value") %>%
+#   mutate_at(c('value'), as.numeric) %>%
+#   group_by(year, product, end_use) %>%
+#   summarise(value = sum(value))
+# 
+# # Write output to xlsx form
+# write_xlsx(POM_data,
+#            "./cleaned_data/electronics_placed_on_market.xlsx")
 
 # Previous code for extracting data from earlier publications in ods format
 
@@ -214,8 +258,6 @@ inflow_wide_outlier_replaced_NA <-
 # Replace outliers (now NAs) by column/UNU across whole dataframe using straight-line interpolation
 inflow_wide_outlier_replaced_interpolated <-
   na.approx(inflow_wide_outlier_replaced_NA,
-            # as na.approx by itself only covers interpolation and not extrapolation (i.e. misses end values),
-            # also performs extrapolation with rule parameter where end-values are missing through using constant (i.e. last known value)
             rule = 1,
             maxgap = 10) %>%
   as.data.frame() %>%
@@ -241,32 +283,41 @@ inflow_wide_outlier_replaced_spline <-
 # *******************************************************************************
 #
 
-# augmented dickeyfuller unit root test, # plot autocorrelation function and partial acf to get correct order
+# We produce a time-series forecast of apparent consumption using an ARIMA model with an external socio-economic variable (GDP per capita projections)
+# A hierarchical time-series approach is used in forecast construction, with bottom up aggregation across UNU-keys
 
-# Produce forecast of sales - arima with economic variable externally (per capita GDP)
-# Hierarchical time-series with bottom up aggregation approach to forecast
+# Download OBR GDP data including short-term forecasts
+download.file(
+  "https://obr.uk/download/public-finances-databank-march-2024-2/?tmstv=1711722115",
+  "raw_data/OBR_forecasts.xlsx")
 
-# https://stackoverflow.com/questions/67564279/looping-with-arima-in-r
-# https://stackoverflow.com/questions/40195505/fitting-arima-model-to-multiple-time-series-and-storing-forecast-into-a-matrix
+# Account for outlier effects (abrupt changes in the time-series related to unexpected events)
 
-# Import outturn sales data (back to 2001 currently).
-# 22 data point for annual time-step, 264 for monthly
-inflow_wide_outlier_replaced_interpolated <-
-  read_excel("inflow_wide_outlier_replaced_NA.xlsx", sheet = 1)
 
-# Convert to time series format
-apparent_consumption <- ts(inflow_wide_outlier_replaced_interpolated,
-                           start = 2001,
-                           frequency = 1)
-
-# Import forecasted external data
-external_forecasts_1 <-
-  read_excel("gdp_forecast_1.xlsx", sheet = 2)
+# Import outturn and forecasted GDP data
+GDP_outturn <-
+  read_excel("raw_data/OBR_forecasts.xlsx", sheet = 2) %>%
+  select(1,28) %>%
+  na.omit() %>%
+  rename(year = 1,
+         value = 2) %>%
+  mutate(year = substr(year,1,4))
 
 # Convert external forecasts to time series format
 gdp_forecast_1 <- ts(external_forecasts_1$gdp_1,
                      start = 2022,
                      frequency = 1)
+
+# Import outturn apparent consumption data (back to 2008 currently across trade and prodcom).
+# 22 data point for annual time-step, 264 for monthly
+# Convert to time series format
+apparent_consumption <- ts(inflow_wide_outlier_replaced_interpolated,
+                           start = 2001,
+                           frequency = 1)
+
+# augmented dickeyfuller unit root test, # plot autocorrelation function and partial acf to get correct order
+# https://stackoverflow.com/questions/67564279/looping-with-arima-in-r
+# https://stackoverflow.com/questions/40195505/fitting-arima-model-to-multiple-time-series-and-storing-forecast-into-a-matrix
 
 # Define arima model of consumption
 arima_consumption <- auto.Arima(

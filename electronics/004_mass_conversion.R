@@ -356,13 +356,17 @@ BoM_percentage_UNU <-
 write_xlsx(BoM_percentage_UNU, 
            "./intermediate_data/BoM_percentage_UNU.xlsx")
 
+BoM_percentage_UNU <- read_xlsx(
+  "./intermediate_data/BoM_percentage_UNU.xlsx") %>%
+  mutate_at(c('material'), trimws)
+
 BoM_percentage_UNU$material <-factor(BoM_percentage_UNU$material, levels=c('Others',
-                                                                           'Glass other',
-                                                                           'Flatpanelglass',
+                                                                           'Glass (other)',
+                                                                           'Flat-panel glass',
                                                                            'Plastic',
-                                                                           'Liionbattery',
-                                                                           'Electronics incl PCB',
-                                                                           'Metals other',
+                                                                           'Li-ion battery',
+                                                                           'Electronics incl. PCB',
+                                                                           'Metals (other)',
                                                                            'Copper',
                                                                            'Aluminium',
                                                                            'Ferrous'))

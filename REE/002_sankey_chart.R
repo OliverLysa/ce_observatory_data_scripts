@@ -55,7 +55,8 @@ REE_sankey_links <- read_xlsx("./intermediate_data/REE_sankey_links.xlsx") %>%
   mutate_at(vars(cols), ~ str_replace(., "Recycle", "Recycling")) %>%
   filter(! year > 2040,
          ! year < 1990) %>%
-  mutate(material = "Neodymium")
+  mutate(material = "Neodymium") %>%
+  mutate(color = "rgba(101, 221, 253, 0.8)")
 
 # Write file to database
 DBI::dbWriteTable(con, 
