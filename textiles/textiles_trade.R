@@ -120,11 +120,11 @@ bind <- bind %>%
 
 # Remove the month identifier in the month ID column to be able to group by year
 # This can be removed for more time-granular data e.g. by month or quarter
-bind2$MonthId <- 
+bind$MonthId <- 
   substr(bind2$MonthId, 1, 4)
 
 # Summarise results in value, mass and unit terms grouped by year, flow type and trade code as well as broad trade direction
-summary_trade_no_country <- bind3 %>%
+summary_trade_no_country <- bind %>%
   group_by(MonthId, 
            FlowTypeDescription, 
            CommodityId) %>%
