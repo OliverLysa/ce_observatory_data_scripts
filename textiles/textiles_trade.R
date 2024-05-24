@@ -45,12 +45,12 @@ source("functions.R",
 # Stop scientific notation of numeric values
 options(scipen = 999)
 
-con_back <- dbConnect(RPostgres::Postgres(),
-                      dbname = 'postgres', 
-                      host = 'aws-0-eu-west-2.pooler.supabase.com',
-                      port = 5432,
-                      user = 'postgres.qowfjhidbxhtdgvknybu',
-                      password = rstudioapi::askForPassword("Database password"))
+# con_back <- dbConnect(RPostgres::Postgres(),
+#                       dbname = 'postgres', 
+#                       host = 'aws-0-eu-west-2.pooler.supabase.com',
+#                       port = 5432,
+#                       user = 'postgres.qowfjhidbxhtdgvknybu',
+#                       password = rstudioapi::askForPassword("Database password"))
 
 # *******************************************************************************
 # Product classification
