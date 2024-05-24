@@ -1,0 +1,60 @@
+##### **********************
+# Author: Matt and Oliver
+
+# *******************************************************************************
+# Packages
+# *******************************************************************************
+# Package names
+packages <- c("magrittr", 
+              "writexl", 
+              "readxl", 
+              "dplyr", 
+              "tidyverse", 
+              "readODS", 
+              "data.table", 
+              "DBI",
+              "RPostgres")
+
+# Install packages not yet installed
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(packages[!installed_packages])
+}
+
+# Packages loading
+invisible(lapply(packages, library, character.only = TRUE))
+
+# *******************************************************************************
+# Import functions, options and connections
+# *******************************************************************************
+# Import functions
+source("functions.R", 
+       local = knitr::knit_global())
+
+# Stop scientific notation of numeric values
+options(scipen = 999)
+
+con_back <- dbConnect(RPostgres::Postgres(),
+                      dbname = 'postgres', 
+                      host = 'aws-0-eu-west-2.pooler.supabase.com',
+                      port = 5432,
+                      user = 'postgres.qowfjhidbxhtdgvknybu',
+                      password = rstudioapi::askForPassword("Database password"))
+
+# *******************************************************************************
+# Classification matching
+# *******************************************************************************
+#
+
+# Import CN8
+WOT_UNU_CN8 <-
+  read_csv("./classifications/classifications/CN8.xlsx") %>%
+  mutate(SIC2 = substr(PCC, 1, 2),
+         SIC4 = substr(PCC, 1, 4))
+
+# Write file locally
+write_xlsx(WOT_UNU_CN8, 
+           "./classifications/concordance_tables/WOT_UNU_CN8_PCC_SIC.xlsx")
+
+# Write file to database
+DBI::dbWriteTable(con, "WOT_UNU_CN8", WOT_UNU_CN8)
