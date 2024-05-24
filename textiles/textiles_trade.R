@@ -36,7 +36,7 @@ if (any(installed_packages == FALSE)) {
 invisible(lapply(packages, library, character.only = TRUE))
 
 # *******************************************************************************
-# Import functions, options and connections
+# Import functions, options and connections 
 # *******************************************************************************
 # Import functions
 source("functions.R", 
