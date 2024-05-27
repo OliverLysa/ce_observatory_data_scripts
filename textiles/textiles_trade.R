@@ -132,7 +132,7 @@ bind$MonthId <-
   substr(bind2$MonthId, 1, 4)
 
 # Summarise results in value, mass and unit terms grouped by year, flow type and trade code as well as broad trade direction
-summary_trade_no_country_im_ex <- bind3 %>%
+summary_trade_no_country <- bind %>%
   group_by(MonthId, 
            FlowTypeDescription, 
            CommodityId) %>%
@@ -153,15 +153,14 @@ summary_trade_no_country_im_ex <- bind3 %>%
     by =join_by("CommodityId" == "CN8")) %>%
   rename(CN = CommodityId)
 
+# Export locally
 write_xlsx(summary_trade_no_country,
           "summary_trade_no_country.xlsx")
 
+# Export to database
 DBI::dbWriteTable(con, 
                   "textiles_trade", 
-                  summary_trade_no_country_im_ex)
-
-write_xlsx(summary_trade_no_country_im_ex,
-           "summary_trade_test.xlsx")
+                  summary_trade_no_country)
 
 # Comtrade
 
