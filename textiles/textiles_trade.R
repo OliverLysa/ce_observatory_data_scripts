@@ -45,12 +45,12 @@ source("functions.R",
 # Stop scientific notation of numeric values
 options(scipen = 999)
 
-# con_back <- dbConnect(RPostgres::Postgres(),
-#                       dbname = 'postgres', 
-#                       host = 'aws-0-eu-west-2.pooler.supabase.com',
-#                       port = 5432,
-#                       user = 'postgres.qowfjhidbxhtdgvknybu',
-#                       password = rstudioapi::askForPassword("Database password"))
+con <- dbConnect(RPostgres::Postgres(),
+                      dbname = 'postgres', 
+                      host = 'aws-0-eu-west-2.pooler.supabase.com',
+                      port = 5432,
+                      user = 'postgres.qowfjhidbxhtdgvknybu',
+                      password = rstudioapi::askForPassword("Database password"))
 
 # *******************************************************************************
 # Product classification
@@ -118,13 +118,21 @@ bind <- bind %>%
          FlowTypeId = gsub(4, 'Non-EU Exports', FlowTypeId)) %>%
   rename(FlowTypeDescription = FlowTypeId)
 
+bind3 <- bind3 %>%
+  mutate(FlowTypeDescription = gsub('EU Imports', 'Imports', FlowTypeDescription),
+         FlowTypeDescription = gsub('EU Exports', 'Exports', FlowTypeDescription),
+         FlowTypeDescription = gsub('`Non-EU Imports`', 'Imports', FlowTypeDescription),
+         FlowTypeDescription = gsub('Non-EU Exports', 'Exports', FlowTypeDescription),
+         FlowTypeDescription = gsub('Non-Exports', 'Exports', FlowTypeDescription),
+         FlowTypeDescription = gsub('Non-Imports', 'Imports', FlowTypeDescription))
+
 # Remove the month identifier in the month ID column to be able to group by year
 # This can be removed for more time-granular data e.g. by month or quarter
 bind$MonthId <- 
   substr(bind2$MonthId, 1, 4)
 
 # Summarise results in value, mass and unit terms grouped by year, flow type and trade code as well as broad trade direction
-summary_trade_no_country <- bind %>%
+summary_trade_no_country_im_ex <- bind3 %>%
   group_by(MonthId, 
            FlowTypeDescription, 
            CommodityId) %>%
@@ -139,10 +147,21 @@ summary_trade_no_country <- bind %>%
                names_to = "Variable",
                values_to = 'Value') %>%
   # Convert trade code to character
-  mutate_at(c(3), as.character)
+  mutate_at(c(3), as.character) %>%
+  left_join(# Join the correspondence codes and the trade data
+    trade_terms,
+    by =join_by("CommodityId" == "CN8")) %>%
+  rename(CN = CommodityId)
 
 write_xlsx(summary_trade_no_country,
           "summary_trade_no_country.xlsx")
+
+DBI::dbWriteTable(con, 
+                  "textiles_trade", 
+                  summary_trade_no_country_im_ex)
+
+write_xlsx(summary_trade_no_country_im_ex,
+           "summary_trade_test.xlsx")
 
 # Comtrade
 
