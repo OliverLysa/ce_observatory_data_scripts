@@ -95,80 +95,76 @@ trade_terms_CN8 <- trade_terms %>%
   unique() %>%
   unlist()
 
-# # If a subset of those codes are sought, these can be selected by index position
-# # Using this as in some cases, a memory issue arise with full list
-# # trade_terms_CN8 <- trade_terms_CN8[1106:1242]
-# 
-# # Create a for loop that goes through the trade terms, extracts the data using the extractor function (in function script) based on the uktrade wrapper
-# # and prints the results to a list of dataframes
-# res <- list()
-# for (i in seq_along(trade_terms_CN8)) {
-#   res[[i]] <- extractor(trade_terms_CN8[i])
-#   
-#   print(i)
-#   
-# }
-# 
-# # Bind the list of returned dataframes to a single dataframe
-# bind2 <- 
-#   dplyr::bind_rows(res)
-# 
-# # If you have not used the in-built lookup codes in the uktrade R package, describe the flow-types for subsequent aggregation
-# bind2 <- bind2 %>%
-#   mutate(FlowTypeId = gsub(1, 'EU Imports', FlowTypeId),
-#          FlowTypeId = gsub(2, 'EU Exports', FlowTypeId),
-#          FlowTypeId = gsub(3, 'Non-EU Imports', FlowTypeId),
-#          FlowTypeId = gsub(4, 'Non-EU Exports', FlowTypeId)) %>%
-#   rename(FlowTypeDescription = FlowTypeId)
-# 
-# # bind3 <- bind3 %>%
-# #   mutate(FlowTypeDescription = gsub('EU Imports', 'Imports', FlowTypeDescription),
-# #          FlowTypeDescription = gsub('EU Exports', 'Exports', FlowTypeDescription),
-# #          FlowTypeDescription = gsub('`Non-EU Imports`', 'Imports', FlowTypeDescription),
-# #          FlowTypeDescription = gsub('Non-EU Exports', 'Exports', FlowTypeDescription),
-# #          FlowTypeDescription = gsub('Non-Exports', 'Exports', FlowTypeDescription),
-# #          FlowTypeDescription = gsub('Non-Imports', 'Imports', FlowTypeDescription))
-# 
-# # Remove the month identifier in the month ID column to be able to group by year
-# # This can be removed for more time-granular data e.g. by month or quarter
-# bind$MonthId <- 
-#   substr(bind$MonthId, 1, 4)
-# 
-# # Summarise results in value, mass and unit terms grouped by year, flow type and trade code as well as broad trade direction
-# summary_trade_no_country <- bind %>%
-#   group_by(MonthId, 
-#            FlowTypeDescription, 
-#            CommodityId) %>%
-#   summarise(sum(Value), 
-#             sum(NetMass), 
-#             sum(SuppUnit)) %>%
-#   rename(Year = MonthId) %>%
-#   # Pivot results longer
-#   pivot_longer(-c(Year, 
-#                   FlowTypeDescription, 
-#                   CommodityId),
-#                names_to = "Variable",
-#                values_to = 'Value') %>%
-#   # Convert trade code to character
-#   mutate_at(c(3), as.character) %>%
-#   left_join(# Join the correspondence codes and the trade data
-#     trade_terms,
-#     by =join_by("CommodityId" == "CN8")) %>%
-#   rename(CN = CommodityId)
-# 
-# # Export locally
-# write_xlsx(summary_trade_no_country,
-#           "summary_trade_no_country_50_only.xlsx")
-# 
-# # Export to database
-# DBI::dbWriteTable(con, 
-#                   "textiles_trade", 
-#                   summary_trade_no_country)
+# If a subset of those codes are sought, these can be selected by index position
+# Using this as in some cases, a memory issue arise with full list
+# trade_terms_CN8 <- trade_terms_CN8[1106:1242]
 
-# Hitting API without package - confirms there are some issues with the package
-# https://api.uktradeinfo.com/OTS?$filter=(MonthId ge 202301 and MonthId le 202312) and ((CommodityId ge 54 and CommodityId le 54))
-# https://api.uktradeinfo.com/OTS?$filter=(MonthId%20ge%20202301%20and%20MonthId%20le%20202312)%20and%20((CommodityId%20ge%2054%20and%20CommodityId%20le%2054))
-raw = GET(paste('https://api.uktradeinfo.com/OTS?$filter=(MonthId%20ge%20202301%20and%20MonthId%20le%20202312)%20and%20((CommodityId%20ge%2054%20and%20CommodityId%20le%2054))'))
+# Create a for loop that goes through the trade terms, extracts the data using the extractor function (in function script) based on the uktrade wrapper
+# and prints the results to a list of dataframes
+res <- list()
+for (i in seq_along(trade_terms_CN8)) {
+  res[[i]] <- extractor(trade_terms_CN8[i])
+
+  print(i)
+
+}
+
+# Bind the list of returned dataframes to a single dataframe
+bind2 <-
+  dplyr::bind_rows(res)
+
+# If you have not used the in-built lookup codes in the uktrade R package, describe the flow-types for subsequent aggregation
+bind2 <- bind2 %>%
+  mutate(FlowTypeId = gsub(1, 'EU Imports', FlowTypeId),
+         FlowTypeId = gsub(2, 'EU Exports', FlowTypeId),
+         FlowTypeId = gsub(3, 'Non-EU Imports', FlowTypeId),
+         FlowTypeId = gsub(4, 'Non-EU Exports', FlowTypeId)) %>%
+  rename(FlowTypeDescription = FlowTypeId)
+
+# Remove the month identifier in the month ID column to be able to group by year
+# This can be removed for more time-granular data e.g. by month or quarter
+bind$MonthId <-
+  substr(bind$MonthId, 1, 4)
+
+# Summarise results in value, mass and unit terms grouped by year, flow type and trade code as well as broad trade direction
+summary_trade_no_country <- bind %>%
+  group_by(MonthId,
+           FlowTypeDescription,
+           CommodityId) %>%
+  summarise(sum(Value),
+            sum(NetMass),
+            sum(SuppUnit)) %>%
+  rename(Year = MonthId) %>%
+  # Pivot results longer
+  pivot_longer(-c(Year,
+                  FlowTypeDescription,
+                  CommodityId),
+               names_to = "Variable",
+               values_to = 'Value') %>%
+  # Convert trade code to character
+  mutate_at(c(3), as.character) %>%
+  left_join(# Join the correspondence codes and the trade data
+    trade_terms,
+    by =join_by("CommodityId" == "CN8")) %>%
+  rename(CN = CommodityId)
+
+# Export locally
+write_xlsx(summary_trade_no_country,
+          "summary_trade_no_country_50_only.xlsx")
+
+# Export to database
+DBI::dbWriteTable(con,
+                  "textiles_trade",
+                  summary_trade_no_country)
+
+#############################
+
+# Making request to API without R package - confirms there are some issues with the package
+# Issue with use of syntax
+# https://api.uktradeinfo.com/OTS?$filter=(MonthId ge 202301 and MonthId le 202312) and ((CommodityId ge 54000000 and CommodityId le 54999999))
+# Not working: https://api.uktradeinfo.com/OTS?$filter=(MonthId ge 202301 and MonthId le 202312) and ((CommodityId ge 54 and CommodityId le 54))
+# https://api.uktradeinfo.com/OTS?$filter=(MonthId%20ge%20202301%20and%20MonthId%20le%20202312)%20and%20((CommodityId%20ge%2054000000%20and%20CommodityId%20le%2066999999))
+raw = GET(paste('https://api.uktradeinfo.com/OTS?$filter=(MonthId%20ge%20202301%20and%20MonthId%20le%20202312)%20and%20((CommodityId%20ge%2054000000%20and%20CommodityId%20le%2054999999))'))
 
 #convert to a character string
 r2 <- rawToChar(raw$content)  
@@ -181,10 +177,14 @@ r3 <- fromJSON(r2)
 
 r4 <- r3$value
 
-r5<- bind_rows(r4)
+r5 <- bind_rows(r4)
 
 write_xlsx(r5,
            "raw_api_output.xlsx")
+
+# Incorporate skip filter/offset
+
+# Need to be able to handle pagination
 
 # Comtrade
 
