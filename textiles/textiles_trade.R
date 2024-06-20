@@ -35,8 +35,6 @@ if (any(installed_packages == FALSE)) {
 # Packages loading
 invisible(lapply(packages, library, character.only = TRUE))
 
-Sys.setenv('COMTRADE_PRIMARY' = '4bb0e2c57f5d4dfc8314f732ae82e1e3')
-
 # *******************************************************************************
 # Import functions, options and connections 
 # *******************************************************************************
@@ -160,7 +158,6 @@ DBI::dbWriteTable(con,
 #############################
 
 # Making request to API without R package - confirms there are some issues with the package
-# Issue with use of syntax
 # https://api.uktradeinfo.com/OTS?$filter=(MonthId ge 202301 and MonthId le 202312) and ((CommodityId ge 54000000 and CommodityId le 54999999))
 # Not working: https://api.uktradeinfo.com/OTS?$filter=(MonthId ge 202301 and MonthId le 202312) and ((CommodityId ge 54 and CommodityId le 54))
 # https://api.uktradeinfo.com/OTS?$filter=(MonthId%20ge%20202301%20and%20MonthId%20le%20202312)%20and%20((CommodityId%20ge%2054000000%20and%20CommodityId%20le%2066999999))
@@ -175,6 +172,7 @@ class(r2)
 # now extract JSON from string object
 r3 <- fromJSON(r2)
 
+# Extract value
 r4 <- r3$value
 
 r5 <- bind_rows(r4)
