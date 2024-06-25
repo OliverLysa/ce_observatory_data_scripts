@@ -82,15 +82,17 @@ consumer_purchases <-
   pivot_longer(-c(time_period_and_codes),
                names_to = 'coicop')
 
+# Create a column 'frequency' for later use as a filter based on whether there is a Q in the time_perod_and_codes column
 consumer_purchases$frequency <- 
   ifelse(grepl("Q",consumer_purchases$time_period_and_codes),'quarterly','annual')
 
+# Rename column 
 consumer_purchases <- 
   consumer_purchases %>%
   rename('period' = 1)
 
 # Export to database
 DBI::dbWriteTable(con,
-                  "textiles_consumer_purchases",
+                  "textiles_consumer_purchases3",
                   consumer_purchases,
                   overwrite = TRUE)
