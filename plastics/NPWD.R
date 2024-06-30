@@ -12,7 +12,7 @@ require(tidyverse)
 require(readODS)
 require(janitor)
 require(data.table)
-require(xlsx)3
+require(xlsx)
 require(readxl)
 
 options(scipen=999)
@@ -26,26 +26,15 @@ options(scipen=999)
 download.file("https://npwd.environment-agency.gov.uk/FileDownload.ashx?FileId=3188ad75-d7e2-4bbb-a63c-3bb373c84061",
               "./raw_data/2020_Q4.xls")
 
-# Import sheet
 q4_20 <- read_excel("./raw_data/2020_Q4.xls", sheet = 1) %>% 
   as.data.frame()
 
-# Get less detailed summary
-q4_20_summary <- q4_20[c(6,8:16, 19), c(3,8,10,13)] %>%
+q4_20 <- q4_20[c(6,8:16, 19), c(3,8,10,13)] %>%
   row_to_names(row_number = 1) %>% clean_names() %>% mutate(Year = 2020, Quarter = 4)
 
-# Get more detail
-q4_20_detail <- 
-  q4_20[c(26:76), c(1:23)] %>%
-  row_to_names(row_number = 1) %>% clean_names() 
+q4_20_detail <- q4_20[c(6,8:16, 19), c(3,8,10,13)] %>%
+  row_to_names(row_number = 1) %>% clean_names() %>% mutate(Year = 2020, Quarter = 4)
 
-q4_20_detail <-
-  q4_20_detail[rowSums(is.na(q4_20_detail)) != ncol(q4_20_detail), ]
-
-q4_20_detail <- 
-  Filter(function(x)!all(is.na(x)), q4_20_detail) %>%
-  fill(1) %>%
-  mutate(Year = 2020, Quarter = 4)
 
 #2020 Q3
 download.file("https://npwd.environment-agency.gov.uk/FileDownload.ashx?FileId=959b6e97-3461-4155-8b84-5871dfd5d0bf",
