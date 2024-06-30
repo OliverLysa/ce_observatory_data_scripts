@@ -94,11 +94,11 @@ Schema for classifying the datasets - helps filter between them. Also info on li
 
 NPWD
 
-| File name                                                                            |     | Data structure                                                |
-|--------------------------------------------------------------------------------------|-----|---------------------------------------------------------------|
-| Quarterly Packaging Recycling Data                                                   |     |                                                               |
-| Monthly Reports                                                                      |     | xlsx updated with new monthly figures presented as cumulative |
-| Monthly packaging waste exported and accepted for reprocessing                       |     |                                                               |
-| PRN/ PERN revenue data                                                               |     |                                                               |
-| UK producer obligation data tables for 2023                                          |     |                                                               |
-| UK producer obligation data tables for 2023 broken down by each of the four Agencies |     |                                                               |
+| File name                                                                            | Data structure and comments                                   |
+|--------------------------------------------------------------------------------------|---------------------------------------------------------------|
+| Quarterly Packaging Recycling Data                                                   |                                                               |
+| Monthly Reports                                                                      | xlsx updated with new monthly figures presented as cumulative |
+| Monthly packaging waste exported and accepted for reprocessing                       |                                                               |
+| PRN/ PERN revenue data                                                               |                                                               |
+| UK producer obligation data tables for 2023                                          |                                                               |
+| UK producer obligation data tables for 2023 broken down by each of the four Agencies |                                                               |
