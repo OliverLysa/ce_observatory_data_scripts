@@ -32,10 +32,18 @@ q4_20 <- read_excel("./raw_data/2020_Q4.xls", sheet = 1) %>%
 q4_20 <- q4_20[c(6,8:16, 19), c(3,8,10,13)] %>%
   row_to_names(row_number = 1) %>% clean_names() %>% mutate(Year = 2020, Quarter = 4)
 
-q4_20_detail <- q4_20[c(6,8:16, 19), c(3,8,10,13)] %>%
-  row_to_names(row_number = 1) %>% clean_names() %>% mutate(Year = 2020, Quarter = 4)
+delete.na <- function(DF, n=2) {
+  DF[rowSums(is.na(DF)) <= n,]
+}
 
-
+q4_20_detail <- q4_20[c(25:75), c(1,4, 11,12,15,19,20,23)] %>%
+  row_to_names(row_number = 2) %>% 
+  clean_names() %>% 
+  mutate(Year = 2020, Quarter = 4) %>%
+  delete.na(2) %>%
+  fill(1, .direction = "down") %>%
+  mutate(na_2 = coalesce(na_2, na))
+  
 #2020 Q3
 download.file("https://npwd.environment-agency.gov.uk/FileDownload.ashx?FileId=959b6e97-3461-4155-8b84-5871dfd5d0bf",
               "./raw_data/2020_Q3.xls")
