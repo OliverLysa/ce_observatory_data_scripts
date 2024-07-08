@@ -1,5 +1,20 @@
 ##### **********************
-# Packaging Data Download (EA Dataset)
+# National Packaging Waste Database
+# Description: Used by obligated businesses and compliance schemes to register with DA-level environment agencies and for preprocessors and exporters to submit quarterly returns on, and issue, EPRNS and ePERNs.
+# Geographical scope: UK-wide
+# Frequency of updates: 
+# 
+
+
+
+# Steps
+# 1. Extract the NPWD data
+# 2. Bin the files into different variables covered 
+
+  
+# Extraction method
+# Estimated time to insight
+  
 
 # *******************************************************************************
 # Require packages
@@ -13,6 +28,7 @@ require(janitor)
 require(data.table)
 require(xlsx)
 require(readxl)
+require(reticulate)
 
 # *******************************************************************************
 # Options and functions
@@ -26,11 +42,13 @@ delete.na <- function(DF, n=2) {
   DF[rowSums(is.na(DF)) <= n,]
 }
 
+trial <-
+
 # Extract the NPWD datafiles
 accepted_exported_summary <- function(filename) {
-  file <- 
+
     download.file(filename,
-                  paste('./raw_data/',filename,'.xls', sep = "", collapse=`,`))
+                  paste('./raw_data/',trial,'.xls',sep = ""))
   
   # output <- read_excel('./raw_data/',filename,'.xls', sheet = 1) %>% 
   #   as.data.frame()
@@ -52,7 +70,7 @@ accepted_exported_summary(
   "https://npwd.environment-agency.gov.uk/FileDownload.ashx?FileId=3188ad75-d7e2-4bbb-a63c-3bb373c84061")
 
 res <- list()
-for (i in seq_along(trade_terms)) {
+for (i in seq_along(filename)) {
   res[[i]] <- accepted_exported_summary(trade_terms[i])
   
   print(i)

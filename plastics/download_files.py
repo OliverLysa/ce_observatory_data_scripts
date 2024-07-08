@@ -23,6 +23,7 @@ def download_files():
     soup = BeautifulSoup(response.content, 'html.parser')
     links = soup.find_all('a', href=True)
     file_links = [link['href'] for link in links if link['href'].startswith('https://npwd.environment-agency.gov.uk/FileDownload.ashx')]
+    # file_names = [link.text for link in links if link['href'].startswith('https://npwd.environment-agency.gov.uk/FileDownload.ashx')]
     download_dir = './raw_data/NPWD_downloads'
     os.makedirs(download_dir, exist_ok=True)
     for file_link in file_links:
