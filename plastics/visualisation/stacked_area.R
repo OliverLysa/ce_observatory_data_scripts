@@ -1,6 +1,5 @@
 ##### **********************
-# Author: Oliver Lysaght
-# Purpose: Import textiles baseline and scenario data published by Millward-Hopkins and create stacked area chart input
+
 
 # *******************************************************************************
 # Packages
