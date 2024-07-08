@@ -37,21 +37,6 @@ source("functions.R",
 # Stop scientific notation of numeric values
 options(scipen = 999)
 
-# Connect to supabase
-con <- dbConnect(RPostgres::Postgres(),
-                 dbname = 'postgres', 
-                 host = 'aws-0-eu-west-2.pooler.supabase.com',
-                 port = 5432,
-                 user = 'postgres.qcgyyjjmwydekbxsjjbx',
-                 password = rstudioapi::askForPassword("Database password"))
-
-con <- dbConnect(RPostgres::Postgres(),
-                 dbname = 'postgres', 
-                 host = 'aws-0-eu-west-2.pooler.supabase.com',
-                 port = 5432,
-                 user = 'postgres.qowfjhidbxhtdgvknybu',
-                 password = rstudioapi::askForPassword("Database password"))
-
 # *******************************************************************************
 # Import mass data from https://github.com/Statistics-Netherlands/ewaste/blob/master/data/htbl_Key_Weight.csv
 # to convert inflows in unit terms to mass terms 

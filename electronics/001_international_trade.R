@@ -45,13 +45,6 @@ source("Functions.R",
 # Stop scientific notation of numeric values
 options(scipen = 999)
 
-con <- dbConnect(RPostgres::Postgres(),
-                      dbname = 'postgres', 
-                      host = 'aws-0-eu-west-2.pooler.supabase.com',
-                      port = 5432,
-                      user = 'postgres.qcgyyjjmwydekbxsjjbx',
-                      password = rstudioapi::askForPassword("Database password"))
-
 # *******************************************************************************
 # Data extraction and tidying
 # *******************************************************************************
