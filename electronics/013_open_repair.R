@@ -79,14 +79,20 @@ Openrepairtab$repair_status <-
   factor(Openrepairtab$repair_status, 
          levels=c("End of life","Repairable", "Fixed"))
 
-ggplot(na.omit(Openrepairtab), aes(product_category, fill = repair_status)) +
-  geom_bar(position = "fill", width = 0.8) +
+# Reclassify products to UNU using ords_unu concordance table, group by UNU and year and summarise number of events, split by repair_status
+Openrepairtab2 <- read_csv("./classifications/concordance_tables/ords_unu.csv") %>%
+  right_join(Openrepairtab, by = "product_category")
+
+Openrepairtab2$unu_key <- str_pad(Openrepairtab2$unu_key, 4, pad = "0")
+
+ggplot((Openrepairtab2), aes(unu_desc, fill = repair_status)) +
+  geom_bar(position = "fill", width = 0.9) +
   scale_fill_manual(values = c("#666666", "#FF9E16", "#00AF41")) +
   coord_flip() +
   theme(axis.title.x = element_blank()) +
   theme(axis.title.y = element_blank()) +
-  theme(legend.title = element_blank())
-
+  theme(legend.title = element_blank()) +
+  scale_y_continuous(labels = scales::percent)
 
 ## Reason for difficulty for repair
 
@@ -94,10 +100,15 @@ Openrepairtab_diff <-
   Openrepair[c(5,11)] %>%
   na.omit()
 
+Openrepairtab_diff2 <- read_csv("./classifications/concordance_tables/ords_unu.csv") %>%
+  right_join(Openrepairtab_diff, by = "product_category") %>%
+  select(4,11)
+
 # Make bar chart
-ggplot(data = Openrepairtab_diff, aes(x = repair_barrier_if_end_of_life)) +
-         geom_bar() +
+ggplot(data = Openrepairtab_diff2, aes(unu_desc, fill = repair_barrier_if_end_of_life)) +
+  geom_bar(position = "fill", width = 0.9) +
   coord_flip() +
+  scale_y_continuous(labels = scales::percent) +
   theme(legend.text = element_text(size = 12)) +
   theme(axis.text=element_text(size=12),
         axis.title=element_text(size=0,face="bold"))

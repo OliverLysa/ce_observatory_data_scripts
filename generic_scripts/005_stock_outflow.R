@@ -40,7 +40,7 @@ invisible(lapply(packages, library, character.only = TRUE))
 # *******************************************************************************
 
 # Import functions
-source("functions.R", 
+source("./scripts/functions.R", 
        local = knitr::knit_global())
 
 # Stop scientific notation of numeric values
@@ -51,8 +51,6 @@ options(scipen = 999)
 # *******************************************************************************
 
 # Extract lifespan data from the following source https://circabc.europa.eu/ui/group/636f928d-2669-41d3-83db-093e90ca93a2/library/8e36f907-0973-4bb3-8949-f2bf3efeb125/details
-# Apply different lifespans depending on the makeup of apparent consumption https://unstats.un.org/unsd/environment/FDES/EGES6/Session%202_8Tanzania_E-waste%20statistics.pdf
-# Differences in lifespans between new and second-hand products
 
 # Extract first half of table
 unitar_lifespan_pg1 <- extract_tables('./raw_data/WEEE Calculation Tool__Manual_2023.pdf', pages = 22) %>%
@@ -129,69 +127,62 @@ write_xlsx(inflow_weibull,
 # *******************************************************************************
 # Import BEIS stock data (for benchmark value if used) and map to UNU classification
 
-# BEIS_stock <- read_xlsx("./raw_data/ECUK_2022_Electrical_Products_tables.xlsx",
-#                         sheet = "Table A2") %>%
-#                 row_to_names(row_number = 4, 
-#                 remove_rows_above = TRUE) %>%
-#                 filter(Year != "Last updated") %>%
-#   pivot_longer(-Year, 
-#                names_to = "product",
-#                values_to = "value") %>%
-#   filter(value != ".") %>%
-#   na.omit() %>%
-#   separate(2, c("product_group", "product"), "-") %>%
-#   mutate_at(c('product'), trimws) %>%
-#   mutate_at(c('value'), as.numeric)  %>%
-#   mutate(value = value * 1000)
-# 
-# # Non-domestic data
-# BEIS_stock_non_domestic <- read_xlsx("./raw_data/ECUK_2022_Electrical_Products_tables.xlsx",
-#                         sheet = "Table A8") %>%
-#   row_to_names(row_number = 4, 
-#                remove_rows_above = TRUE) %>%
-#   pivot_longer(-Year, 
-#                names_to = "product",
-#                values_to = "value") %>%
-#   filter(value != ".") %>%
-#   na.omit() %>%
-#   separate(2, c("product_group", "product"), "-") %>%
-#   mutate_at(c('product'), trimws) %>%
-#   mutate_at(c('value'), as.numeric)
-# 
-# # Bind domestic & non-domestic
-# BEIS_stock <-
-#   rbindlist(
-#     list(
-#       BEIS_stock,
-#       BEIS_stock_non_domestic
-#     ),
-#     use.names = TRUE)
-# 
-# # Write summary file including totals
-# write_xlsx(BEIS_stock, 
-#            "./intermediate_data/BEIS_stock.xlsx")
-# 
-# # Filter out totals
-# BEIS_stock_filtered <- BEIS_stock %>%
-#   filter(!grepl("(?i)Total",product)) %>%
-#   select(-product_group) %>%
-#   filter(product != "NA") %>%
-#   mutate(value = value / 1000000)
-# 
-# ggplot(BEIS_stock_filtered, aes(fill=product, y=value, x=Year)) + 
-#   geom_bar(position="stack", stat="identity") +
-#   theme(panel.background = element_rect(fill = "#FFFFFF")) +
-#   scale_x_discrete(
-#     breaks = seq(1970, 2022, 5)
-#   ) +
-#   ylab("Million units")
-# 
-# ggplot(BEIS_stock_filtered, aes(fill=product, y=value, x = Year)) +
-#   geom_bar(position="stack", stat="identity") +
-#   facet_wrap(vars(product), nrow = 5) +
-#   theme(panel.background = element_rect(fill = "#FFFFFF")) +
-#   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
-#   ylab("tonnes")
+BEIS_stock <- read_xlsx("./raw_data/ECUK_2022_Electrical_Products_tables.xlsx",
+                        sheet = "Table A2") %>%
+                row_to_names(row_number = 4, 
+                remove_rows_above = TRUE) %>%
+                filter(Year != "Last updated") %>%
+  pivot_longer(-Year, 
+               names_to = "product",
+               values_to = "value") %>%
+  filter(value != ".") %>%
+  na.omit() %>%
+  separate(2, c("product_group", "product"), "-") %>%
+  mutate_at(c('product'), trimws) %>%
+  mutate_at(c('value'), as.numeric)  %>%
+  mutate(value = value * 1000)
+
+# Non-domestic data
+BEIS_stock_non_domestic <- read_xlsx("./raw_data/ECUK_2022_Electrical_Products_tables.xlsx",
+                        sheet = "Table A8") %>%
+  row_to_names(row_number = 4, 
+               remove_rows_above = TRUE) %>%
+  pivot_longer(-Year, 
+               names_to = "product",
+               values_to = "value") %>%
+  filter(value != ".") %>%
+  na.omit() %>%
+  separate(2, c("product_group", "product"), "-") %>%
+  mutate_at(c('product'), trimws) %>%
+  mutate_at(c('value'), as.numeric)
+
+# Bind domestic & non-domestic
+BEIS_stock <-
+  rbindlist(
+    list(
+      BEIS_stock,
+      BEIS_stock_non_domestic
+    ),
+    use.names = TRUE)
+
+# Write summary file including totals
+write_xlsx(BEIS_stock, 
+           "./intermediate_data/BEIS_stock.xlsx")
+
+# Filter out totals
+BEIS_stock_filtered <- BEIS_stock %>%
+  filter(!grepl("(?i)Total",product)) %>%
+  select(-product_group) %>%
+  filter(product != "NA") %>%
+  mutate(value = value / 1000000)
+
+ggplot(BEIS_stock_filtered, aes(fill=product, y=value, x=Year)) + 
+  geom_bar(position="stack", stat="identity") +
+  theme(panel.background = element_rect(fill = "#FFFFFF")) +
+  scale_x_discrete(
+    breaks = seq(1970, 2022, 5)
+  ) +
+  ylab("Million units")
 
 # *******************************************************************************
 ## Calculate outflows
