@@ -26,13 +26,13 @@ The Python programming language has also been used as part of the project in cas
 
 ## scripts
 
-### Product-group specific scripts
-
-[Electronics scripts readme](https://github.com/OliverLysa/observatory-data-prep/blob/main/electronics_readme.md)
-
 [functions.R](https://github.com/OliverLysa/observatory/blob/main/scripts/functions.R)
 
 A collection of custom functions regularly used throughout the data processing pipeline and not otherwise provided in R packages.
+
+### Product-group specific scripts
+
+[Electronics scripts readme](https://github.com/OliverLysa/ce_observatory_data_scripts/blob/main/electronics/electronics_readme.md)
 
 # Updates
 
