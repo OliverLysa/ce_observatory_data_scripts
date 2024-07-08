@@ -45,13 +45,6 @@ source("functions.R",
 # Stop scientific notation of numeric values
 options(scipen = 999)
 
-con <- dbConnect(RPostgres::Postgres(),
-                      dbname = 'postgres', 
-                      host = 'aws-0-eu-west-2.pooler.supabase.com',
-                      port = 5432,
-                      user = 'postgres.qowfjhidbxhtdgvknybu',
-                      password = rstudioapi::askForPassword("Database password"))
-
 # *******************************************************************************
 # Product classification
 # *******************************************************************************
@@ -153,12 +146,13 @@ write_xlsx(summary_trade_no_country,
 # Export to database
 DBI::dbWriteTable(con,
                   "textiles_trade",
-                  summary_trade_no_country)
+                  summary_trade_no_country,
+                  append: TRUE)
 
 #############################
 
 # Making request to API without R package - confirms there are some issues with the package
-# https://api.uktradeinfo.com/OTS?$filter=(MonthId ge 202301 and MonthId le 202312) and ((CommodityId ge 54000000 and CommodityId le 54999999))
+# https://api.uktradeinfo.com/OTS?$filter=(MonthId ge 202301 and MonthId le 202312) and ((CommodityId ge -54000000 and CommodityId le -54999999))
 # Not working: https://api.uktradeinfo.com/OTS?$filter=(MonthId ge 202301 and MonthId le 202312) and ((CommodityId ge 54 and CommodityId le 54))
 # https://api.uktradeinfo.com/OTS?$filter=(MonthId%20ge%20202301%20and%20MonthId%20le%20202312)%20and%20((CommodityId%20ge%2054000000%20and%20CommodityId%20le%2066999999))
 raw = GET(paste('https://api.uktradeinfo.com/OTS?$filter=(MonthId%20ge%20202301%20and%20MonthId%20le%20202312)%20and%20((CommodityId%20ge%2054000000%20and%20CommodityId%20le%2054999999))'))
@@ -180,11 +174,7 @@ r5 <- bind_rows(r4)
 write_xlsx(r5,
            "raw_api_output.xlsx")
 
-# Incorporate skip filter/offset
-
-# Need to be able to handle pagination
-
-# Comtrade
+# Incorporate skip filter/offset / pagination
 
 # Extract trade terms
 trade_terms_HS6 <-trade_terms %>%
