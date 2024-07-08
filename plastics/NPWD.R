@@ -5,7 +5,6 @@
 # Require packages
 #********************************************************************************
 
-require(magrittr)
 require(writexl)
 require(dplyr)
 require(tidyverse)
@@ -15,12 +14,53 @@ require(data.table)
 require(xlsx)
 require(readxl)
 
+# *******************************************************************************
+# Options and functions
+#********************************************************************************
+
+# Turn off scientific notation
 options(scipen=999)
+
+# Delete rows with N number of nas
+delete.na <- function(DF, n=2) {
+  DF[rowSums(is.na(DF)) <= n,]
+}
+
+# Extract the NPWD datafiles
+accepted_exported_summary <- function(filename) {
+  file <- 
+    download.file(filename,
+                  paste('./raw_data/',filename,'.xls', sep = "", collapse=`,`))
+  
+  # output <- read_excel('./raw_data/',filename,'.xls', sheet = 1) %>% 
+  #   as.data.frame()
+  # 
+  # output <- output[c(6,8:16, 19), c(3,8,10,13)] %>%
+  #   row_to_names(row_number = 1) %>% 
+  #   clean_names() # %>% 
+  #   # mutate(Year = 2020, Quarter = 4)
+  
+  return(file)
+}
 
 # *******************************************************************************
 # Download and data preparation
 #********************************************************************************
 #
+
+accepted_exported_summary(
+  "https://npwd.environment-agency.gov.uk/FileDownload.ashx?FileId=3188ad75-d7e2-4bbb-a63c-3bb373c84061")
+
+res <- list()
+for (i in seq_along(trade_terms)) {
+  res[[i]] <- accepted_exported_summary(trade_terms[i])
+  
+  print(i)
+  
+  bind <- 
+    dplyr::bind_rows(res)
+  
+}
 
 #2020 Q4
 download.file("https://npwd.environment-agency.gov.uk/FileDownload.ashx?FileId=3188ad75-d7e2-4bbb-a63c-3bb373c84061",
@@ -29,12 +69,8 @@ download.file("https://npwd.environment-agency.gov.uk/FileDownload.ashx?FileId=3
 q4_20 <- read_excel("./raw_data/2020_Q4.xls", sheet = 1) %>% 
   as.data.frame()
 
-q4_20 <- q4_20[c(6,8:16, 19), c(3,8,10,13)] %>%
+q4_20_summary <- q4_20[c(6,8:16, 19), c(3,8,10,13)] %>%
   row_to_names(row_number = 1) %>% clean_names() %>% mutate(Year = 2020, Quarter = 4)
-
-delete.na <- function(DF, n=2) {
-  DF[rowSums(is.na(DF)) <= n,]
-}
 
 q4_20_detail <- q4_20[c(25:75), c(1,4, 11,12,15,19,20,23)] %>%
   row_to_names(row_number = 2) %>% 
@@ -50,8 +86,17 @@ download.file("https://npwd.environment-agency.gov.uk/FileDownload.ashx?FileId=9
 
 q3_20 <- read_excel("./raw_data/2020_Q3.xls", sheet = 1) %>% 
   as.data.frame()
-q3_20 <- q3_20[c(6,8:16, 19), c(3,8,10,13)] %>%
+
+q3_20_summary <- q3_20[c(6,8:16, 19), c(3,8,10,13)] %>%
   row_to_names(row_number = 1) %>% clean_names() %>% mutate(Year = 2020, Quarter = 3)
+
+q3_20_detail <- q3_20[c(25:75), c(1,4, 11,12,15,19,20,23)] %>%
+  row_to_names(row_number = 2) %>% 
+  clean_names() %>% 
+  mutate(Year = 2020, Quarter = 3) %>%
+  delete.na(2) %>%
+  fill(1, .direction = "down") %>%
+  mutate(na_2 = coalesce(na_2, na))
 
 #2020 Q2
 download.file("https://npwd.environment-agency.gov.uk/FileDownload.ashx?FileId=093ee842-901a-4429-bc37-473023eceeb2", 
@@ -59,8 +104,19 @@ download.file("https://npwd.environment-agency.gov.uk/FileDownload.ashx?FileId=0
 
 q2_20 <- read_excel("./raw_data/2020_Q2.xls", sheet = 1) %>% 
   as.data.frame()
-q2_20 <- q2_20[c(6,8:16, 19), c(3,8,10,13)] %>%
-  row_to_names(row_number = 1) %>% clean_names() %>% mutate(Year = 2020, Quarter = 2)
+
+q2_20_summary <- q2_20[c(6,8:16, 19), c(3,8,10,13)] %>%
+  row_to_names(row_number = 1) %>% 
+  clean_names() %>% 
+  mutate(Year = 2020, Quarter = 2)
+
+q2_20_detail <- q2_20[c(25:75), c(1,4, 11,12,15,19,20,23)] %>%
+  row_to_names(row_number = 2) %>% 
+  clean_names() %>% 
+  mutate(Year = 2020, Quarter = 2) %>%
+  delete.na(2) %>%
+  fill(1, .direction = "down") %>%
+  mutate(na_2 = coalesce(na_2, na))
 
 #2020 Q1
 download.file("https://npwd.environment-agency.gov.uk/FileDownload.ashx?FileId=0c813490-bfd8-44d5-8881-d638987f0aa3",
@@ -68,8 +124,19 @@ download.file("https://npwd.environment-agency.gov.uk/FileDownload.ashx?FileId=0
 
 q1_20 <- read_excel("./raw_data/2020_Q1.xls", sheet = 1) %>% 
   as.data.frame()
-q1_20 <- q1_20[c(6,8:16, 19), c(3,8,10,13)] %>%
-  row_to_names(row_number = 1) %>% clean_names() %>% mutate(Year = 2020, Quarter = 1)
+
+q1_20_summary <- q1_20[c(6,8:16, 19), c(3,8,10,13)] %>%
+  row_to_names(row_number = 1) %>% 
+  clean_names() %>% 
+  mutate(Year = 2020, Quarter = 1)
+
+q1_20_detail <- q1_20[c(25:75), c(1,4, 11,12,15,19,20,23)] %>%
+  row_to_names(row_number = 2) %>% 
+  clean_names() %>% 
+  mutate(Year = 2020, Quarter = 1) %>%
+  delete.na(2) %>%
+  fill(1, .direction = "down") %>%
+  mutate(na_2 = coalesce(na_2, na))
 
 #2019 Q4 
 download.file("https://npwd.environment-agency.gov.uk/FileDownload.ashx?FileId=0196efc3-8991-4d93-9c3e-609ef6978229",
@@ -77,8 +144,19 @@ download.file("https://npwd.environment-agency.gov.uk/FileDownload.ashx?FileId=0
 
 q4_19 <- read_excel("./raw_data/2019_Q4.xls", sheet = 1) %>% 
   as.data.frame()
+
 q4_19 <- q4_19[c(6,8:16, 19), c(4,10,12,16)] %>%
-  row_to_names(row_number = 1) %>% clean_names() %>% mutate(Year = 2019, Quarter = 4)
+  row_to_names(row_number = 1) %>% 
+  clean_names() %>% 
+  mutate(Year = 2019, Quarter = 4)
+
+q4_19_detail <- q2_20[c(25:75), c(1,4, 11,12,15,19,20,23)] %>%
+  row_to_names(row_number = 2) %>% 
+  clean_names() %>% 
+  mutate(Year = 2019, Quarter = 4) %>%
+  delete.na(2) %>%
+  fill(1, .direction = "down") %>%
+  mutate(na_2 = coalesce(na_2, na))
 
 #2019 Q3
 download.file("https://npwd.environment-agency.gov.uk/FileDownload.ashx?FileId=a1959e24-3c52-45cb-b8e8-3ff73e265063",
@@ -86,8 +164,19 @@ download.file("https://npwd.environment-agency.gov.uk/FileDownload.ashx?FileId=a
 
 q3_19 <- read_excel("./raw_data/2019_Q3.xls", sheet = 1) %>% 
   as.data.frame()
+
 q3_19 <- q3_19[c(6,8:16, 19), c(4,10,12,16)] %>%
-  row_to_names(row_number = 1) %>% clean_names() %>% mutate(Year = 2019, Quarter = 3)
+  row_to_names(row_number = 1) %>% 
+  clean_names() %>% 
+  mutate(Year = 2019, Quarter = 3)
+
+q3_19_detail <- q2_20[c(25:75), c(1,4, 11,12,15,19,20,23)] %>%
+  row_to_names(row_number = 2) %>% 
+  clean_names() %>% 
+  mutate(Year = 2019, Quarter = 3) %>%
+  delete.na(2) %>%
+  fill(1, .direction = "down") %>%
+  mutate(na_2 = coalesce(na_2, na))
 
 #2019 Q2
 download.file("https://npwd.environment-agency.gov.uk/FileDownload.ashx?FileId=d7fb69de-3e3f-4c6d-a1ee-b524c42e85c3",
@@ -98,6 +187,14 @@ q2_19 <- read_excel("./raw_data/2019_Q2.xls", sheet = 1) %>%
 q2_19 <- q2_19[c(6,8:16, 19), c(4,10,12,16)] %>%
   row_to_names(row_number = 1) %>% clean_names() %>% mutate(Year = 2019, Quarter = 2)
 
+q4_19_detail <- q2_20[c(25:75), c(1,4, 11,12,15,19,20,23)] %>%
+  row_to_names(row_number = 2) %>% 
+  clean_names() %>% 
+  mutate(Year = 2020, Quarter = 2) %>%
+  delete.na(2) %>%
+  fill(1, .direction = "down") %>%
+  mutate(na_2 = coalesce(na_2, na))
+
 #2019 Q1
 download.file("https://npwd.environment-agency.gov.uk/FileDownload.ashx?FileId=601d5e83-9a06-47e2-bd70-b3d48b2709d0",
               "./raw_data/2019_Q1.xls")
@@ -106,6 +203,14 @@ q1_19 <- read_excel("./raw_data/2019_Q1.xls", sheet = 1) %>%
   as.data.frame()
 q1_19 <- q1_19[c(6,8:16, 19), c(4,10,12,16)] %>%
   row_to_names(row_number = 1) %>% clean_names() %>% mutate(Year = 2019, Quarter = 1)
+
+q4_19_detail <- q2_20[c(25:75), c(1,4, 11,12,15,19,20,23)] %>%
+  row_to_names(row_number = 2) %>% 
+  clean_names() %>% 
+  mutate(Year = 2020, Quarter = 2) %>%
+  delete.na(2) %>%
+  fill(1, .direction = "down") %>%
+  mutate(na_2 = coalesce(na_2, na))
 
 #2018 Q4
 download.file("https://npwd.environment-agency.gov.uk/FileDownload.ashx?FileId=8547f686-64b9-4516-ac63-a29d4b91716f",
