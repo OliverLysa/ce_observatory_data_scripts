@@ -2,20 +2,13 @@
 # National Packaging Waste Database
 # Description: Used by obligated businesses and compliance schemes to register with DA-level environment agencies and for preprocessors and exporters to submit quarterly returns on, and issue, EPRNS and ePERNs.
 # Geographical scope: UK-wide
-# Frequency of updates: 
+# Frequency of updates: Monthly - Quarterly
 # 
-
-
 
 # Steps
 # 1. Extract the NPWD data
 # 2. Bin the files into different variables covered 
-
   
-# Extraction method
-# Estimated time to insight
-  
-
 # *******************************************************************************
 # Require packages
 #********************************************************************************
@@ -42,43 +35,21 @@ delete.na <- function(DF, n=2) {
   DF[rowSums(is.na(DF)) <= n,]
 }
 
-trial <-
-
-# Extract the NPWD datafiles
-accepted_exported_summary <- function(filename) {
-
-    download.file(filename,
-                  paste('./raw_data/',trial,'.xls',sep = ""))
-  
-  # output <- read_excel('./raw_data/',filename,'.xls', sheet = 1) %>% 
-  #   as.data.frame()
-  # 
-  # output <- output[c(6,8:16, 19), c(3,8,10,13)] %>%
-  #   row_to_names(row_number = 1) %>% 
-  #   clean_names() # %>% 
-  #   # mutate(Year = 2020, Quarter = 4)
-  
-  return(file)
-}
-
 # *******************************************************************************
 # Download and data preparation
 #********************************************************************************
 #
 
-accepted_exported_summary(
-  "https://npwd.environment-agency.gov.uk/FileDownload.ashx?FileId=3188ad75-d7e2-4bbb-a63c-3bb373c84061")
+# Following python script downloading all files, list files in groups corresponding to the variables they cover and file type
+file_list <- 
+  list.files("./raw_data/NPWD_downloads",
+             pattern='Recycling_Summary.+xls')
 
-res <- list()
-for (i in seq_along(filename)) {
-  res[[i]] <- accepted_exported_summary(trade_terms[i])
-  
-  print(i)
-  
-  bind <- 
-    dplyr::bind_rows(res)
-  
-}
+# Import those files
+df.list <- 
+  lapply(paste("./raw_data/NPWD_downloads/",
+               file_list,sep = ""), read_excel)
+
 
 #2020 Q4
 download.file("https://npwd.environment-agency.gov.uk/FileDownload.ashx?FileId=3188ad75-d7e2-4bbb-a63c-3bb373c84061",
