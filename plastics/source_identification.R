@@ -7,19 +7,6 @@ require(janitor)
 require(xlsx)
 require(tidyverse)
 require(data.table)
-require(ggplot2)
-require(plotly)
-require(highcharter)
-require(netstat)
-require(ggridges)
-require(jsonlite)
-require(mixdist)
-require(logOfGamma)
-require(tabulizer)
-require(DT)
-require(googlesheets4)
-require(shiny)
-require(shinyWidgets)
 
 options(warn = -1,
         scipen=999,
@@ -37,22 +24,12 @@ publishers <- content(raw, "text")
 publishers <- fromJSON(publishers, flatten = TRUE)
 publishers <- as.data.frame(publishers$result)
 
-datatable(publishers,
-          options = list(paging = TRUE,
-                         paging = TRUE,
-                         autoWidth = TRUE,
-                         server = FALSE,
-                         dom = 'Bfrtip'),
-          extensions = 'Buttons',
-          filter = 'top'
-)
-
 # We used the data.gov.uk API to search their metadata library for the terms, collating sources, de-duplicating and manually reviewing against input requirements.
 
 {r}
 # #### Extract ####
 # # Import search terms
-terms <- c("electronic", "EEE", "WEEE", "electronic+waste", "lifespan", "lifetime", "electronic+price")
+terms <- c("plastic")
 
 extractor <- function(x) {
   raw = GET(paste('https://data.gov.uk/api/action/package_search?q=',
@@ -76,6 +53,7 @@ for (i in seq_along(terms)) {
 
 bind <-
   dplyr::bind_rows(res) %>%
+  unique() %>%
   filter(type == "dataset",
          private != "TRUE",
          ! `theme-primary` %in% c("transport",
@@ -87,16 +65,13 @@ bind <-
                                   "mapping")) %>%
   filter(is.na(unpublished)|unpublished!="TRUE")
 
+# Convert lists to format that can be exported
 bind <-
   as.data.frame(substr(as.matrix(bind), 1, 32767))
 
 write_xlsx(bind,
            "datagovall.xlsx")
 
-# 0 returns for plastics - need to use adjacent and linked terminology
-https://www.gov.uk/government/statistical-data-sets
-
-# For Andrew - best way to get the
-
-# 
+# 0 returns for plastic - need to use adjacent and linked terminology
+# https://www.gov.uk/government/statistical-data-sets
 
