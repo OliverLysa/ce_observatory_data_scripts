@@ -26,7 +26,7 @@ The Python programming language has also been used as part of the project in cas
 
 ## scripts
 
-[functions.R](https://github.com/OliverLysa/observatory/blob/main/scripts/functions.R)
+functions.R
 
 A collection of custom functions regularly used throughout the data processing pipeline and not otherwise provided in R packages.
 
@@ -36,7 +36,7 @@ A collection of custom functions regularly used throughout the data processing p
 
 # Updates
 
-The observatory has been designed to incorporate new data as it becomes available to help with timely insight, trend assessment, monitoring and evaluation. Web hooks are used to trigger site rebuild following data updates. Data are updated through scheduled extraction scripts, with imported data undergoing structure, data type and content validation to reduce risk of site build failure.
+The observatory has been designed to incorporate new data as it becomes available to help with timely insight, trend assessment, monitoring and evaluation. Data are updated through scheduled extraction scripts.
 
 ## Feedback
 
