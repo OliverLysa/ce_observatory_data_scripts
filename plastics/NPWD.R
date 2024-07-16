@@ -118,6 +118,58 @@ summary_table <-
   group_by(year, category, variable) %>%
   summarise(value = sum(value))
 
+# This data can also be presented quarterly, or monthly
+detail_table <- 
+quarterly_recycling_df %>%
+  mutate(year=ifelse(grepl("Table 1",x2), as.character(x2), NA), .before = x2) %>%
+  mutate(year = gsub("[^0-9]", "", year)) %>%
+  mutate(across(c('year'), substr, 2, nchar(year))) %>%
+  mutate(year = substr(year, 1, 4)) %>%
+  fill(year, .direction = "down") %>%
+  mutate(year = gsub("1202", '2020', year),
+         year = gsub("2202", '2020', year),
+         year = gsub("3202", '2020', year),
+         year = gsub("4202", '2020', year)) %>%
+  filter(! str_detect(x2, 'Table 1')) %>%
+  rename(tab = 1) %>%
+  mutate(tab=ifelse(grepl("Table",tab), tab, NA), .before = x2) %>%
+  mutate(rep=ifelse(grepl("Reprocessors",x2), x2, NA), .before = x2) %>%
+  mutate(exp=ifelse(grepl("Exporters",x2), x2, NA), .before = x2) %>%
+  mutate(combined = coalesce(tab, rep, exp), .before = x2) %>%
+  fill(combined, .direction = "down") %>%
+  filter(! combined %in% c("Reprocessors", "Exporters")) %>%
+  select(-c(tab, rep, combined)) %>%
+  row_to_names(row_number = 2) %>%
+  clean_names() %>%
+  select(where(not_all_na)) %>%
+  mutate(na_3 = coalesce(na_3, na_4)) %>%
+  mutate(gross1_received = coalesce(gross1_received, gross1_exported, gross1_total)) %>%
+  # delete gross1exported where matching with gross1
+  mutate_at(c('gross1_received','gross1_exported','gross1_total','na_8','na_10','net2_exported'), as.numeric) %>%
+  mutate(gross1_exported = ifelse(gross1_received == gross1_exported, NA, gross1_exported)) %>%
+  mutate(gross1_total = ifelse(gross1_received == gross1_total, NA, gross1_total)) %>%
+  mutate(gross1_exported = coalesce(gross1_exported, na_8, gross1_total, na_10)) %>%
+  mutate(gross_total = gross1_received + gross1_exported) %>%
+  mutate(net2_received = ifelse(net2_received == gross_total, NA, net2_received)) %>%
+  mutate(across(is.numeric, round, digits=2)) %>%
+  mutate(net2_exported = ifelse(net2_exported == gross_total, NA, net2_exported))
+
+%>%
+  select(1:3, 5,6,21,10:20)
+  
+  
+  
+
+%>%
+  mutate(x12 = coalesce(x12, x10)) %>%
+  mutate(x20 = coalesce(x20, x23)) %>%
+  mutate(x20 = coalesce(x20, x18)) %>%
+  mutate(x20 = coalesce(x20, x21)) %>%
+
+
+
+
+
 DBI::dbWriteTable(con,
                   "packaging_recovery_recycling",
                   summary_table,
