@@ -2,7 +2,7 @@
 # National Packaging Waste Database
 # Description: Used by obligated businesses and compliance schemes to register with DA-level environment agencies and for preprocessors and exporters to submit quarterly returns on, and issue, EPRNS and ePERNs.
 # Geographical scope: UK-wide
-# Frequency of updates: Monthly - Quarterly
+# Frequency of updates: Monthly - Annual
 # 
 
 # Steps
@@ -121,7 +121,7 @@ summary_table <-
 write_xlsx(summary_table,
                  "./cleaned_data/NPWD_recycling_recovery_summary.xlsx")
 
-# This data can also be presented quarterly, or monthly
+# Detail table
 detail_table <- 
 quarterly_recycling_df %>%
   mutate(year=ifelse(grepl("Table 1",x2), as.character(x2), NA), .before = x2) %>%
@@ -184,7 +184,7 @@ quarterly_recycling_df %>%
   group_by(year, material_1, material_2, variable) %>%
   summarise(value = sum(value,na.rm =TRUE))
 
-write_xlsx(summary_table,
+write_xlsx(detail_table,
            "./cleaned_data/NPWD_recycling_recovery_detail.xlsx")
 
 # NA OMIT in calculation
