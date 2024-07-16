@@ -118,6 +118,9 @@ summary_table <-
   group_by(year, category, variable) %>%
   summarise(value = sum(value))
 
+write_xlsx(summary_table,
+                 "./cleaned_data/NPWD_recycling_recovery_summary.xlsx")
+
 # This data can also be presented quarterly, or monthly
 detail_table <- 
 quarterly_recycling_df %>%
@@ -179,12 +182,14 @@ quarterly_recycling_df %>%
                values_to = "value") %>%
   mutate_at(c('value'), as.numeric) %>%
   group_by(year, material_1, material_2, variable) %>%
-  summarise(value = sum(value))
+  summarise(value = sum(value,na.rm =TRUE))
+
+write_xlsx(summary_table,
+           "./cleaned_data/NPWD_recycling_recovery_detail.xlsx")
+
+# NA OMIT in calculation
   
 DBI::dbWriteTable(con,
                   "packaging_recovery_recycling_detail",
                   detail_table,
                   append: FALSE)
-
-# Create non-detailed summary table
-
