@@ -116,7 +116,13 @@ summary_table <-
                values_to = "value") %>%
   mutate_at(c('value'), as.numeric) %>%
   group_by(year, category, variable) %>%
-  summarise(value = sum(value))
+  summarise(value = sum(value)) %>%
+  filter(year != "2024")
+
+DBI::dbWriteTable(con,
+                    "packaging_recovery_recycling",
+                    summary_table,
+                    overwrite = TRUE)
 
 write_xlsx(summary_table,
                  "./cleaned_data/NPWD_recycling_recovery_summary.xlsx")
@@ -172,17 +178,21 @@ quarterly_recycling_df %>%
   rename(year = 1,
          material_1 = 2,
          material_2 = 3,
-         gross_received = 4,
-         gross_exported = 5,
-         net_received =6,
-         net_exported=7) %>%
+         `Gross received` = 4,
+         `Gross exported` = 5,
+         `Net received` =6,
+          `Net exported`= 7,
+         `Gross total` =8,
+         `Net total` =9) %>%
   mutate(material_2 = coalesce(material_2, material_1)) %>%
   pivot_longer(-c(year, material_1, material_2),
                names_to = "variable",
                values_to = "value") %>%
   mutate_at(c('value'), as.numeric) %>%
   group_by(year, material_1, material_2, variable) %>%
-  summarise(value = sum(value,na.rm =TRUE))
+  summarise(value = sum(value,na.rm =TRUE)) %>%
+  filter(year != "2024") %>%
+  unite(material_2, c(material_1, material_2), sep = " - ", remove = TRUE)
 
 write_xlsx(detail_table,
            "./cleaned_data/NPWD_recycling_recovery_detail.xlsx")
@@ -192,4 +202,4 @@ write_xlsx(detail_table,
 DBI::dbWriteTable(con,
                   "packaging_recovery_recycling_detail",
                   detail_table,
-                  append: FALSE)
+                  overwrite = TRUE)
