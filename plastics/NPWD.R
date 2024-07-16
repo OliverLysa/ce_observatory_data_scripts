@@ -152,28 +152,39 @@ quarterly_recycling_df %>%
   mutate(gross_total = gross1_received + gross1_exported) %>%
   mutate(net2_received = ifelse(net2_received == gross_total, NA, net2_received)) %>%
   mutate(across(is.numeric, round, digits=2)) %>%
-  mutate(net2_exported = ifelse(net2_exported == gross_total, NA, net2_exported))
-
-%>%
-  select(1:3, 5,6,21,10:20)
+  mutate(net2_exported = ifelse(net2_exported == gross_total, NA, net2_exported)) %>%
+  mutate(net2_received = coalesce(net2_received, na_12)) %>%
+  mutate(net2_received = coalesce(net2_received, na_13)) %>%
+  mutate(net2_received = coalesce(net2_received, na_14)) %>%
+  # mutate(net2_exported = coalesce(net2_received, na_14)) %>%
+  mutate_at(c('net2_received','net2_exported','net2_total','na_17','na_13'), as.numeric) %>%
+  mutate(net_total = net2_received + net2_exported) %>%
+  mutate(across(is.numeric, round, digits=2)) %>%
+  mutate(net2_exported = coalesce(net2_exported, net2_total)) %>%
+  mutate(net2_exported = coalesce(net2_exported, na_13)) %>%
+  mutate(net2_exported = coalesce(net2_exported, na_17)) %>%
+  select(1:3,5,6,10,11,21) %>%
+  mutate(net_total = net2_received + net2_exported) %>%
+  drop_na(gross1_received) %>%
+  rename(year = 1,
+         material_1 = 2,
+         material_2 = 3,
+         gross_received = 4,
+         gross_exported = 5,
+         net_received =6,
+         net_exported=7) %>%
+  mutate(material_2 = coalesce(material_2, material_1)) %>%
+  pivot_longer(-c(year, material_1, material_2),
+               names_to = "variable",
+               values_to = "value") %>%
+  mutate_at(c('value'), as.numeric) %>%
+  group_by(year, material_1, material_2, variable) %>%
+  summarise(value = sum(value))
   
-  
-  
-
-%>%
-  mutate(x12 = coalesce(x12, x10)) %>%
-  mutate(x20 = coalesce(x20, x23)) %>%
-  mutate(x20 = coalesce(x20, x18)) %>%
-  mutate(x20 = coalesce(x20, x21)) %>%
-
-
-
-
-
 DBI::dbWriteTable(con,
-                  "packaging_recovery_recycling",
-                  summary_table,
-                  append: TRUE)
+                  "packaging_recovery_recycling_detail",
+                  detail_table,
+                  append: FALSE)
 
 # Create non-detailed summary table
 
