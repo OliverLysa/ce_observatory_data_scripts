@@ -139,15 +139,27 @@ summary_trade_no_country <- bind %>%
     by =join_by("CommodityId" == "CN8")) %>%
   rename(CN = CommodityId)
 
-# Export locally
-write_xlsx(summary_trade_no_country,
-          "summary_trade_no_country_50_only.xlsx")
-
 # Export to database
 DBI::dbWriteTable(con,
                   "textiles_trade",
                   summary_trade_no_country,
                   append: TRUE)
+
+textiles_trade_data <- DBI::dbReadTable(con,
+                  "textiles_trade")
+
+textiles_trade_data2 <- textiles_trade_data %>%
+  unite(HS4, c(HS2,HS4), sep = "-", remove = FALSE) %>%
+  unite(HS6, c(HS4,HS6), sep = "-", remove = FALSE) %>%
+  unite(CN, c(HS6,CN), sep = "-", remove = FALSE)
+
+DBI::dbWriteTable(con,
+                  "textiles_trade2",
+                  textiles_trade_data2,
+                  overwrite = TRUE)
+
+write_csv(textiles_trade_data2,
+          "./cleaned_data/textiles_trade2.csv")
 
 #############################
 

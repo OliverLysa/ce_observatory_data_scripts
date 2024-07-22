@@ -36,6 +36,13 @@ if (any(installed_packages == FALSE)) {
 # Packages loading
 invisible(lapply(packages, library, character.only = TRUE))
 
+con <- dbConnect(RPostgres::Postgres(),
+                 dbname = 'postgres', 
+                 host = 'aws-0-eu-west-2.pooler.supabase.com',
+                 port = 6543,
+                 user = 'postgres.qowfjhidbxhtdgvknybu',
+                 password = rstudioapi::askForPassword("Database password"))
+
 # *******************************************************************************
 # Import functions, options and connections 
 # *******************************************************************************
@@ -84,8 +91,39 @@ consumer_purchases <-
   consumer_purchases %>%
   rename('period' = 1)
 
+consumer_purchases2 <-
+  # Import latest CN data linked to here
+  read_excel("./raw_data/consumer_trends.xls",
+             sheet = "05KS") %>%
+  na.omit() %>%
+  row_to_names(1) %>%
+  clean_names()
+
+# Remove non-numeric rows
+consumer_purchases2 <-
+  subset(consumer_purchases2, grepl('^\\d+$', consumer_purchases2$`furniture_and_furnishings`)) 
+
+# Assign frequency column and pivot longer
+consumer_purchases2 <- 
+  consumer_purchases2 %>%
+  as.data.frame %>%
+  pivot_longer(-c(time_period_and_codes),
+               names_to = 'coicop')
+
+# Create a column 'frequency' for later use as a filter based on whether there is a Q in the time_perod_and_codes column
+consumer_purchases2$frequency <- 
+  ifelse(grepl("Q",consumer_purchases2$time_period_and_codes),'quarterly','annual')
+
+# Rename column 
+consumer_purchases2 <- 
+  consumer_purchases2 %>%
+  rename('period' = 1) %>%
+  bind_rows(consumer_purchases)
+
 # Export to database
 DBI::dbWriteTable(con,
-                  "textiles_consumer_purchases3",
-                  consumer_purchases,
+                  "householdtextiles",
+                  consumer_purchases2,
                   overwrite = TRUE)
+
+
