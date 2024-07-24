@@ -150,24 +150,17 @@ summary_trade_no_country <- bind %>%
     by =join_by("CommodityId" == "CN8")) %>%
   rename(CN = CommodityId)
 
-# Export to database
-DBI::dbWriteTable(con,
-                  "textiles_trade",
-                  summary_trade_no_country,
-                  append: TRUE)
-
-textiles_trade_data <- DBI::dbReadTable(con,
-                  "textiles_trade")
-
+# Format columns for the tree filter on frontend
 textiles_trade_data2 <- textiles_trade_data %>%
   unite(HS4, c(HS2,HS4), sep = "-", remove = FALSE) %>%
   unite(HS6, c(HS4,HS6), sep = "-", remove = FALSE) %>%
   unite(CN, c(HS6,CN), sep = "-", remove = FALSE)
 
+# Export to database
 DBI::dbWriteTable(con,
-                  "textiles_trade2",
-                  textiles_trade_data2,
-                  overwrite = TRUE)
+                  "",
+                  summary_trade_no_country,
+                  append: TRUE)
 
 write_csv(textiles_trade_data2,
           "./cleaned_data/textiles_trade2.csv")
