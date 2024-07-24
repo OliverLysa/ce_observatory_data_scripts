@@ -24,7 +24,8 @@ packages <- c("magrittr",
               "future",
               "furrr",
               "rjson",
-              "comtradr")
+              "comtradr",
+              "tabulizer")
 
 # Install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
@@ -45,6 +46,9 @@ source("functions.R",
 # Stop scientific notation of numeric values
 options(scipen = 999)
 
+options(java.parameters = "-Xmx16000m")
+gc()
+
 # *******************************************************************************
 # Product classification
 # *******************************************************************************
@@ -54,6 +58,13 @@ options(scipen = 999)
 download.file(
   "https://www.uktradeinfo.com/media/ltnlpgcz/cn2024a.xlsx",
   "./classifications/classifications/cn2024a.xlsx")
+
+# 2023 CN
+download.file(
+  "https://op.europa.eu/o/opportal-service/euvoc-download-handler?cellarURI=http%3A%2F%2Fpublications.europa.eu%2Fresource%2Fdistribution%2Fcombined-nomenclature-2023%2F20240425-0%2Fcsv%2Fcsv%2FCN2023_Self_Explanatory_Texts_EN_DE_FR.csv&fileName=CN2023_Self_Explanatory_Texts_EN_DE_FR.csv",
+  "./classifications/classifications/cn2023.csv")
+
+
 
 # Import trade terms
 trade_terms <-
