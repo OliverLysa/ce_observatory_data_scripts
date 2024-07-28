@@ -268,16 +268,23 @@ revenue_data <-
          Material = gsub("\\bWood Rep. &\\b", 'Wood', Material),
          Material = gsub("\\bWood Rep. & Wood\\b", 'Wood', Material),
          Material = gsub("\\bWood & Wood\\b", 'Wood', Material),
-         Material = gsub("\\bEfW for\\b", 'EfW', Material)) %>% 
+         Material = gsub("\\bEfW for\\b", 'EfW', Material),
+         Material = gsub("\\bPaper/board\\b", 'Paper/Board', Material)) %>% 
   mutate(Material = gsub("\\*", "", Material),
          `Accreditation Type` = gsub("\\.", "", `Accreditation Type`),
          `Accreditation Type` = gsub("Re-melt", "Reprocessor", `Accreditation Type`)) %>%
+  mutate(`Accreditation Type` = ifelse( (Material %in% "Glass Other") & (year %in% c("2018")), "Reprocessor & Exporter", `Accreditation Type`)) %>%
+  mutate(`Accreditation Type` = ifelse( (Material %in% "Wood") & (year %in% c("2017", "2018")), "Reprocessor & Exporter", `Accreditation Type`)) %>%
   pivot_longer(-c(year, Material, `Accreditation Type`),
                names_to = "item",
                values_to = "value") %>%
-  clean_names()
+  clean_names() %>%
+  mutate_at(c('material'), trimws)
 
 DBI::dbWriteTable(con,
                   "packaging_revenue_data",
                   revenue_data,
                   overwrite = TRUE)
+
+write_xlsx(revenue_data,
+           "./cleaned_data/packaging_revenue_data.xlsx")
