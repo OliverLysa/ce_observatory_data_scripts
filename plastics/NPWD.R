@@ -176,30 +176,108 @@ quarterly_recycling_df %>%
   mutate(net_total = net2_received + net2_exported) %>%
   drop_na(gross1_received) %>%
   rename(year = 1,
-         material_1 = 2,
-         material_2 = 3,
+         mat1 = 2,
+         mat2 = 3,
          `Gross received` = 4,
          `Gross exported` = 5,
          `Net received` =6,
           `Net exported`= 7,
          `Gross total` =8,
          `Net total` =9) %>%
-  mutate(material_2 = coalesce(material_2, material_1)) %>%
-  pivot_longer(-c(year, material_1, material_2),
+  mutate(mat1 = gsub("Re-melt", "Remelt", mat1)) %>%
+  mutate(mat2 = coalesce(mat2, mat1)) %>%
+  pivot_longer(-c(year, mat1, mat2),
                names_to = "variable",
                values_to = "value") %>%
   mutate_at(c('value'), as.numeric) %>%
-  group_by(year, material_1, material_2, variable) %>%
+  group_by(year, mat1, mat2, variable) %>%
   summarise(value = sum(value,na.rm =TRUE)) %>%
   filter(year != "2024") %>%
-  unite(material_2, c(material_1, material_2), sep = " - ", remove = TRUE)
+  dplyr::filter(!grepl('Total', mat2)) %>%
+  unite(mat2, c(mat1, mat2), sep = "-", remove = FALSE)
 
-write_xlsx(detail_table,
-           "./cleaned_data/NPWD_recycling_recovery_detail.xlsx")
-
-# NA OMIT in calculation
-  
+# Write to database  
 DBI::dbWriteTable(con,
                   "packaging_recovery_recycling_detail",
                   detail_table,
+                  overwrite = TRUE)
+
+# Write locally
+write_xlsx(detail_table,
+           "./cleaned_data/NPWD_recycling_recovery_detail.xlsx")
+
+## PRN Revenue
+
+## Recycling summary 
+
+substrRight <- function(x, n){
+  substr(x, nchar(x)-n+1, nchar(x))
+}
+
+revenue_files <- 
+  list.files("./raw_data/NPWD_downloads",
+             pattern='PRN.+xls')
+
+# Import those files and bind to a single df
+revenue_data <- 
+  lapply(paste("./raw_data/NPWD_downloads/",
+               revenue_files,sep = ""), read_excel) %>%
+  dplyr::bind_rows() %>%
+  mutate(Material = coalesce(Material, `Material Type`)) %>%
+  mutate(Material = coalesce(Material, `Material/ Process`)) %>%
+  separate(Material,c("Material","Accreditation_Type"),sep=" (?=[^ ]*$)") %>%
+  mutate(`Accreditation Type` = coalesce(`Accreditation Type`, Accreditation_Type)) %>%
+  select(-c(Accreditation_Type, `Material Type`, `Material/ Process`, Total)) %>%
+  mutate(year=ifelse(grepl("©",Material), as.character(Material), NA), .before = Material) %>%
+  mutate(year = gsub("[^0-9]", "", year)) %>%
+  mutate(year = substrRight(year, 4)) %>%
+  mutate_at(c('year'), as.numeric) %>%
+  mutate(year = year - 1) %>%
+  fill(year, .direction = "up") %>%
+  filter(! Material %in% c("Total", "Paper Composting")) %>%
+  drop_na(`Infrastructure and capacity`) %>%
+  mutate(Material = ifelse( (Material %in% "Glass") & (year %in% c("2022", "2023")) & (`Accreditation Type` %in% "Reprocessor"), "Glass Re-melt", Material)) %>%
+  mutate(Material = ifelse( (Material %in% "Glass") & (year %in% c("2022", "2023")) & (`Accreditation Type` %in% "Exporter"), "Glass Re-melt", Material)) %>%
+  mutate(Material = ifelse( (Material %in% "Glass") & (year %in% c("2022", "2023")) & (`Accreditation Type` %in% "Exp & Rep"), "Glass Other", Material)) %>%
+  mutate(Material = ifelse( (Material %in% "*Glass") & (year %in% c("2022", "2023")) & (`Accreditation Type` %in% "Rep & Exp"), "Glass Other", Material)) %>%
+  mutate(Material = ifelse( (Material %in% "Glass") & (year %in% c("2018","2020")) & (`Accreditation Type` %in% "Re-melt"), "Glass Re-melt", Material)) %>%
+  mutate(`Accreditation Type` = gsub("\\bRep\\b", 'Reprocessor', `Accreditation Type`),
+         `Accreditation Type` = gsub("\\bExp\\b", 'Exporter', `Accreditation Type`),
+         `Accreditation Type` = gsub("\\bExp\\.\\b", 'Exporter', `Accreditation Type`),
+         `Accreditation Type` = gsub("\\bExporter & Reprocessor\\b", 'Reprocessor & Exporter', `Accreditation Type`),
+         `Accreditation Type` = gsub("\\bExport\\b", 'Exporter', `Accreditation Type`)) %>%
+  mutate(`Accreditation Type` = ifelse( (Material %in% "Glass Other Rep. & Glass Other"), "Reprocessor & Exporter", `Accreditation Type`)) %>%
+  mutate(`Accreditation Type` = ifelse( (Material %in% "Aluminium") & (year %in% c("2018", "2020")) & (is.na(`Accreditation Type`)), "Reprocessor", `Accreditation Type`)) %>%
+  mutate(`Accreditation Type` = ifelse( (Material %in% "EfW") & (year %in% c("2018", "2020")) & (is.na(`Accreditation Type`)), "Reprocessor", `Accreditation Type`)) %>%
+  mutate(`Accreditation Type` = ifelse( (Material %in% "Paper/board") & (year %in% c("2018", "2020")) & (is.na(`Accreditation Type`)), "Reprocessor", `Accreditation Type`)) %>%
+  mutate(`Accreditation Type` = ifelse( (Material %in% "Plastic") & (year %in% c("2018", "2020")) & (is.na(`Accreditation Type`)), "Reprocessor", `Accreditation Type`)) %>%
+  mutate(`Accreditation Type` = ifelse( (Material %in% "Steel") & (year %in% c("2018", "2020")) & (is.na(`Accreditation Type`)), "Reprocessor", `Accreditation Type`)) %>%
+  mutate(`Accreditation Type` = ifelse( (Material %in% "Glass Other Rep &"), "Reprocessor & Exporter", `Accreditation Type`)) %>%
+  mutate(`Accreditation Type` = ifelse( (Material %in% "EfW Rep &"), "Reprocessor & Exporter", `Accreditation Type`)) %>%
+  mutate(`Accreditation Type` = ifelse( (Material %in% "Wood Rep. & Wood"), "Reprocessor & Exporter", `Accreditation Type`)) %>%
+  mutate(`Accreditation Type` = ifelse( (Material %in% "Steel") & (year %in% c("2018", "2020")) & (is.na(`Accreditation Type`)), "Reprocessor", `Accreditation Type`)) %>%
+  mutate(Material = ifelse( (Material %in% "Glass") & (year %in% c("2021")) & (`Accreditation Type` %in% c("Reprocessor", "Exporter")), "Glass Re-melt", Material)) %>%
+  mutate(Material = ifelse( (Material %in% "*Glass"), "Glass Other", Material)) %>%
+  mutate(Material = gsub("\\bAlum.\\b", 'Aluminium', Material),
+         Material = gsub("\\bAlum\\b", 'Aluminium', Material),
+         Material = gsub("\\bEfW Rep &\\b", 'EfW', Material),
+         Material = gsub("\\bGlass Other Rep &\\b", 'Glass Other', Material),
+         Material = gsub("\\bGlass Other Rep &\\b", 'Glass Other', Material),
+         Material = gsub("\\bGlass Other & Glass Other\\b", 'Glass Other', Material),
+         Material = gsub("\\bGlass Other Rep. & Glass Other\\b", 'Glass Other', Material),
+         Material = gsub("\\bWood Rep. &\\b", 'Wood', Material),
+         Material = gsub("\\bWood Rep. & Wood\\b", 'Wood', Material),
+         Material = gsub("\\bWood & Wood\\b", 'Wood', Material),
+         Material = gsub("\\bEfW for\\b", 'EfW', Material)) %>% 
+  mutate(Material = gsub("\\*", "", Material),
+         `Accreditation Type` = gsub("\\.", "", `Accreditation Type`),
+         `Accreditation Type` = gsub("Re-melt", "Reprocessor", `Accreditation Type`)) %>%
+  pivot_longer(-c(year, Material, `Accreditation Type`),
+               names_to = "item",
+               values_to = "value") %>%
+  clean_names()
+
+DBI::dbWriteTable(con,
+                  "packaging_revenue_data",
+                  revenue_data,
                   overwrite = TRUE)
