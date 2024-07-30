@@ -12,13 +12,6 @@ require(xlsx)
 require(readxl)
 require(reticulate)
 
-con <- dbConnect(RPostgres::Postgres(),
-                 dbname = 'postgres', 
-                 host = 'aws-0-eu-west-2.pooler.supabase.com',
-                 port = 6543,
-                 user = 'postgres.qowfjhidbxhtdgvknybu',
-                 password = rstudioapi::askForPassword("Database password"))
-
 # *******************************************************************************
 # Options and functions
 #********************************************************************************
@@ -44,8 +37,8 @@ download.file(
 # Add tax rate
 # Create lookup for gases
 year <- c(2021,2022,2023,2024)
-value <- c('210.82',
-          '210.82',
+value <- c('200',
+          '200',
           '210.82',
           '210.82')
 tax_rate <- data.frame(year, value) %>%
@@ -70,5 +63,12 @@ packaging_tax <-
   na.omit() %>%
   pivot_longer(-year,
                names_to = "variable",
-               values_to = "value")
+               values_to = "value") %>%
+  mutate(across(is.numeric, round, digits=2)) %>%
+  mutate(variable = gsub("revenue", "Revenue £", variable),
+         variable = gsub("tonnes", "Tonnes", variable))
 
+DBI::dbWriteTable(con,
+                  "packaging_tax",
+                  packaging_tax,
+                  overwrite = TRUE)
