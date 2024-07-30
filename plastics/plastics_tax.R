@@ -40,7 +40,7 @@ year <- c(2021,2022,2023,2024)
 value <- c('200',
           '200',
           '210.82',
-          '210.82')
+          '217.85')
 tax_rate <- data.frame(year, value) %>%
   mutate(across(where(is.character), as.numeric))
 
