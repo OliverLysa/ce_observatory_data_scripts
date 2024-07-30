@@ -38,7 +38,7 @@ con <- dbConnect(RPostgres::Postgres(),
 options(scipen=999)
 
 # Import functions
-source("./scripts/functions.R", 
+source("./functions.R", 
        local = knitr::knit_global())
 
 # *******************************************************************************
@@ -208,8 +208,6 @@ write_xlsx(detail_table,
 
 ## PRN Revenue
 
-## Recycling summary 
-
 substrRight <- function(x, n){
   substr(x, nchar(x)-n+1, nchar(x))
 }
@@ -288,3 +286,31 @@ DBI::dbWriteTable(con,
 
 write_xlsx(revenue_data,
            "./cleaned_data/packaging_revenue_data.xlsx")
+
+# POM
+
+pom_files <- 
+  list.files("./raw_data/NPWD_downloads",
+             pattern='Consolidated.+xls')
+
+# Import those files and bind to a single df
+pom_data <- 
+  lapply(paste("./raw_data/NPWD_downloads/",
+               pom_files,sep = ""), read_excel) %>%
+  dplyr::bind_rows() %>%
+  select(where(not_all_na)) %>%
+  clean_names() %>%
+  mutate(year=ifelse(
+    grepl("Year", consolidated_table_for_all_activities) |
+    grepl("Year", consolidated_tables_for_all_activities_all_weights_in_whole_tonnes), 
+          as.character(x3), NA),
+    .before = consolidated_table_for_all_activities) %>%
+  fill(year, .direction = "downup") %>%
+  mutate(consolidated_table_for_all_activities = coalesce(consolidated_table_for_all_activities, consolidated_tables_for_all_activities_all_weights_in_whole_tonnes)) %>%
+  select(1:10)
+
+
+%>%
+  mutate(year = gsub("[^0-9]", "", year)) %>%
+  mutate(year = substrRight(year, 4)) %>%
+  mutate_at(c('year'), as.numeric) %>%
