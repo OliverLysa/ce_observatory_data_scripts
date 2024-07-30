@@ -306,11 +306,30 @@ pom_data <-
           as.character(x3), NA),
     .before = consolidated_table_for_all_activities) %>%
   fill(year, .direction = "downup") %>%
-  mutate(consolidated_table_for_all_activities = coalesce(consolidated_table_for_all_activities, consolidated_tables_for_all_activities_all_weights_in_whole_tonnes)) %>%
-  select(1:10)
+  mutate(consolidated_table_for_all_activities = coalesce(consolidated_table_for_all_activities, 
+                                                          consolidated_tables_for_all_activities_all_weights_in_whole_tonnes)) %>%
+  select(1:10) %>%
+  row_to_names(12) %>%
+  clean_names() %>%
+  rename(variable = 2) %>%
+  drop_na(variable) %>%
+  filter(! str_detect(variable, 'Producer|Obligation|Registration|Paper|Glass|Aluminium|Steel|Plastic|Wood|Organisation|NPWD|Organisation|HANDLED|SUMMARY|%|Activity|Total*')) %>%
+  mutate(table=ifelse(grepl("Table",variable), paper, NA), .before = variable) %>%
+  fill(table, .direction = "down") %>%
+  filter(! str_detect(variable, 'Table')) %>%
+  mutate(table=replace_na(table, "Packaging Supplied")) %>%
+  select(where(not_all_na)) %>%
+  filter(! str_detect(variable, 'Packaging/Packaging Materials Imported|Imported Transit Packaging|Packaging/Packaging Materials Exported')) %>%
+  rename(year = 1) %>%
+  pivot_longer(-c(year, table, variable),
+               names_to = "material",
+               values_to = "value")
 
 
-%>%
-  mutate(year = gsub("[^0-9]", "", year)) %>%
-  mutate(year = substrRight(year, 4)) %>%
-  mutate_at(c('year'), as.numeric) %>%
+
+  
+  
+
+
+
+
