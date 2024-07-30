@@ -35,7 +35,6 @@ download.file(
 )
 
 # Add tax rate
-# Create lookup for gases
 year <- c(2021,2022,2023,2024)
 value <- c('200',
           '200',
