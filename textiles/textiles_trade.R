@@ -92,9 +92,11 @@ trade_terms <-
 # UKTradeData - goes back to 2000
 trade_terms_CN8 <- trade_terms %>%
   # Isolate list of CN8 codes from classification table, column 'CN8', extract unique codes and unlist
-  select(HS2) %>%
+  select(CN8) %>%
   unique() %>%
   unlist()
+
+one <- c("61102091", "58110000")
 
 # If a subset of those codes are sought, these can be selected by index position
 # Using this as in some cases, a memory issue arise with full list
@@ -103,19 +105,19 @@ trade_terms_CN8 <- trade_terms %>%
 # Create a for loop that goes through the trade terms, extracts the data using the extractor function (in function script) based on the uktrade wrapper
 # and prints the results to a list of dataframes
 res <- list()
-for (i in seq_along(trade_terms_CN8)) {
-  res[[i]] <- extractor(trade_terms_CN8[i])
+for (i in seq_along(one)) {
+  res[[i]] <- extractor(one[i])
 
   print(i)
-
+  
 }
 
 # Bind the list of returned dataframes to a single dataframe
-bind2 <-
+bind <-
   dplyr::bind_rows(res)
 
 # If you have not used the in-built lookup codes in the uktrade R package, describe the flow-types for subsequent aggregation
-bind2 <- bind2 %>%
+bind <- bind %>%
   mutate(FlowTypeId = gsub(1, 'EU Imports', FlowTypeId),
          FlowTypeId = gsub(2, 'EU Exports', FlowTypeId),
          FlowTypeId = gsub(3, 'Non-EU Imports', FlowTypeId),
