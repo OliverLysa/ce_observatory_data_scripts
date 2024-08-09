@@ -23,13 +23,6 @@ require(xlsx)
 require(readxl)
 require(reticulate)
 
-con <- dbConnect(RPostgres::Postgres(),
-                 dbname = 'postgres', 
-                 host = 'aws-0-eu-west-2.pooler.supabase.com',
-                 port = 6543,
-                 user = 'postgres.qowfjhidbxhtdgvknybu',
-                 password = rstudioapi::askForPassword("Database password"))
-
 # *******************************************************************************
 # Options and functions
 #********************************************************************************
@@ -117,7 +110,8 @@ summary_table <-
   mutate_at(c('value'), as.numeric) %>%
   group_by(year, category, variable) %>%
   summarise(value = sum(value)) %>%
-  filter(year != "2024")
+  filter(year != "2024") %>%
+  mutate(identifier = 4)
 
 DBI::dbWriteTable(con,
                     "packaging_recovery_recycling",
@@ -194,7 +188,9 @@ quarterly_recycling_df %>%
   summarise(value = sum(value,na.rm =TRUE)) %>%
   filter(year != "2024") %>%
   dplyr::filter(!grepl('Total', mat2)) %>%
-  unite(mat2, c(mat1, mat2), sep = "-", remove = FALSE)
+  unite(mat2, c(mat1, mat2), sep = "-", remove = FALSE) %>%
+  # mutate(mat2 = gsub("\\(.*", "", mat2)) %>%
+  mutate(identifier = 4)
 
 # Write to database  
 DBI::dbWriteTable(con,
@@ -239,11 +235,6 @@ revenue_data <-
   mutate(Material = ifelse( (Material %in% "Glass") & (year %in% c("2022", "2023")) & (`Accreditation Type` %in% "Exp & Rep"), "Glass Other", Material)) %>%
   mutate(Material = ifelse( (Material %in% "*Glass") & (year %in% c("2022", "2023")) & (`Accreditation Type` %in% "Rep & Exp"), "Glass Other", Material)) %>%
   mutate(Material = ifelse( (Material %in% "Glass") & (year %in% c("2018","2020")) & (`Accreditation Type` %in% "Re-melt"), "Glass Re-melt", Material)) %>%
-  mutate(`Accreditation Type` = gsub("\\bRep\\b", 'Reprocessor', `Accreditation Type`),
-         `Accreditation Type` = gsub("\\bExp\\b", 'Exporter', `Accreditation Type`),
-         `Accreditation Type` = gsub("\\bExp\\.\\b", 'Exporter', `Accreditation Type`),
-         `Accreditation Type` = gsub("\\bExporter & Reprocessor\\b", 'Reprocessor & Exporter', `Accreditation Type`),
-         `Accreditation Type` = gsub("\\bExport\\b", 'Exporter', `Accreditation Type`)) %>%
   mutate(`Accreditation Type` = ifelse( (Material %in% "Glass Other Rep. & Glass Other"), "Reprocessor & Exporter", `Accreditation Type`)) %>%
   mutate(`Accreditation Type` = ifelse( (Material %in% "Aluminium") & (year %in% c("2018", "2020")) & (is.na(`Accreditation Type`)), "Reprocessor", `Accreditation Type`)) %>%
   mutate(`Accreditation Type` = ifelse( (Material %in% "EfW") & (year %in% c("2018", "2020")) & (is.na(`Accreditation Type`)), "Reprocessor", `Accreditation Type`)) %>%
@@ -256,6 +247,11 @@ revenue_data <-
   mutate(`Accreditation Type` = ifelse( (Material %in% "Steel") & (year %in% c("2018", "2020")) & (is.na(`Accreditation Type`)), "Reprocessor", `Accreditation Type`)) %>%
   mutate(Material = ifelse( (Material %in% "Glass") & (year %in% c("2021")) & (`Accreditation Type` %in% c("Reprocessor", "Exporter")), "Glass Re-melt", Material)) %>%
   mutate(Material = ifelse( (Material %in% "*Glass"), "Glass Other", Material)) %>%
+  mutate(`Accreditation Type` = gsub("\\bRep\\b", 'Reprocessor', `Accreditation Type`),
+         `Accreditation Type` = gsub("\\bExp\\b", 'Exporter', `Accreditation Type`),
+         `Accreditation Type` = gsub("\\bExp\\.\\b", 'Exporter', `Accreditation Type`),
+         `Accreditation Type` = gsub("\\bExporter & Reprocessor\\b", 'Reprocessor & Exporter', `Accreditation Type`),
+         `Accreditation Type` = gsub("\\bExport\\b", 'Exporter', `Accreditation Type`)) %>%
   mutate(Material = gsub("\\bAlum.\\b", 'Aluminium', Material),
          Material = gsub("\\bAlum\\b", 'Aluminium', Material),
          Material = gsub("\\bEfW Rep &\\b", 'EfW', Material),
@@ -277,7 +273,8 @@ revenue_data <-
                names_to = "item",
                values_to = "value") %>%
   clean_names() %>%
-  mutate_at(c('material'), trimws)
+  mutate_at(c('material'), trimws) %>%
+  mutate(identifier = 4)
 
 DBI::dbWriteTable(con,
                   "packaging_revenue_data",
@@ -323,8 +320,17 @@ pom_data <-
   rename(year = 1) %>%
   pivot_longer(-c(year, table, variable),
                names_to = "material",
-               values_to = "value")
+               values_to = "value") %>%
+  mutate(identifier = 4)
 
+DBI::dbWriteTable(con,
+                  "packaging_POM_NPWD",
+                  pom_data,
+                  overwrite = TRUE)
+
+# Write output to xlsx form
+write_xlsx(pom_data, 
+           "./cleaned_data/packaging_pom.xlsx")
 
 
   
