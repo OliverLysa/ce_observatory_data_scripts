@@ -111,6 +111,7 @@ summary_table <-
   group_by(year, category, variable) %>%
   summarise(value = sum(value)) %>%
   filter(year != "2024") %>%
+  # mutate(unit=ifelse(grepl("PRNs", variable), "PRNs (Number)", "Tonnages")) %>%
   mutate(identifier = 4)
 
 DBI::dbWriteTable(con,
@@ -349,6 +350,9 @@ DBI::dbWriteTable(con,
 # Write output to xlsx form
 write_xlsx(pom_data, 
            "./cleaned_data/packaging_pom.xlsx")
+
+write_xlsx(pom_data_indicators, 
+           "./cleaned_data/packaging_pom_indicators.xlsx")
 
 
   
