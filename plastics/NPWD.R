@@ -341,7 +341,6 @@ pom_data_indicators <- pom_data %>%
          POM = domestic_production + imports - exports) %>%
   select(year, material, variable, domestic_production, imports, exports, POM)
 
-
 DBI::dbWriteTable(con,
                   "packaging_POM_NPWD",
                   pom_data,

@@ -5,6 +5,20 @@ download.file(
   "./raw_data/material_facilities/MF_Data_January_to_December_2020.xlsx"
 )
 
+MF_data_20 <-
+  # Read in file
+  read_excel("./raw_data/material_facilities/MF_Data_January_to_December_2020.xlsx",
+             sheet = "Output") %>%
+  clean_names() %>%
+  filter(grade_if_som %in% c("PET Bottles - Coloured", 
+                         "PET Bottles - Clear",
+                         "PET Bottles - Mixed")) %>%
+  select(1:13) %>%
+  group_by(year, ea_area, grade_if_som) %>%
+  summarise(tonnes = sum(tonnes))
+
+# Includes some mixed categories e.g. PTT that will need to be broken down
+
 # 2021
 
 download.file(
@@ -12,4 +26,25 @@ download.file(
   "./raw_data/material_facilities/MF_Data_January_to_December_2021.xlsx"
 )
 
+MF_data_21 <-
+  # Read in file
+  read_excel("./raw_data/material_facilities/MF_Data_January_to_December_2021.xlsx",
+             sheet = "Output") %>%
+  clean_names() %>%
+  filter(grade_if_som %in% c("PET Bottles - Coloured", 
+                             "PET Bottles - Clear",
+                             "PET Bottles - Mixed")) %>%
+  select(1:13) %>%
+  group_by(year, ea_area, grade_if_som) %>%
+  summarise(tonnes = sum(tonnes))
 
+MF_data <- MF_data_20 %>%
+  bind_rows(MF_data_21) %>%
+  rename(region = 2,
+         grade = 3)
+
+DBI::dbWriteTable(con,
+                  "MF_data",
+                  MF_data,
+                  overwrite = TRUE)
+  
