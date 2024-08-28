@@ -106,7 +106,9 @@ PPT_statistics <-
   mutate(table_1 = gsub("\\[revised\\]", "", table_1)) %>%
   mutate(table_1 = gsub("\\[provisional\\]", "", table_1)) %>%
   na.omit() %>%
-  rename(period = 1)
+  rename(period = 1) %>%
+  mutate_at(c('value'), as.numeric) %>%
+  mutate(value = value *1000)
 
 # Export to database
 DBI::dbWriteTable(con, "pptxeffects",

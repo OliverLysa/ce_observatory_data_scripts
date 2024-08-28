@@ -111,11 +111,12 @@ summary_table <-
   group_by(year, category, variable) %>%
   summarise(value = sum(value)) %>%
   filter(year != "2024") %>%
-  # mutate(unit=ifelse(grepl("PRNs", variable), "PRNs (Number)", "Tonnages")) %>%
+  mutate(unit=ifelse(grepl("PRNs", variable), "PRNs (Number)", "Tonnages")) %>%
+  dplyr::filter(!grepl('TOTAL', category)) %>%
   mutate(identifier = 4)
 
 DBI::dbWriteTable(con,
-                    "packaging_recovery_recycling",
+                    "packaging_recovery_recycling_alt",
                     summary_table,
                     overwrite = TRUE)
 
@@ -190,12 +191,19 @@ quarterly_recycling_df %>%
   filter(year != "2024") %>%
   dplyr::filter(!grepl('Total', mat2)) %>%
   unite(mat2, c(mat1, mat2), sep = "-", remove = FALSE) %>%
-  # mutate(mat2 = gsub("\\(.*", "", mat2)) %>%
+  # mutate(mat2 = gsub("\\(.*", "", mat2)) 
+  dplyr::filter(!grepl('total', variable)) %>%
+  mutate(unit = case_when(str_detect(variable, "Gross") ~ "Gross",
+                          str_detect(variable, "Net") ~ "Net")) %>%
+  mutate(mat2 = gsub("\\(Agreed with local agency office or based on sampling\\)", "", mat2)) %>%
+  mutate(mat2 = gsub("\\(Agreed with local agency office\\)", "", mat2)) %>%
+  # mutate(mat2 = gsub("-", " ", mat2)) %>%
+  # mutate(mat2 = gsub("Plastic-Other", "Plastic - Other", mat2)) %>%
   mutate(identifier = 4)
 
 # Write to database  
 DBI::dbWriteTable(con,
-                  "packaging_recovery_recycling_detail",
+                  "packaging_recovery_recycling_detail_alt",
                   detail_table,
                   overwrite = TRUE)
 
@@ -329,17 +337,17 @@ pom_data_indicators <- pom_data %>%
   mutate_at(c('value'), as.numeric) %>%
   mutate(variable = gsub("Imported for ", "", variable)) %>%
   mutate(variable = gsub("End User Packaging", "Selling", variable)) %>%
-  pivot_wider(names_from = table,
-              values_from = value) %>%
+  # pivot_wider(names_from = table,
+  #             values_from = value) %>%
   filter(variable %in% c("Selling",
                        "Pack/Filling",
                        "Conversion")) %>%
-  clean_names() %>%
-  rename(domestic_production = packaging_supplied) %>%
-  mutate(imports = rowSums(pick(packaging_imported_into_the_uk_for_the_purpose_of_an_activity, packaging_imported_into_the_uk_as_an_end_user), na.rm = T),
-         exports = rowSums(pick(packaging_exported_outside_the_uk_by_the_producer, packaging_exported_outside_the_uk_by_a_third_party), na.rm = T),
-         POM = domestic_production + imports - exports) %>%
-  select(year, material, variable, domestic_production, imports, exports, POM)
+  clean_names() # %>%
+  # rename(domestic_production = packaging_supplied) %>%
+  # mutate(imports = rowSums(pick(packaging_imported_into_the_uk_for_the_purpose_of_an_activity, packaging_imported_into_the_uk_as_an_end_user), na.rm = T),
+  #        exports = rowSums(pick(packaging_exported_outside_the_uk_by_the_producer, packaging_exported_outside_the_uk_by_a_third_party), na.rm = T),
+  #        POM = domestic_production + imports - exports) %>%
+  # select(year, material, variable, domestic_production, imports, exports, POM)
 
 DBI::dbWriteTable(con,
                   "packaging_POM_NPWD",
@@ -353,9 +361,12 @@ write_xlsx(pom_data,
 write_xlsx(pom_data_indicators, 
            "./cleaned_data/packaging_pom_indicators.xlsx")
 
+wrap_composition_data <- 
+  read_excel("./raw_data/wrap_plastic_market_situation report.xlsx") %>%
+  filter(Category != "Total")
+  
+prop_table <- prop.table(wrap_composition_data)
 
-  
-  
 
 
 

@@ -30,7 +30,25 @@ options(scipen=999)
 source("./scripts/functions.R", 
        local = knitr::knit_global())
 
-## 
-# Dry recycling - quarto, with breakdown to level of plastics as a whole
+## Q100
 
-# https://assets.publishing.service.gov.uk/media/65ba6e0ff51b10000d6a7e44/WFH_England_Data_202122__1_.ods
+download.file(
+  "https://s3.eu-west-1.amazonaws.com/data.defra.gov.uk/Waste/Q100_Waste_collection_data_England_2022_23.csv",
+  "./raw_data/collection/Q100_Waste_collection_data_England_2022_23.csv"
+)
+
+Q100 <- read_csv("./raw_data/collection/Q100_Waste_collection_data_England_2022_23.csv") %>%
+  row_to_names(1) %>%
+  clean_names() %>%
+  filter(str_detect(material, 'PET')) %>%
+  select(5,7,12,21) %>%
+  mutate(year = 2022) %>%
+  mutate_at(c('total_tonnes'), as.numeric) %>%
+  group_by(authority, facility_type, year) %>%
+  summarise(value = sum(total_tonnes))
+  
+
+DBI::dbWriteTable(con,
+                  "q100",
+                  Q100,
+                  overwrite = TRUE)

@@ -22,3 +22,21 @@ if (any(installed_packages == FALSE)) {
 
 # Packages loading
 invisible(lapply(packages, library, character.only = TRUE))
+
+SW_all <- read_csv(
+  "./cleaned_data/plastics_sankey_links_ex_rev.csv")
+
+mass <- SW_all %>%
+  mutate(unit = "mass")
+
+sankey_all <- SW_all %>%
+  mutate(unit = "monetary") %>%
+  bind_rows(mass)
+
+# Export to database
+DBI::dbWriteTable(con, "plastics_sankey_links",
+                  sankey_all,
+                  overwrite = TRUE)
+
+
+
