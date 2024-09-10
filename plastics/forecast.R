@@ -145,6 +145,14 @@ ses_project <- projection %>%
   mutate(method = "Ratio-based",
          Exogenous_factor = "Population")
 
+## Multivariate Model (GDP & Pop)
+rmc2 <- read_excel("rmc.xlsx", sheet = 2) 
+rmcts2 <- ts(rmc2,frequency=1,start=c(1998,1))
+mvm <- tslm(RMC ~ Population + GDP, data = rmcts2)
+summary(mvm)
+accuracy(mvm)
+
+# Bind production-side material flows
 project_all <- rbindlist(
   list(lin_project,
                          holt_project,
@@ -152,19 +160,43 @@ project_all <- rbindlist(
                          use.names = TRUE) %>%
   bind_rows(pom_data_indicators)
 
-# Add waste variable
-projection_waste <- project_all %>%
-  mutate(variable = "Waste generated") %>%
-  bind_rows(project_all)
+# Emissions
 
-projection_kpi <- projection_waste %>%
+# Import emissions factor
+ghg_emissions <- 
+  read_excel("./raw_data/ghg-conversion-factors-2024_full_set__for_advanced_users_.xlsx",
+             sheet = "Material use",
+             range = "B70:G80") %>%
+  slice(-1) %>%
+  rename(material = 1) %>%
+  filter(material == "Plastics: average plastics")
+
+# Produce production emissions
+production_emissions <- 
+  project_all %>%
+  mutate(emissions = 3164.7804900000001) %>%
+  mutate(value = (value * emissions)/1000) %>%
+  mutate(variable = "Production emissions (T CO2e)",
+         .before = year) %>%
+  select(-emissions)
+
+# Add waste variable
+projection_combined <- project_all %>%
+  mutate(variable = "Waste generated") %>%
+  bind_rows(project_all) %>%
+  bind_rows(production_emissions)
+
+# Create KPI table omitting low and high
+projection_kpi <- projection_combined %>%
   filter(! `Level` %in% c("Low","High"))
 
+# Write table
 DBI::dbWriteTable(con,
                   "plastic_projection",
-                  projection_waste,
+                  projection_combined,
                   overwrite = TRUE)
 
+# Write table
 DBI::dbWriteTable(con,
                   "plastic_projection_kpi",
                   projection_kpi,
@@ -172,10 +204,9 @@ DBI::dbWriteTable(con,
 
 
 
-## Multivariate Model (GDP & Pop)
 
-rmc2 <- read_excel("rmc.xlsx", sheet = 2) 
-rmcts2 <- ts(rmc2,frequency=1,start=c(1998,1))
-mvm <- tslm(RMC ~ Population + GDP, data = rmcts2)
-summary(mvm)
-accuracy(mvm)
+
+
+
+
+

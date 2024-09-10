@@ -12,13 +12,6 @@ require(xlsx)
 require(readxl)
 require(reticulate)
 
-con <- dbConnect(RPostgres::Postgres(),
-                 dbname = 'postgres', 
-                 host = 'aws-0-eu-west-2.pooler.supabase.com',
-                 port = 6543,
-                 user = 'postgres.qowfjhidbxhtdgvknybu',
-                 password = rstudioapi::askForPassword("Database password"))
-
 # *******************************************************************************
 # Options and functions
 #********************************************************************************

@@ -337,17 +337,17 @@ pom_data_indicators <- pom_data %>%
   mutate_at(c('value'), as.numeric) %>%
   mutate(variable = gsub("Imported for ", "", variable)) %>%
   mutate(variable = gsub("End User Packaging", "Selling", variable)) %>%
-  # pivot_wider(names_from = table,
-  #             values_from = value) %>%
+  pivot_wider(names_from = table,
+              values_from = value) %>%
   filter(variable %in% c("Selling",
                        "Pack/Filling",
                        "Conversion")) %>%
-  clean_names() # %>%
-  # rename(domestic_production = packaging_supplied) %>%
-  # mutate(imports = rowSums(pick(packaging_imported_into_the_uk_for_the_purpose_of_an_activity, packaging_imported_into_the_uk_as_an_end_user), na.rm = T),
-  #        exports = rowSums(pick(packaging_exported_outside_the_uk_by_the_producer, packaging_exported_outside_the_uk_by_a_third_party), na.rm = T),
-  #        POM = domestic_production + imports - exports) %>%
-  # select(year, material, variable, domestic_production, imports, exports, POM)
+  clean_names() %>%
+  rename(domestic_production = packaging_supplied) %>%
+  mutate(imports = rowSums(pick(packaging_imported_into_the_uk_for_the_purpose_of_an_activity, packaging_imported_into_the_uk_as_an_end_user), na.rm = T),
+         exports = rowSums(pick(packaging_exported_outside_the_uk_by_the_producer, packaging_exported_outside_the_uk_by_a_third_party), na.rm = T),
+         POM = domestic_production + imports - exports) %>%
+  select(year, material, variable, domestic_production, imports, exports, POM)
 
 DBI::dbWriteTable(con,
                   "packaging_POM_NPWD",

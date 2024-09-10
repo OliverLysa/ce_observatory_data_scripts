@@ -73,3 +73,7 @@ DBI::dbWriteTable(con,
                   "EA_register_packaging_plastic",
                   all,
                   overwrite = TRUE)
+
+# Write the file
+write.xlsx(all,
+           "./cleaned_data/plastic_register_24.xlsx")
