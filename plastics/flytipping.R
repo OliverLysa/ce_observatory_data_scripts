@@ -12,7 +12,15 @@ flytipping <- flytipping_all %>%
   dplyr::filter(!grepl('Total', `LA Name`)) %>%
   pivot_longer(-c(Year, `LA Name`),
                names_to = "type",
-               values_to = "value")
+               values_to = "value") %>%
+  mutate(Year = str_remove(Year, "-.+")) %>%
+  mutate_at(c('value','Year'), as.numeric) %>%
+  na.omit() %>%
+  rename(Year = 1,
+         LA = 2,
+         type = 3,
+         value = 4) %>%
+  mutate_at(c('LA'), trimws)
 
 # Write table
 DBI::dbWriteTable(con,

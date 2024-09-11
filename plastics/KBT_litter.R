@@ -17,10 +17,10 @@ datasettrimmed <- dataset[c(1:3361), c(10, 23:68)] %>%
   filter(value != 0) %>%
   mutate(Litter_Type = gsub("Litter Type Counts - ", "", Litter_Type)) %>% 
   group_by(Litter_Type, Region) %>% 
-  summarise(Value = sum(value)) %>% 
-  mutate(freq = Value / sum(Value)*100) %>%
-  mutate(across(is.numeric, round, digits=1)) %>%
-  select(-Value)
+  summarise(Value = sum(value)) # %>% 
+  # mutate(freq = Value / sum(Value)) %>%
+  # mutate(across(is.numeric, round, digits=3)) %>%
+  # select(-Value)
 
 DBI::dbWriteTable(con, 
                   "litter_proportions",

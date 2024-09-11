@@ -108,7 +108,7 @@ PPT_statistics <-
   na.omit() %>%
   rename(period = 1) %>%
   mutate_at(c('value'), as.numeric) %>%
-  mutate(value = value *1000)
+  mutate(value = ifelse((unit %in% "Monetary"), value*1000000, value*1000))
 
 # Export to database
 DBI::dbWriteTable(con, "pptxeffects",
