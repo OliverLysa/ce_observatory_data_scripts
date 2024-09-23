@@ -246,10 +246,11 @@ Exp_Combined <-
     use.names = FALSE
   ) %>%
   mutate(Type = tolower(Type)) %>%
-  mutate(Type=ifelse(grepl("rdf",Type), "Refused derived fuel", Type)) %>%
+  mutate(Type=ifelse(grepl("rdf",Type), "Refuse derived fuel", Type)) %>%
   mutate(Type=ifelse(grepl("srf",Type), "Solid recovered fuel", Type)) %>%
   mutate(Type=ifelse(grepl("other",Type), "Other", Type)) %>%
-  mutate(Type=ifelse(grepl("mechanical treatment|concentrate",Type), "Other", Type))
+  mutate(Type=ifelse(grepl("mechanical treatment|concentrate",Type), "Other", Type)) %>%
+  mutate(Destination=ifelse(grepl("The netherlands|Netherlands|netherlands",Destination), "The Netherlands", Destination))
 
 capFirst <- function(s) {
   paste(toupper(substring(s, 1, 1)), substring(s, 2), sep = "")
