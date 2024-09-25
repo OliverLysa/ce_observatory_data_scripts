@@ -8,7 +8,10 @@ plastic_packaging_gva <- aGVA_data %>%
                    "2016",
                    "2223",
                    "2229",
-                   "2896")) %>%
+                   "2896",
+                   "3811",
+                   "3821",
+                   "4677")) %>%
   unite(description, code, description, sep = " - ")
 
 DBI::dbWriteTable(con,
