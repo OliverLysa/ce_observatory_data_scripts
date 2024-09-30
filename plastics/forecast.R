@@ -67,7 +67,7 @@ output_lin <-
 
 checkresiduals(linforecast)
 
-#Product Holt ES
+# Product Holt ES
 ratio_holt <- 
   holt(ratio_ts, h=28)
 
@@ -319,7 +319,7 @@ ghg_emissions <-
              sheet = "Material use",
              range = "B70:G80") %>%
   slice(-1) %>%
-  rename(material = 1) %>%
+  dplyr::rename(material = 1) %>%
   filter(material == "Plastics: average plastics")
 
 # Produce production emissions

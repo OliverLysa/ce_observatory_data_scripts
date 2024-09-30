@@ -82,10 +82,10 @@ All_2018 <- All_2018[-c(1:7), ] %>%
 EWC_2018 <- All_2018 %>% 
   filter (`Site Category` %in% c("Landfill")) %>% 
   mutate_at(vars(`Tonnes Received`), as.numeric) %>% 
-  dplyr::group_by (`Waste Code`, `EWC Waste Desc`, `Site Category`) %>% 
+  group_by (`Waste Code`, `EWC Waste Desc`, `Site Category`) %>% 
   summarise (Value = sum(`Tonnes Received`)) %>%
   mutate(Year = "2018") %>%
-  mutate(`EWC Waste Desc` = str_replace(`EWC Waste Desc`, "^\\S* ", ""))
+  dplyr::mutate(`EWC Waste Desc` = str_replace(`EWC Waste Desc`, "^\\S* ", ""))
 
 # ****2017***********************************************************************
 
