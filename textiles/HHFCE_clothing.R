@@ -97,7 +97,8 @@ consumer_purchases2 <-
              sheet = "05KS") %>%
   na.omit() %>%
   row_to_names(1) %>%
-  clean_names()
+  clean_names() %>%
+  select(-c(8:18))
 
 # Remove non-numeric rows
 consumer_purchases2 <-
@@ -118,7 +119,15 @@ consumer_purchases2$frequency <-
 consumer_purchases2 <- 
   consumer_purchases2 %>%
   rename('period' = 1) %>%
-  bind_rows(consumer_purchases)
+  bind_rows(consumer_purchases) %>%
+  filter(! coicop %in% c("clothing_and_footwear",
+                         "footwear",
+                         "furnishing_household_equipment_and_routine_hh_maintenance",
+                         "furniture_and_furnishings_carpets_and_other_floor_coverings",
+                         "household_appliances")) %>%
+  mutate(coicop = gsub("_", " ", coicop)) %>%
+  mutate(coicop = str_to_title(coicop))
+  
 
 # Export to database
 DBI::dbWriteTable(con,
