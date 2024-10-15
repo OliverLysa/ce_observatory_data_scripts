@@ -23,28 +23,6 @@ options(scipen=999)
 source("./scripts/functions.R", 
        local = knitr::knit_global())
 
-## Q100 - treatment routes
-
-download.file(
-  "https://s3.eu-west-1.amazonaws.com/data.defra.gov.uk/Waste/Q100_Waste_collection_data_England_2022_23.csv",
-  "./raw_data/collection/Q100_Waste_collection_data_England_2022_23.csv"
-)
-
-Q100 <- read_csv("./raw_data/collection/Q100_Waste_collection_data_England_2022_23.csv") %>%
-  row_to_names(1) %>%
-  clean_names() %>%
-  filter(str_detect(material, 'PET')) %>%
-  select(5,7,12,21) %>%
-  mutate(year = 2022) %>%
-  mutate_at(c('total_tonnes'), as.numeric) %>%
-  group_by(authority, facility_type, year) %>%
-  summarise(value = sum(total_tonnes))
-
-DBI::dbWriteTable(con,
-                  "q100",
-                  Q100,
-                  overwrite = TRUE)
-
 ## Import and clean composition data
 
 composition <- read_excel("./raw_data/waste_composition/UK NATIONAL COMPOSITION ESTIMATES 2017.xlsx",
@@ -104,4 +82,25 @@ DBI::dbWriteTable(con,
                   "LACW_composition",
                   combined_collection,
                   overwrite = TRUE)
-         
+
+## Q100 - treatment routes
+
+download.file(
+  "https://s3.eu-west-1.amazonaws.com/data.defra.gov.uk/Waste/Q100_Waste_collection_data_England_2022_23.csv",
+  "./raw_data/collection/Q100_Waste_collection_data_England_2022_23.csv"
+)
+
+Q100 <- read_csv("./raw_data/collection/Q100_Waste_collection_data_England_2022_23.csv") %>%
+  row_to_names(1) %>%
+  clean_names() %>%
+  filter(str_detect(material, 'PET')) %>%
+  select(5,7,12,21) %>%
+  mutate(year = 2022) %>%
+  mutate_at(c('total_tonnes'), as.numeric) %>%
+  group_by(authority, facility_type, year) %>%
+  summarise(value = sum(total_tonnes))
+
+DBI::dbWriteTable(con,
+                  "q100",
+                  Q100,
+                  overwrite = TRUE)         
