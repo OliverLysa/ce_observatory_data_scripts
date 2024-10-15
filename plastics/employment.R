@@ -395,10 +395,11 @@ BRES_all <-
       BRES_09
     ),
     use.names = TRUE
-  )
+  ) %>%
+  mutate_at(c('year'), as.numeric)
 
 
 DBI::dbWriteTable(con,
-                  "Business Register and Employment Survey",
-                  employment,
+                  "Business_Register_and_Employment_Survey",
+                  BRES_all,
                   overwrite = TRUE)
