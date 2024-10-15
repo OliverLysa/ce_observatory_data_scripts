@@ -18,7 +18,7 @@ code_descriptions <-
 prodcom_pet <-
   read_csv("./raw_data/20164062,20164064,22213065,22213067,22213069_2008-2024.csv") %>%
   filter(# Variable == "Volume (Kilogram)",
-          !Code %in% c("22013069"),
+          !Code %in% c("22013069", "22213069"),
           Value != 0.0) %>%
   mutate(across(c(Value), na_if, "S")) %>%
   mutate(# Remove letter E in the value column

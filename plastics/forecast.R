@@ -1,3 +1,10 @@
+##### **********************
+# Purpose: 
+
+# *******************************************************************************
+# Require packages
+#********************************************************************************
+
 require(readxl)
 require(plyr)
 require(dplyr)
@@ -7,10 +14,18 @@ require(knitr)
 require(ggplot2)
 require(forecast)
 
+# *******************************************************************************
+# Options and functions
+# *******************************************************************************
+
 # Set options
 options(warn = -1,
         scipen = 999,
         timeout = 1000)
+
+# *******************************************************************************
+# Analysis
+# *******************************************************************************
 
 # Import the POM data
 pom_data_indicators <- read_xlsx( 
@@ -21,26 +36,31 @@ pom_data_indicators <- read_xlsx(
   select(1,7) %>%
   mutate(variable = "Placed on market",
          type = "Outturn") %>%
-  rename(value = 2) %>%
+  dplyr::rename(value = 2) %>%
   mutate_at(c('year','value'), as.numeric)
 
-# Calculate ratio to population 
+# Calculate ratio of POM to population 
 # Import the baseline data
-download.file(
-  "https://www.ons.gov.uk/generator?format=xls&uri=/peoplepopulationandcommunity/populationandmigration/populationestimates/timeseries/ukpop/pop",
-  "./raw_data/population_outturn.xls"
-)
+# download.file(
+#   "https://www.ons.gov.uk/generator?format=xls&uri=/peoplepopulationandcommunity/populationandmigration/populationestimates/timeseries/ukpop/pop",
+#   "./raw_data/population_outturn.xls"
+# )
 
+# *******************************************************************************
+# Population as exogenous variable
+
+# Import outturn population data
 population_outturn <- 
   read_excel("./raw_data/population_outturn.xls", sheet = 1) %>%
   select(1,2) %>%
   row_to_names(7) %>%
-  rename(year = 1,
+  dplyr::rename(year = 1,
          population = 2) %>%
   mutate_at(c('year'), as.numeric)
 
+# Create a ratio of POM to population (outturn)
 population_ratio <-
-  dplyr::left_join(# Join the correspondence codes and the trade data
+  dplyr::left_join(
     pom_data_indicators,
     population_outturn,
     by =join_by("year")) %>%
@@ -49,23 +69,32 @@ population_ratio <-
   mutate(pom_per_capita = value/population) %>%
   select(pom_per_capita)
 
+# *******************************************************************************
+# Linear model with time-series components
+
 ## Convert ratio into ts object
 ratio_ts <- 
   ts(population_ratio,frequency=1,start=c(2014,1))
 
-# Linear model
+# Create a linear forecast model
 ratio_ts_mod <- 
   tslm(ratio_ts ~ trend)
 
+# Produce 28 predictions
 linforecast <- 
   forecast(ratio_ts_mod, h=28)
 
+# Check residuals of model
+checkresiduals(linforecast)
+
+# Print the predictions
 output_lin <- 
   print(linforecast) %>%
   mutate(year = seq(2023, 2050, length = 28)) %>%
   mutate(forecast_type = "linear model, time-series components")
 
-checkresiduals(linforecast)
+# *******************************************************************************
+# Holt exponential smoothing
 
 # Product Holt ES
 ratio_holt <- 
@@ -76,7 +105,9 @@ output_holt <-
   mutate(year = seq(2023, 2050, length = 28)) %>%
   mutate(forecast_type = "Holt linear trend method")
 
-# SES
+# *******************************************************************************
+# Simple exponential smoothing
+
 ratio_ses <- 
   ses(ratio_ts, h=28)
 
@@ -96,11 +127,11 @@ output_ses <-
 projection <- 
   read_excel("./raw_data/population_projections.xlsx",
              sheet = "PERSONS") %>%
-  mutate(id = row_number()) %>%
+  dplyr::mutate(id = row_number()) %>%
   filter(id %in% c(5, 25)) %>%
   select(3:50) %>%
   row_to_names(1) %>%
-  mutate(variable = "Placed on market",
+  dplyr::mutate(variable = "Placed on market",
          .before = "2021") %>%
   pivot_longer(-variable,
                names_to = "year",
@@ -108,7 +139,7 @@ projection <-
   mutate_at(c('year','value'), as.numeric) %>%
   mutate(value = value * 1000) 
 
-# Produce linear projection
+# Produce linear projection by multiplying the projected ratio by the exogenous variable
 lin_project <- projection %>%
   left_join(output_lin, "year") %>%
   na.omit() %>%
@@ -122,7 +153,7 @@ lin_project <- projection %>%
   mutate(method = "Ratio-based",
          Exogenous_factor = "Population")
 
-# Produce holt-based projection
+# Produce holt-based projection by multiplying the projected ratio by the exogenous variable
 holt_project <- projection %>%
   left_join(output_holt, "year") %>%
   na.omit() %>%
@@ -136,7 +167,7 @@ holt_project <- projection %>%
   mutate(method = "Ratio-based",
          Exogenous_factor = "Population")
 
-# Produce SES-based projection
+# Produce SES-based projection by multiplying the projected ratio by the exogenous variable
 ses_project <- projection %>%
   left_join(output_ses, "year") %>%
   na.omit() %>%
@@ -157,7 +188,7 @@ ses_project <- projection %>%
 # summary(mvm)
 # accuracy(mvm)
 
-# Bind production-side material flows
+# Bind the projections made using population as the exogenous variable
 project_all <- rbindlist(
   list(lin_project,
                          holt_project,
@@ -165,15 +196,20 @@ project_all <- rbindlist(
                          use.names = TRUE) %>%
   bind_rows(pom_data_indicators)
 
-# Emissions
+# Add waste variable
+projection_combined <- project_all %>%
+  mutate(variable = "Waste generated") %>%
+  bind_rows(project_all)
 
-# Import emissions factor
+# Emissions for population
+
+# Import emissions factors
 ghg_emissions <- 
   read_excel("./raw_data/ghg-conversion-factors-2024_full_set__for_advanced_users_.xlsx",
              sheet = "Material use",
              range = "B70:G80") %>%
   slice(-1) %>%
-  rename(material = 1) %>%
+  dplyr::rename(material = 1) %>%
   filter(material == "Plastics: average plastics")
 
 # Produce production emissions
@@ -181,23 +217,22 @@ production_emissions <-
   project_all %>%
   mutate(emissions = 3164.7804900000001) %>%
   mutate(value = (value * emissions)/1000) %>%
-  mutate(variable = "Production emissions (T CO2e)",
+  dplyr::mutate(variable = "Production emissions (T CO2e)",
          .before = year) %>%
   select(-emissions)
 
-# Add waste variable
-projection_combined <- project_all %>%
-  mutate(variable = "Waste generated") %>%
-  bind_rows(project_all) %>%
+# Bind to data
+projection_combined <- projection_combined %>%
   bind_rows(production_emissions)
 
 # Create KPI table omitting low and high
 projection_kpi <- projection_combined %>%
   filter(! `Level` %in% c("Low","High"))
 
-# GDP analysis
+# *******************************************************************************
+# GDP as exogenous variable
 
-# Import projection and tidy
+# Import OECD projection and tidy
 gdp <- 
   read_excel("./raw_data/OECD,DF_EO114_LTB,,filtered,2024-09-11 11-55-19.xlsx",
              sheet = "Table") %>%
@@ -217,6 +252,7 @@ gdp <- gdp %>%
   mutate_at(c('year'), trimws) %>%
   mutate_at(c('year','value'), as.numeric)
 
+# Construct a ratio of GDP to POM (outturn)
 gdp_ratio <- 
   dplyr::left_join(# Join the correspondence codes and the trade data
     pom_data_indicators,
@@ -311,7 +347,7 @@ project_all_gdp <- rbindlist(
   use.names = TRUE) %>%
   mutate(variable = "Placed on market")
 
-# Emissions
+# Emissions for GDP
 
 # Import emissions factor
 ghg_emissions <- 
@@ -327,7 +363,7 @@ production_emissions_gdp <-
   project_all_gdp %>%
   mutate(emissions = 3164.7804900000001) %>%
   mutate(value = (value * emissions)/1000) %>%
-  mutate(variable = "Production emissions (T CO2e)",
+  dplyr::mutate(variable = "Production emissions (T CO2e)",
          .before = year) %>%
   select(-emissions)
 
@@ -337,20 +373,41 @@ projection_combined_gdp <- project_all_gdp %>%
   bind_rows(project_all_gdp) %>%
   bind_rows(production_emissions_gdp)
 
+projection_all_variables <- projection_combined %>%
+  bind_rows(projection_combined_gdp) %>%
+  filter(! year > 2042) %>%
+  filter(! (year == 2023 & type == "Outturn")) %>%
+  mutate(material = "Plastic")
+
 # Create KPI table omitting low and high
 projection_kpi_gdp <- projection_combined_gdp %>%
   filter(! `Level` %in% c("Low","High"))
 
-projection_all_variables <- projection_combined %>%
-  bind_rows(projection_combined_gdp) %>%
-  filter(! year > 2042) %>%
-  filter(! (year == 2023 & type == "Outturn"))
-
-# Create KPI table omitting low and high
+# Create overall KPI table
 projection_kpi_all <- projection_kpi %>%
   bind_rows(projection_kpi_gdp) %>%
   filter(! year > 2042) %>%
   filter(! (year == 2023 & type == "Outturn"))
+
+# Detailed chart
+
+plastic_packaging_composition_breakdown <- read_xlsx( 
+  "./cleaned_data/plastic_packaging_composition.xlsx") %>%
+  select(-Total) %>%
+  filter(Category != "Total") %>%
+  pivot_longer(-c(Year, Source, Category, Type),
+             names_to = "Material sub-type",
+             values_to = "proportion") %>%
+  mutate(material = "Plastic") %>%
+  dplyr::rename("application" = Type)
+
+projection_detailed <- 
+  left_join(projection_all_variables, plastic_packaging_composition_breakdown, "material") %>%
+  clean_names() %>%
+  mutate(value = value * proportion) %>%
+  select(-c(year_2, proportion))
+
+#### Write to database
 
 # Write table
 DBI::dbWriteTable(con,
@@ -364,6 +421,11 @@ DBI::dbWriteTable(con,
                   projection_kpi_all,
                   overwrite = TRUE)
 
+# Write table
+DBI::dbWriteTable(con,
+                  "plastic_projection_detailed",
+                  projection_detailed,
+                  overwrite = TRUE)
 
-
-
+write_xlsx(projection_detailed, 
+           "./cleaned_data/plastic_projection_detailed.xlsx")
