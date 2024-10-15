@@ -31,8 +31,8 @@ All_2022 <-
   read_excel("./raw_data/Landfill_Incineration/Landfill/Input/2022/2022_extracted.xlsx", sheet = 1) 
 
 EWC_2022 <- All_2022 %>% 
-  filter (Fate %in% c("Landfill")) %>% 
-  dplyr::group_by (`Waste Code`, `EWC Waste Desc`, Fate) %>% 
+  filter (`Site Category` %in% c("Landfill")) %>% 
+  dplyr::group_by (`Waste Code`, `EWC Waste Desc`, `Site Category`) %>% 
   summarise (Value = sum(`Tonnes Received`)) %>%
   mutate(Year = "2022")
 
@@ -42,8 +42,8 @@ All_2021 <-
   read_excel("./raw_data/Landfill_Incineration/Landfill/Input/2021/2021_extracted.xlsx", sheet = 1) 
 
 EWC_2021 <- All_2021 %>% 
-  filter (Fate %in% c("Landfill")) %>% 
-  dplyr::group_by (`Waste Code`, `EWC Waste Desc`, Fate) %>% 
+  filter (`Site Category` %in% c("Landfill")) %>% 
+  dplyr::group_by (`Waste Code`, `EWC Waste Desc`, `Site Category`) %>% 
   summarise (Value = sum(`Tonnes Received`)) %>%
   mutate(Year = "2021")
 
@@ -53,8 +53,8 @@ All_2020 <-
   read_excel("./raw_data/Landfill_Incineration/Landfill/Input/2020/2020_extracted.xlsx", sheet = 1) 
 
 EWC_2020 <- All_2020 %>% 
-  filter (Fate %in% c("Landfill")) %>% 
-  dplyr::group_by (`Waste Code`, `EWC Waste Desc`, Fate) %>% 
+  filter (`Site Category` %in% c("Landfill")) %>% 
+  dplyr::group_by (`Waste Code`, `EWC Waste Desc`, `Site Category`) %>% 
   summarise (Value = sum(`Tonnes Received`)) %>%
   mutate(Year = "2020")
 
@@ -64,8 +64,8 @@ All_2019 <-
   read_excel("./raw_data/Landfill_Incineration/Landfill/Input/2019/2019_WDI_Extract.xlsx", sheet = 1) 
 
 EWC_2019 <- All_2019 %>% 
-  filter (Fate %in% c("Landfill")) %>% 
-  dplyr::group_by (Waste_Code, EWC_Waste_Desc, Fate) %>% 
+  filter (Site_Category %in% c("Landfill")) %>% 
+  dplyr::group_by (Waste_Code, EWC_Waste_Desc, Site_Category) %>% 
   summarise (Value = sum(Tonnes_Received)) %>%
   mutate(Year = "2019")
 
@@ -80,12 +80,14 @@ All_2018 <- All_2018[-c(1:7), ] %>%
 
 # Filter to Landfill
 EWC_2018 <- All_2018 %>% 
-  filter (Fate %in% c("Landfill")) %>% 
+  filter (`Site Category` %in% c("Landfill")) %>% 
   mutate_at(vars(`Tonnes Received`), as.numeric) %>% 
-  group_by (`Waste Code`, `EWC Waste Desc`, Fate) %>% 
+  dplyr::group_by (`Waste Code`, `EWC Waste Desc`, `Site Category`) %>% 
+  group_by (`Waste Code`, `EWC Waste Desc`, `Site Category`) %>% 
   summarise (Value = sum(`Tonnes Received`)) %>%
   mutate(Year = "2018") %>%
-  dplyr::mutate(`EWC Waste Desc` = str_replace(`EWC Waste Desc`, "^\\S* ", ""))
+  mutate(`EWC Waste Desc` = str_replace(`EWC Waste Desc`, "^\\S* ", ""))
+dplyr::mutate(`EWC Waste Desc` = str_replace(`EWC Waste Desc`, "^\\S* ", ""))
 
 # ****2017***********************************************************************
 
@@ -95,9 +97,9 @@ All_2017 <-
 
 # Filter to Landfill
 EWC_2017 <- All_2017 %>% 
-  filter (Fate %in% c("Landfill")) %>%  
+  filter (Site_Category %in% c("Landfill", "Incineration")) %>%  
   mutate_at(vars(`Tonnes_Received`), as.numeric) %>% 
-  group_by (`Waste_Code`, `EWC_Waste_Desc`, Fate) %>% 
+  group_by (`Waste_Code`, `EWC_Waste_Desc`, Site_Category) %>% 
   summarise (Value = sum(`Tonnes_Received`)) %>%
   mutate(Year = "2017")  %>%
   mutate(`EWC_Waste_Desc` = str_replace(`EWC_Waste_Desc`, "^\\S* ", ""))
@@ -110,9 +112,9 @@ All_2016 <-
 
 # Filter to Landfill
 EWC_2016 <- All_2016 %>% 
-  filter (Fate %in% c("Landfill")) %>%
+  filter (Site_Category %in% c("Landfill", "Incineration")) %>%
   mutate_at(vars(`Tonnes_Received`), as.numeric) %>% 
-  group_by(`EWC_Code`, `EWC_Waste_Description`, Fate) %>% 
+  group_by(`EWC_Code`, `EWC_Waste_Description`, Site_Category) %>% 
   summarise (Value = sum(`Tonnes_Received`)) %>%
   mutate(Year = "2016") %>%
   mutate(`EWC_Waste_Description` = str_replace(`EWC_Waste_Description`, "^\\S* ", ""))
@@ -125,9 +127,9 @@ All_2015 <-
 
 # Filter to Landfill
 EWC_2015 <- All_2015 %>% 
-  filter (Fate %in% c("Landfill")) %>%
+  filter (Site_Category %in% c("Landfill", "Incineration")) %>%
   mutate_at(vars(`Tonnes_Received`), as.numeric) %>% 
-  dplyr::group_by (`Waste_Code`, `EWC_Waste_Desc`, Fate) %>% 
+  dplyr::group_by (`Waste_Code`, `EWC_Waste_Desc`, Site_Category) %>% 
   summarise (Value = sum(`Tonnes_Received`)) %>%
   mutate(Year = "2015") %>%
   mutate(EWC_Waste_Desc = str_replace(EWC_Waste_Desc, "^\\S* ", ""))
@@ -140,9 +142,9 @@ All_2014 <-
 
 # Filter to Landfill
 EWC_2014 <- All_2014 %>% 
-  filter (Fate %in% c("Landfill")) %>%  
+  filter (Site_Category %in% c("Landfill", "Incineration")) %>%  
   mutate_at(vars(`Tonnes_Received`), as.numeric) %>% 
-  dplyr::group_by (`Waste_Code`, `EWC_Waste_Desc`, Fate) %>% 
+  dplyr::group_by (`Waste_Code`, `EWC_Waste_Desc`,Site_Category) %>% 
   summarise (Value = sum(`Tonnes_Received`)) %>%
   mutate(Year = "2014") %>%
   mutate(EWC_Waste_Desc = str_replace(EWC_Waste_Desc, "^\\S* ", ""))
@@ -155,9 +157,9 @@ All_2013 <-
 
 # Filter to Landfill
 EWC_2013 <- All_2013 %>% 
-  filter (Fate %in% c("Landfill")) %>% 
+  filter (Site_Category %in% c("Landfill", "Incineration")) %>% 
   mutate_at(vars(`Tonnes_Received`), as.numeric) %>% 
-  dplyr::group_by (`Waste_Code`, `EWC_Waste_Desc`, Fate) %>% 
+  dplyr::group_by (`Waste_Code`, `EWC_Waste_Desc`,Site_Category) %>% 
   summarise (Value = sum(`Tonnes_Received`)) %>%
   mutate(Year = "2013") %>%
   mutate(EWC_Waste_Desc = str_replace(EWC_Waste_Desc, "^\\S* ", ""))
@@ -170,9 +172,9 @@ All_2012 <-
 
 # Filter to Landfill
 EWC_2012 <- All_2012 %>% 
-  filter (Fate %in% c("Landfill")) %>%  
+  filter (Site_Category %in% c("Landfill", "Incineration")) %>%  
   mutate_at(vars(`Tonnes_Received`), as.numeric) %>% 
-  dplyr::group_by (`Waste_Code`, `EWC_Waste_Desc`, Fate) %>% 
+  dplyr::group_by (`Waste_Code`, `EWC_Waste_Desc`, Site_Category) %>% 
   summarise (Value = sum(`Tonnes_Received`)) %>%
   mutate(Year = "2012")
 
@@ -184,9 +186,9 @@ All_2011 <-
 
 # Filter to Landfill
 EWC_2011 <- All_2011 %>% 
-  filter (Fate %in% c("Landfill")) %>% 
+  filter (Site_Category %in% c("Landfill", "Incineration")) %>% 
   mutate_at(vars(`Tonnes_Received`), as.numeric) %>% 
-  dplyr::group_by (`Waste_Code`, `EWC_Waste_Desc`, Fate) %>% 
+  dplyr::group_by (`Waste_Code`, `EWC_Waste_Desc`, Site_Category) %>% 
   summarise (Value = sum(`Tonnes_Received`)) %>%
   mutate(Year = "2011")
 
@@ -198,10 +200,10 @@ All_2010 <-
 
 # Filter to Landfill
 EWC_2010 <- All_2010 %>% 
-  filter (Fate %in% c("Landfill")) %>% 
+  filter (Site_Category %in% c("Landfill", "Incineration")) %>% 
   filter(`Facility_RPA`!="Wales") %>%
   mutate_at(vars(`Tonnes_Received`), as.numeric) %>% 
-  dplyr::group_by (`Waste_Code`, `EWC_Waste_Desc`, Fate) %>% 
+  dplyr::group_by (`Waste_Code`, `EWC_Waste_Desc`, Site_Category) %>% 
   summarise (Value = sum(`Tonnes_Received`)) %>%
   mutate(Year = "2010")
 
@@ -213,10 +215,10 @@ All_2009 <-
 
 # Filter to Landfill
 EWC_2009 <- All_2009 %>% 
-  filter (Fate %in% c("Landfill")) %>%
+  filter (Site_Category %in% c("Landfill", "Incineration")) %>%
   filter(`Facility RPA`!="Wales") %>%
   mutate_at(vars(`Tonnes_Received`), as.numeric) %>% 
-  dplyr::group_by (`Waste_Code`, `EWC_Waste_Desc`, Fate) %>% 
+  dplyr::group_by (`Waste_Code`, `EWC_Waste_Desc`,Site_Category) %>% 
   summarise (Value = sum(`Tonnes_Received`)) %>%
   mutate(Year = "2009")
 
@@ -232,7 +234,7 @@ All_2008 <-
 
 # Filter to Landfill
 All_2008_Grouped <- All_2008 %>% 
-  filter (Fate %in% c("Landfill")) %>% 
+  filter (Site_Category %in% c("Landfill", "Incineration")) %>% 
   mutate_at(vars(`Tonnes_Input`), as.numeric) %>%
   filter(`Facility RPA`!="Wales")
 
@@ -240,7 +242,7 @@ All_2008_Grouped$`Tonnes_Input` <- replace_na(All_2008_Grouped$`Tonnes_Input`, 0
 
 EWC_2008 <- All_2008_Grouped %>%
   subset (! `Waste_Code` %in% nameslist_plus20$Codes) %>%
-  dplyr::group_by (`Waste_Code`, `EWC_Waste_Desc`, Fate) %>% 
+  dplyr::group_by (`Waste_Code`, `EWC_Waste_Desc`, Site_Category) %>% 
   summarise (Value = sum(`Tonnes_Input`)) %>%
   mutate(Year = "2008")
 
@@ -252,7 +254,7 @@ All_2007 <-
 
 # Filter to Landfill
 All_2007_Grouped <- All_2007 %>% 
-  filter (Fate %in% c("Landfill")) %>% 
+  filter (Site_Category %in% c("Landfill", "Incineration")) %>% 
   filter(`Facility RPA`!="Wales")
 
 All_2007_Grouped$`Tonnes_Input` <- replace_na(All_2007_Grouped$`Tonnes_Input`, 0)
@@ -260,7 +262,7 @@ All_2007_Grouped$`Tonnes_Input` <- replace_na(All_2007_Grouped$`Tonnes_Input`, 0
 EWC_2007 <- All_2007_Grouped %>%
   mutate_at(vars(`Tonnes_Input`), as.numeric) %>% 
   subset (! `Waste_Code` %in% nameslist_plus20$Codes) %>%
-  dplyr::group_by (`Waste_Code`, `EWC_Waste_Desc`,Fate) %>% 
+  dplyr::group_by (`Waste_Code`, `EWC_Waste_Desc`,Site_Category) %>% 
   summarise (Value = sum(`Tonnes_Input`)) %>%
   mutate(Year = "2007")
 
@@ -271,7 +273,7 @@ All_2006 <- read_excel("./raw_data/Landfill_Incineration/Landfill/Input/2006/200
 
 # Filter to Landfill
 All_2006_Grouped <- All_2006 %>% 
-  filter (Fate %in% c("Landfill")) %>%
+  filter (Site_Category %in% c("Landfill", "Incineration")) %>%
   filter(`Facility RPA`!="Wales")
 
 All_2006_Grouped$`Tonnes_Input` <- replace_na(All_2006_Grouped$`Tonnes_Input`, 0)
@@ -279,7 +281,7 @@ All_2006_Grouped$`Tonnes_Input` <- replace_na(All_2006_Grouped$`Tonnes_Input`, 0
 EWC_2006 <- All_2006_Grouped %>%
   mutate_at(vars(`Tonnes_Input`), as.numeric) %>% 
   subset (! `Waste_Code` %in% nameslist_plus20$Codes) %>%
-  dplyr::group_by (`Waste_Code`, `EWC_Waste_Desc`, Fate) %>% 
+  dplyr::group_by (`Waste_Code`, `EWC_Waste_Desc`,Site_Category) %>% 
   summarise (Value = sum(`Tonnes_Input`)) %>%
   mutate(Year = "2006")
 
