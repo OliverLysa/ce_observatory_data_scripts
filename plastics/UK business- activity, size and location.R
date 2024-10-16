@@ -101,11 +101,11 @@ download.file(
 
 BASL_2021 <- read_excel("./raw_data/UK businesses activity, size and location/BASL_2021.xlsx",
                         sheet = "Table 17") %>%
-  row_to_names(3) %>%
+  row_to_names(5) %>%
   clean_names() %>%
   select(1,6:15) %>%
-  rename_with(~ str_remove(., ".*?_"), everything()) %>%
   rename(SIC = 1) %>%
+  rename_with(~ str_remove(., ".*?_"), everything()) %>%
   separate(SIC,c("SIC","Description"),sep=" : ") %>%
   mutate_at(c('SIC','Description'), trimws) %>%
   pivot_longer(-c(SIC, Description),
@@ -124,9 +124,10 @@ download.file(
 
 BASL_2020 <- read_excel("./raw_data/UK businesses activity, size and location/BASL_2020.xlsx",
                         sheet = "Table 17") %>%
-  row_to_names(3) %>%
+  row_to_names(5) %>%
   clean_names() %>%
   select(1,6:15) %>%
+  rename(SIC = 1) %>%
   rename_with(~ str_remove(., ".*?_"), everything()) %>%
   rename(SIC = 1) %>%
   separate(SIC,c("SIC","Description"),sep=" : ") %>%
@@ -147,11 +148,11 @@ download.file(
 
 BASL_2019 <- read_excel("./raw_data/UK businesses activity, size and location/BASL_2019.xlsx",
                         sheet = "Table 17") %>%
-  row_to_names(3) %>%
+  row_to_names(5) %>%
   clean_names() %>%
   select(1,6:15) %>%
-  rename_with(~ str_remove(., ".*?_"), everything()) %>%
   rename(SIC = 1) %>%
+  rename_with(~ str_remove(., ".*?_"), everything()) %>%
   separate(SIC,c("SIC","Description"),sep=" : ") %>%
   mutate_at(c('SIC','Description'), trimws) %>%
   pivot_longer(-c(SIC, Description),
@@ -170,7 +171,7 @@ download.file(
 
 BASL_2018 <- read_excel("./raw_data/UK businesses activity, size and location/BASL_2018.xls",
                         sheet = "Table 17") %>%
-  row_to_names(3) %>%
+  row_to_names(5) %>%
   clean_names() %>%
   select(1,6:15) %>%
   rename_with(~ str_remove(., ".*?_"), everything()) %>%
@@ -193,7 +194,7 @@ download.file(
 
 BASL_2017 <- read_excel("./raw_data/UK businesses activity, size and location/BASL_2017.xlsx",
                         sheet = "Table 17") %>%
-  row_to_names(3) %>%
+  row_to_names(5) %>%
   clean_names() %>%
   select(1,6:15) %>%
   rename_with(~ str_remove(., ".*?_"), everything()) %>%
