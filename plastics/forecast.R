@@ -39,15 +39,28 @@ pom_data_indicators <- read_xlsx(
   dplyr::rename(value = 2) %>%
   mutate_at(c('year','value'), as.numeric)
 
+pom_data_indicators <- read_ods( 
+  "./raw_data/UK_Statistics_on_Waste_dataset_September_2024_accessible (1).ods",
+  sheet = "Packaging") %>%
+  row_to_names(6) %>%
+  filter(Material == "Plastic") %>%
+  select(1,3) %>%
+  dplyr::rename(year = 1,
+         value = 2) %>%
+  mutate_at(c('year','value'), as.numeric) %>%
+  mutate(value = value * 1000) %>%
+  mutate(variable = "Placed on market",
+         type = "Outturn")
+
+# *******************************************************************************
+# Population as exogenous variable
+
 # Calculate ratio of POM to population 
 # Import the baseline data
 # download.file(
 #   "https://www.ons.gov.uk/generator?format=xls&uri=/peoplepopulationandcommunity/populationandmigration/populationestimates/timeseries/ukpop/pop",
 #   "./raw_data/population_outturn.xls"
 # )
-
-# *******************************************************************************
-# Population as exogenous variable
 
 # Import outturn population data
 population_outturn <- 
@@ -408,18 +421,6 @@ projection_detailed <-
   select(-c(year_2, proportion))
 
 #### Write to database
-
-# Write table
-DBI::dbWriteTable(con,
-                  "plastic_projection",
-                  projection_all_variables,
-                  overwrite = TRUE)
-
-# Write table
-DBI::dbWriteTable(con,
-                  "plastic_projection_kpi",
-                  projection_kpi_all,
-                  overwrite = TRUE)
 
 # Write table
 DBI::dbWriteTable(con,

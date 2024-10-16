@@ -110,7 +110,8 @@ PPT_statistics <-
   mutate_at(c('value'), as.numeric) %>%
   mutate(value = ifelse((unit %in% "Monetary"), value*1000000, value*1000)) %>%
   mutate(variable = gsub("_", " ", variable)) %>%
-  mutate(variable = str_to_sentence(variable))
+  mutate(variable = str_to_sentence(variable)) %>%
+  mutate(frequency = str_to_sentence(frequency))
 
 # Export to database
 DBI::dbWriteTable(con, "pptxeffects",

@@ -1,3 +1,31 @@
+# *******************************************************************************
+# Require packages
+# *******************************************************************************
+
+# Package names
+packages <- c(
+  "magrittr",
+  "writexl",
+  "readxl",
+  "dplyr",
+  "tidyverse",
+  "readODS",
+  "data.table",
+  "janitor",
+  "xlsx",
+  "tabulizer",
+  "docxtractr",
+  "campfin"
+)
+
+# Install packages not yet installed
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(packages[!installed_packages])
+}
+
+# Packages loading
+invisible(lapply(packages, library, character.only = TRUE))
 
 # Accredited reprocessors
 
@@ -31,7 +59,7 @@ ar_all <-
     ),
     use.names = FALSE
   ) %>%
-  mutate(Type = "Accredited Reprocessors", .before = 1)
+  dplyr::mutate(Type = "Accredited Reprocessors", .before = 1)
 
 # Accredit exporters
 
@@ -66,7 +94,7 @@ ae_all <-
 
 all <- ar_all %>%
   bind_rows(ae_all) %>%
-  mutate(Year = "2024",
+  dplyr::mutate(Year = "2024",
          .before = 1)
 
 DBI::dbWriteTable(con,

@@ -287,6 +287,8 @@ ASHE_all <-
   mutate(type = str_to_title(type)) %>%
   arrange(year)
 
+ASHE_all <- ASHE_all[nchar(ASHE_all$code) >= 3, ]
+
 DBI::dbWriteTable(con,
                   "ASHE",
                   ASHE_all,
