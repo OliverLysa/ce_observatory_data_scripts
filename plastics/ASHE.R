@@ -282,9 +282,12 @@ ASHE_all <-
     ),
     use.names = TRUE
   ) %>%
-  mutate_at(c('year'), as.numeric)
+  mutate_at(c('year'), as.numeric) %>%
+  mutate_at(c('code'), as.character) %>%
+  mutate(type = str_to_title(type)) %>%
+  arrange(year)
 
 DBI::dbWriteTable(con,
-                  "Business_Register_and_Employment_Survey",
-                  BRES_all,
+                  "ASHE",
+                  ASHE_all,
                   overwrite = TRUE)
