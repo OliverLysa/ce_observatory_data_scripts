@@ -47,4 +47,12 @@ DBI::dbWriteTable(con,
                   "MF_data",
                   MF_data,
                   overwrite = TRUE)
+
+# Join Input and Output
+
+MF_data_in <-   # Read in file
+  read_excel("./raw_data/material_facilities/MF_Data_January_to_December_2021.xlsx",
+             sheet = "Input")
+
+MF_data_out <-  
   
