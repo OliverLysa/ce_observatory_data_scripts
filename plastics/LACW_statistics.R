@@ -97,8 +97,16 @@ Q100 <- read_csv("./raw_data/collection/Q100_Waste_collection_data_England_2022_
   select(5,7,12,21) %>%
   mutate(year = 2022) %>%
   mutate_at(c('total_tonnes'), as.numeric) %>%
-  group_by(authority, facility_type, year) %>%
-  summarise(value = sum(total_tonnes))
+  filter(facility_type != "Final Destination") %>%
+  dplyr::rename(value = 4) %>%
+  ungroup() %>%
+  as.data.frame() 
+
+Q100$period <- 
+  factor(Q100$period, levels = c("Apr 22 - Jun 22",
+                               "Jul 22 - Sep 22",
+                               "Oct 22 - Dec 22",
+                               "Jan 23 - Mar 23"))
 
 DBI::dbWriteTable(con,
                   "q100",

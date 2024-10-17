@@ -89,7 +89,7 @@ ae_all <-
     ),
     use.names = FALSE
   ) %>%
-  mutate(Type = "Accredited Exporters", .before = 1) %>%
+  mutate(Type = "Accredited Exporters") %>%
   filter(Agency!="")
 
 all <- ar_all %>%
