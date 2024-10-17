@@ -1,3 +1,28 @@
+# *******************************************************************************
+# Require packages
+#********************************************************************************
+
+require(writexl)
+require(dplyr)
+require(tidyverse)
+require(readODS)
+require(janitor)
+require(data.table)
+require(xlsx)
+require(readxl)
+require(reticulate)
+
+# *******************************************************************************
+# Options and functions
+# *******************************************************************************
+
+# Turn off scientific notation
+options(scipen=999)
+
+# Import functions
+source("./functions.R", 
+       local = knitr::knit_global())
+
 # Defra packaging statistics
 
 Defra_packaging_all <- read_ods( 
@@ -17,7 +42,9 @@ Defra_packaging_all <- read_ods(
   na.omit() %>%
   mutate(value = value * 1000) %>%
   mutate_at(vars('achieved_recovery_recycling_rate','value'), funs(round(., 2)))%>%
-  dplyr::rename(rate = 3)
+  dplyr::rename(rate = 3) %>%
+  mutate(variable = case_when(str_detect(variable, "packaging_waste_arising") ~ "Arisings",
+                          str_detect(variable, "total_recovered_recycled") ~ "Recovered/recycled")) 
 
 DBI::dbWriteTable(con,
                   "Defra_packaging",
