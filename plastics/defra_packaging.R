@@ -40,11 +40,12 @@ Defra_packaging_all <- read_ods(
                values_to = "value") %>%
   mutate_at(c('achieved_recovery_recycling_rate','value'), as.numeric) %>%
   na.omit() %>%
-  mutate(value = value * 1000) %>%
-  mutate_at(vars('achieved_recovery_recycling_rate','value'), funs(round(., 2)))%>%
   dplyr::rename(rate = 3) %>%
+  mutate(value = value * 1000) %>%
+  mutate(rate = rate * 100) %>%
   mutate(variable = case_when(str_detect(variable, "packaging_waste_arising") ~ "Arisings",
-                          str_detect(variable, "total_recovered_recycled") ~ "Recovered/recycled")) 
+                              str_detect(variable, "total_recovered_recycled") ~ "Recovered/recycled")) %>% 
+  mutate_at(vars('rate','value'), funs(round(., 2)))
 
 DBI::dbWriteTable(con,
                   "Defra_packaging",
