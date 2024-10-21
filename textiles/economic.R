@@ -65,13 +65,14 @@ econ_textiles <-
                      ifelse(grepl("employment", variable), "Count (number)",
                             ifelse(grepl("turnover", variable), "Turnover (GBP)",
                                    ifelse(grepl("employees", variable), "Employees (number)","2021"))))) %>%
-  filter(activity != "Total")
+  filter(activity != "Total") %>%
+  mutate(activity = str_to_title(activity))
 
 write_xlsx(econ_textiles,
           "./cleaned_data/econ_textiles.xlsx")
 
 DBI::dbWriteTable(con,
-                  "econ_textiles",
+                  "textilesecon",
                   econ_textiles,
                   overwrite = TRUE)
 
