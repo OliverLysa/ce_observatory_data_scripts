@@ -126,9 +126,10 @@ consumer_purchases2 <-
                          "furniture_and_furnishings_carpets_and_other_floor_coverings",
                          "household_appliances")) %>%
   mutate(coicop = gsub("_", " ", coicop)) %>%
-  mutate(coicop = str_to_title(coicop))
+  mutate(coicop = str_to_title(coicop)) %>%
+  mutate(frequency = str_to_title(frequency)) %>%
+  mutate_at(c('value'), as.numeric)
   
-
 # Export to database
 DBI::dbWriteTable(con,
                   "householdtextiles",

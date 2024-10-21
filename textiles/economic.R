@@ -40,7 +40,7 @@ econ_textiles <-
   # clean column names to make easier to work with
   clean_names() %>%
   # rename columns
-  rename(region = 1,
+  dplyr::rename(region = 1,
          activity = 2) %>%
   # Fill first column so region is apparent across all lines
   fill(region, .direction = "down") %>%
@@ -64,13 +64,14 @@ econ_textiles <-
   mutate(variable=ifelse(grepl("count", variable), "Count (number)",
                      ifelse(grepl("employment", variable), "Count (number)",
                             ifelse(grepl("turnover", variable), "Turnover (GBP)",
-                                   ifelse(grepl("employees", variable), "Employees (number)","2021")))))
+                                   ifelse(grepl("employees", variable), "Employees (number)","2021"))))) %>%
+  filter(activity != "Total")
 
 write_xlsx(econ_textiles,
           "./cleaned_data/econ_textiles.xlsx")
 
 DBI::dbWriteTable(con,
-                  "econ_textiles_test",
+                  "econ_textiles",
                   econ_textiles,
                   overwrite = TRUE)
 
