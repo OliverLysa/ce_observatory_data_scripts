@@ -62,14 +62,11 @@ econ_textiles <-
   # Remove the rows with nas in them 
   na.omit() %>%
   mutate(variable=ifelse(grepl("count", variable), "Count (number)",
-                     ifelse(grepl("employment", variable), "Count (number)",
+                     ifelse(grepl("employment", variable), "Employment (number)",
                             ifelse(grepl("turnover", variable), "Turnover (GBP)",
                                    ifelse(grepl("employees", variable), "Employees (number)","2021"))))) %>%
   filter(activity != "Total") %>%
   mutate(activity = str_to_title(activity))
-
-write_xlsx(econ_textiles,
-          "./cleaned_data/econ_textiles.xlsx")
 
 DBI::dbWriteTable(con,
                   "textilesecon",
