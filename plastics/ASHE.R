@@ -289,6 +289,9 @@ ASHE_all <-
 
 ASHE_all <- ASHE_all[nchar(ASHE_all$code) >= 4, ]
 
+ASHE_all <- ASHE_all %>%
+      unite(code_desc, c(code, description), sep = " - ", remove = FALSE)
+
 DBI::dbWriteTable(con,
                   "ASHE",
                   ASHE_all,

@@ -396,9 +396,19 @@ BRES_all <-
     ),
     use.names = TRUE
   ) %>%
-  mutate_at(c('year'), as.numeric)
+  mutate_at(c('year'), as.numeric) 
 
+# Import descriptions
+descriptions <- read_excel("./raw_data/BRES/BRES_22.xlsx",
+                      sheet = "Sic Names") %>%
+  dplyr::rename(SIC = 1)
 
+# Join to descriptions
+BRES_all <- BRES_all %>%
+  left_join(descriptions, "SIC") %>%
+  unite(code_desc, c(SIC, `SIC Name`), sep = " - ", remove = FALSE)
+
+# Write to database
 DBI::dbWriteTable(con,
                   "Business_Register_and_Employment_Survey",
                   BRES_all,

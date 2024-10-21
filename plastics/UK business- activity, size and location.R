@@ -223,7 +223,8 @@ BASL_all <-
     use.names = TRUE
   ) %>%
   mutate_at(c('year'), as.numeric) %>%
-  filter(! str_detect(SIC, 'Data|Back|Note|Source|Total|null')) 
+  filter(! str_detect(SIC, 'Data|Back|Note|Source|Total|null')) %>%
+  unite(code_desc, c(SIC, Description), sep = " - ", remove = FALSE)
 
 DBI::dbWriteTable(con,
                   "BASL",

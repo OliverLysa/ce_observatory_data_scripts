@@ -47,7 +47,7 @@ conversion_factors_hs_plastic_keys <- read_docx("./raw_data/2024 August_DRAFT Pl
   mutate_at(c('plastic_content_tentative','hs_code'), as.numeric) %>%
   fill(plastic_content_tentative)
 
-# 200911,200912,200919,200921,200929,200931,200939,200941,200949,200950,200961,200969,200971,200979,200981,200989,200989,200990,200990,220110,220190,220210,220299,392310,392321,392329,392330,392340,392350,392390
+# HS codes: 200911,200912,200919,200921,200929,200931,200939,200941,200949,200950,200961,200969,200971,200979,200981,200989,200989,200990,200990,220110,220190,220210,220299,392310,392321,392329,392330,392340,392350,392390
 
 # Import trade data
 trade_data <- 
@@ -55,26 +55,42 @@ trade_data <-
   dplyr::group_by(Hs6, FlowType, Year) %>%
   dplyr::summarise(NetMass = sum(NetMass))
 
-# Import plastic to polymer conversion
-polymer_conversion <- read_excel("./raw_data/Plastic Waste Generated Tool-2023.xlsm",
-                                 sheet = "conversion") %>%
-  select(-1) %>%
-  slice(1) %>%
-  clean_names() %>%
-  pivot_longer(-total, 
+# # Import plastic to polymer conversion
+# polymer_conversion <- read_excel("./raw_data/Plastic Waste Generated Tool-2023.xlsm",
+#                                  sheet = "conversion") %>%
+#   select(-1) %>%
+#   slice(1) %>%
+#   clean_names() %>%
+#   pivot_longer(-total, 
+#                names_to = "Polymer",
+#                values_to = "value") %>%
+#   mutate(year = 2020) %>%
+#   select(-1)
+
+# Import UK-specific polymer conversion
+UK_polymer_breakdown <- read_xlsx( 
+  "./cleaned_data/plastic_packaging_composition.xlsx") %>%
+  filter(Category == "Total") %>%
+  select(1,5:12) %>%
+  pivot_longer(-Year, 
                names_to = "Polymer",
                values_to = "value") %>%
-  mutate(year = 2020) %>%
-  select(-1)
+  mutate(Year = 2020)
 
 # Join datasets
-joined_data <- 
+trade_indicators <- 
   left_join(trade_data, conversion_factors_hs_plastic_keys, by=c("Hs6" = "hs_code")) %>%
   mutate(kg = NetMass * plastic_content_tentative) %>%
-  left_join(polymer_conversion, by=c("Year" = "year")) %>%
-  filter(Polymer == "pet") %>%
+  left_join(UK_polymer_breakdown, by=c("Year" = "Year")) %>%
+  filter(Polymer == "PET") %>%
   mutate(pet_kg = value * kg) %>%
   dplyr::group_by(FlowType) %>%
-  dplyr::summarise(total = sum(pet_kg)/1000)
+  dplyr::summarise(tonnes = sum(pet_kg)/1000) %>%
+  pivot_wider(names_from = FlowType,
+              values_from = tonnes) %>%
+  clean_names() %>%
+  mutate(net_imports = )
+
+domestic_production_indicators <- 
 
 
