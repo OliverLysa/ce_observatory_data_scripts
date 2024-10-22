@@ -64,11 +64,16 @@ csv_data$location <-
 geo_data <- csv_data %>%
   as.data.frame() %>%
   clean_names() %>%
-  dplyr::mutate(LON = location$lon, .before = 1) %>%
+  dplyr::mutate(LONG = location$lon, .before = 1) %>%
   dplyr::mutate(LAT = location$lat, .before = 1) %>%
-  select(1,2,4:10,13:16)
+  select(1,2,4:10,13:16) %>%
+  na.omit()
 
 DBI::dbWriteTable(con,
                   "Packaging_reprocessors_spatial",
                   geo_data,
                   overwrite = TRUE)
+
+leaflet(geo_data) %>% addTiles() %>%
+  addCircles(lng = ~LONG, lat = ~LAT, 
+                   popup = ~accredited_organisation)
