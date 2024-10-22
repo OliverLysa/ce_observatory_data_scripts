@@ -76,11 +76,9 @@ aGVA_data <-
          indicator = gsub("total_capital_expenditure_acquisitions_note_2", 'Capital expenditure acquisitions', indicator),
          indicator = gsub("total_capital_expenditure_disposals_note_2", 'Capital expenditure disposals', indicator)) %>%
   dplyr::mutate(indicator = gsub("_", " ", indicator)) %>%
-  dplyr::mutate(indicator = str_to_sentence(indicator))
-
-# Write summary file
-write_xlsx(aGVA_data, 
-           "./cleaned_data/ABS_all.xlsx")
+  dplyr::mutate(indicator = str_to_sentence(indicator)) %>%
+  mutate(value = round(value, 0)) %>%
+  unite(code_desc, c(code, description), sep = " - ", remove = FALSE)
 
 DBI::dbWriteTable(con,
                   "ABS",

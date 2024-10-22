@@ -27,17 +27,7 @@ if (any(installed_packages == FALSE)) {
 # Packages loading
 invisible(lapply(packages, library, character.only = TRUE))
 
-# Trade - UNITAR method
-
-# Import hs to plastic conversion factors
-# conversion_factors_trade <- read_excel("./raw_data/ENG  - Plastic Embedded POM-Calculation Tool.xlsm",
-#                       sheet = "HS_PlasticKEY") %>%
-#   clean_names() %>%
-#   select(1:3,5) %>%
-#   dplyr::rename(hs_description = 2,
-#          plastic_key = 3,
-#          plastic_fraction = 4) %>%
-#   filter(plastic_key %in% c("P101", "P102", "P103", "P104", "P105"))
+# Trade
 
 # Import conversion factors from latest guidelines
 conversion_factors_hs_plastic_keys <- read_docx("./raw_data/2024 August_DRAFT Plastic guideline_after proofreading.docx") %>%
@@ -89,8 +79,31 @@ trade_indicators <-
   pivot_wider(names_from = FlowType,
               values_from = tonnes) %>%
   clean_names() %>%
-  mutate(net_imports = )
+  mutate(net_imports = eu_imports + non_eu_imports - eu_exports - non_eu_exports)
 
-domestic_production_indicators <- 
+# ### Domestic production
+# conversion_factors_cpc_plastic_keys <- read_docx("./raw_data/CPC codes plastics guidelines.docx") %>%
+#   docx_extract_tbl(1, header = TRUE) %>%
+#   row_to_names(1) %>%
+#   clean_names() %>%
+#   filter(plastic_key_unu_key %in% c("P101", "P102", "P103", "P104", "P105")) %>%
+#   select(3:5,7) %>%
+#   mutate_at(c('cpc_subclass'), as.numeric)
+
+# Prodcom codes
+
+prodcom <- read_xlsx(
+           "./cleaned_data/Prodcom_data_all.xlsx") %>%
+  # mutate(Code_6 = substr(Code, 1, 5)) %>%
+  filter(Year == "2020",
+         Variable != "Value £000's") %>%
+  filter(Code %in% c("10321210",
+                     "10321220",
+                     "10321230",
+                     "10321910",
+                     ))
+
+domestic_production_indicators <-
+  left_join(prodcom, conversion_factors_cpc_plastic_keys, by=c("Code_6" = "cpc_subclass"))
 
 
