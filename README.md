@@ -10,7 +10,7 @@ A collection of scripts to:
 
 2.  transform these through steps including: cleaning and reformatting; grouping by classifications and summarising; data validation, interpolation and extrapolation; calculating key variables/metrics; and
 
-3.  export cleaned data outputs to a PostGreSQL database (supabase) for storage.
+3.  export cleaned data outputs to a PostGreSQL database for storage.
 
 Data outputs from these scripts are used to populate the ce-observatory - a dashboard providing for specific resource-product-industry categories, a detailed description using high-quality data of current baseline material and monetary flows as well as wider impacts and alongside the means to make comparison with alternative circular economy configurations.
 
@@ -20,7 +20,9 @@ Data outputs from these scripts are used to populate the ce-observatory - a dash
 
 Scripts in this repository are largely written in the programming language R. Please see [here](https://rstudio-education.github.io/hopr/starting.html) for more information on running R scripts and computer software requirements. Files are packaged within an R Project with relative file paths used to call data inputs and functions. These can be most easily navigated and ran within the R Studio IDE, though this can also be done in the terminal/command line.
 
-The Python programming language has also been used as part of the project in cases where it offers better performance or provides functions not otherwise available in R. Python scripts are largely presented within [Jupyter Notebooks](https://jupyter.org/install) - an open source IDE that requires installing the jupyter-notebook package in your Python environment, more information about which can be found [here](https://www.python.org/downloads/). In some cases, .py Python scripts are also used. These can be viewed and modified in a code editor such as Visual Studio Code and ran in the terminal/command line.
+The Python programming language has also been used as part of the project. Python scripts are in some cases presented within [Jupyter Notebooks](https://jupyter.org/install) - an open source IDE that requires installing the jupyter-notebook package in your Python environment, more information about which can be found [here](https://www.python.org/downloads/). In some cases, .py Python scripts are also used. These can be viewed and modified in a code editor such as Visual Studio Code and ran in the terminal/command line.
+
+The javascript programming language has been used for some scripts. With node installed, these can be ran from the terminal by, within the project folder, running 'node name of script.js'. 
 
 # Folder and file descriptions
 
