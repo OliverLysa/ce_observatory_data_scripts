@@ -74,6 +74,9 @@ DBI::dbWriteTable(con,
                   geo_data,
                   overwrite = TRUE)
 
+write_xlsx(geo_data,
+           "./cleaned_data/register_geo_data.xlsx")
+
 leaflet(geo_data) %>% addTiles() %>%
   addCircles(lng = ~LONG, lat = ~LAT, 
                    popup = ~accredited_organisation)

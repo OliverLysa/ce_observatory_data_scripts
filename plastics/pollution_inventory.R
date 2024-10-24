@@ -1,10 +1,6 @@
 ##### **********************
 # Pollution inventory
 
-# Steps
-# 1. Extract the NPWD data
-# 2. Bin the files into different variables covered 
-
 # *******************************************************************************
 # Require packages
 #********************************************************************************
