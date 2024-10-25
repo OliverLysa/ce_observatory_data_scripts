@@ -27,7 +27,8 @@ if (any(installed_packages == FALSE)) {
 # Packages loading
 invisible(lapply(packages, library, character.only = TRUE))
 
-# Trade
+####### Trade
+# ***********************
 
 # Import conversion factors from latest guidelines
 conversion_factors_hs_plastic_keys <- read_docx("./raw_data/2024 August_DRAFT Plastic guideline_after proofreading.docx") %>%
@@ -82,17 +83,12 @@ trade_indicators <-
   clean_names() %>%
   mutate(net_imports = eu_imports + non_eu_imports - eu_exports - non_eu_exports)
 
-# ### Domestic production
-# conversion_factors_cpc_plastic_keys <- read_docx("./raw_data/CPC codes plastics guidelines.docx") %>%
-#   docx_extract_tbl(1, header = TRUE) %>%
-#   row_to_names(1) %>%
-#   clean_names() %>%
-#   filter(plastic_key_unu_key %in% c("P101", "P102", "P103", "P104", "P105")) %>%
-#   select(3:5,7) %>%
-#   mutate_at(c('cpc_subclass'), as.numeric)
+#######  Prodcom codes
+# ***********************
 
-# Prodcom codes
+# Make CN to PCC conversion table
 
+# Import prodcom data
 prodcom <- read_xlsx(
            "./cleaned_data/Prodcom_data_all.xlsx") %>%
   # mutate(Code_6 = substr(Code, 1, 5)) %>%
@@ -140,7 +136,29 @@ prodcom <- read_xlsx(
                      "11071970"
                      ))
 
+# Import conversion factors
+
+# conversion_factors_cpc_plastic_keys <- read_docx("./raw_data/CPC codes plastics guidelines.docx") %>%
+#   docx_extract_tbl(1, header = TRUE) %>%
+#   row_to_names(1) %>%
+#   clean_names() %>%
+#   filter(plastic_key_unu_key %in% c("P101", "P102", "P103", "P104", "P105")) %>%
+#   select(3:5,7) %>%
+#   mutate_at(c('cpc_subclass'), as.numeric)
+
+Drewniok_conversion <- read_xlsx(
+  "./raw_data/ProdClassification (1).xlsx",
+  sheet = "Data") %>%
+  clean_names() %>%
+  filter(packaging == 1) %>%
+  select(1:21)
+
 domestic_production_indicators <-
-  left_join(prodcom, conversion_factors_cpc_plastic_keys, by=c("Code_6" = "cpc_subclass"))
+  # Convert into standard unit
+  left_join(prodcom, Drewniok_conversion, by=c("Code" = "code")) %>%
+  clean_names() %>%
+  mutate(plastic_tonnes = case_when(str_detect(variable, "Tonnes") ~ value * plastic_fraction,
+                        str_detect(variable, "Kilogram") ~ (value/1000)*plastic_fraction,
+                        str_detect(variable, "items") ~ value*unit_conv*plastic_fraction))
 
-
+# Convert domestic production into 

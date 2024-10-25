@@ -32,7 +32,7 @@ Region_name <- read_excel("./raw_data/waste_investigations.xlsx",
 # Import data and tidy
 waste_investigations <- read_excel("./raw_data/waste_investigations.xlsx",
                       sheet = "Raw Data") %>%
-  select(2,3,5,12,15, 17,18) %>%
+  select(2,3,5,7, 12,15, 17,18) %>%
   clean_names() %>%
   mutate(start_year = substr(start_date, 1, 4)) %>%
   unique() %>%
@@ -41,7 +41,11 @@ waste_investigations <- read_excel("./raw_data/waste_investigations.xlsx",
   ) %>%
   left_join(Region_name, by = "area") %>%
   select(-c(area,start_date)) %>%
-  dplyr::rename(region = "description")
+  dplyr::rename(region = "description") %>%
+  filter(waste_type == "Packaging") %>%
+  na.omit() %>%
+  mutate_at(c('industry_sector'), trimws) %>%
+  unite(industry_sub_sector, c(industry_sector, industry_sub_sector), sep = "-", remove = FALSE)
 
 DBI::dbWriteTable(con,
                   "waste_investigations",
