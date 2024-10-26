@@ -20,7 +20,6 @@ options(scipen=999)
 
 # *******************************************************************************
 # Options and functions
-
 #********************************************************************************
 
 # Emissions below reporting threshold are not submitted.included here. 
@@ -120,6 +119,7 @@ PI_all <-
   clean_names() %>%
   mutate_at(c('quantity_released_kg'), as.numeric) %>%
   na.omit() %>%
+  mutate(quantity_released = quantity_released_kg / 1000) %>%
   unite(regulated_industry_sub_sector, c(regulated_industry_sector, regulated_industry_sub_sector), sep = "-", remove = FALSE)
 
 DBI::dbWriteTable(con,
