@@ -51,12 +51,13 @@ litter_type <-
   na.omit() %>%
   mutate(`sub_type` = gsub("wet", "wet wipe", sub_type)) %>%
   mutate(`sub_type` = gsub("expanded", "expanded polystyrene", sub_type)) %>%
-  mutate(sub_type = str_to_title(sub_type)) %>%
   mutate(measure = "Litter type")
 
 # Bind measures
 loughborough_litter <- material %>%
-  bind_rows(litter_type)
+  bind_rows(litter_type) %>%
+  mutate(`sub_type` = gsub("_", "", sub_type)) %>%
+  mutate(sub_type = str_to_sentence(sub_type))
 
 DBI::dbWriteTable(con,
                   "loughborough_litter",
