@@ -57,7 +57,8 @@ litter_type <-
 loughborough_litter <- material %>%
   bind_rows(litter_type) %>%
   mutate(`sub_type` = gsub("_", "", sub_type)) %>%
-  mutate(sub_type = str_to_sentence(sub_type))
+  mutate(sub_type = str_to_sentence(sub_type)) %>%
+  mutate(region = gsub("Yorkshire and", "Yorkshire and The Humber", region))
 
 DBI::dbWriteTable(con,
                   "loughborough_litter",
