@@ -54,19 +54,10 @@ gc()
 # *******************************************************************************
 #
 
-# Download code - only the 2024 classification (may need to extend correlations for historic data)
-download.file(
-  "https://www.uktradeinfo.com/media/ltnlpgcz/cn2024a.xlsx",
-  "./classifications/classifications/cn2024a.xlsx")
-
-# 2023 CN
-download.file(
-  "https://op.europa.eu/o/opportal-service/euvoc-download-handler?cellarURI=http%3A%2F%2Fpublications.europa.eu%2Fresource%2Fdistribution%2Fcombined-nomenclature-2023%2F20240425-0%2Fcsv%2Fcsv%2FCN2023_Self_Explanatory_Texts_EN_DE_FR.csv&fileName=CN2023_Self_Explanatory_Texts_EN_DE_FR.csv",
-  "./classifications/classifications/cn2023.csv")
-
+# 2023 CN - update to use the 2023 codes if different
 
 # Import trade terms
-trade_terms <-
+trade_terms_23 <-
   # Import latest CN data linked to here
   read_excel("./classifications/classifications/cn2024a.xlsx") %>%
   # Pad CN so it is 8 digits
@@ -82,125 +73,179 @@ trade_terms <-
   filter(HS2 >=50, 
          HS2 <=66) %>%
   # Removing several codes from 05, 06 categories - to investigate further
-  slice(-c(1:67))
+  slice(-c(1:67)) %>%
+  select(HS6) %>%
+  unique()
+
+trade_terms <- 
+  data.frame(HS6 = apply(trade_terms, 1, function(x) paste0(as.character(x), ',')))
+
+trade_terms <- 
+  paste(unlist(trade_terms), collapse ="") %>%
+  as.data.frame()
+
+write_csv(trade_terms, "./textiles/23_trade_terms_search.csv")
+
+# 2022 CN
+
+# Import trade terms
+trade_terms_22 <-
+  # Import latest CN data linked to here
+  read_csv("./classifications/cn2022.csv") %>%
+  mutate(CN_CODE = gsub(" ", "", CN_CODE)) %>%
+  # Create HS shorter codes to filter by
+  mutate(HS2 = substr(CN_CODE, 1, 2),
+         HS6 = substr(CN_CODE, 1, 6)) %>%
+  dplyr::filter(nchar(as.character(HS6))==6) %>%
+  # Filter to HS 2 between 50 and 66
+  filter(HS2 >=50, 
+         HS2 <=66) %>%
+  select(HS6) %>%
+  unique()
+
+trade_terms_22 <- 
+  data.frame(HS6 = apply(trade_terms_22, 1, function(x) paste0(as.character(x), ',')))
+
+trade_terms_22 <- 
+  paste(unlist(trade_terms_22), collapse ="") %>%
+  as.data.frame()
+
+write_csv(trade_terms_22, "./textiles/trade_codes/22_trade_terms_search.csv")
+
+# 2021 CN
+
+# Import trade terms
+trade_terms_21 <-
+  # Import latest CN data linked to here
+  read_csv("./classifications/cn2021.csv") %>%
+  mutate(CN_CODE = gsub(" ", "", CN_CODE)) %>%
+  # Create HS shorter codes to filter by
+  mutate(HS2 = substr(CN_CODE, 1, 2),
+         HS6 = substr(CN_CODE, 1, 6)) %>%
+  dplyr::filter(nchar(as.character(HS6))==6) %>%
+  # Filter to HS 2 between 50 and 66
+  filter(HS2 >=50, 
+         HS2 <=66) %>%
+  select(HS6) %>%
+  unique()
+
+trade_terms_21 <- 
+  data.frame(HS6 = apply(trade_terms_21, 1, function(x) paste0(as.character(x), ',')))
+
+trade_terms_21 <- 
+  paste(unlist(trade_terms_21), collapse ="") %>%
+  as.data.frame()
+
+write_csv(trade_terms_21, "./textiles/trade_codes/21_trade_terms_search.csv")
+
+# 2020 CN
+
+# Import trade terms
+trade_terms_20 <-
+  # Import latest CN data linked to here
+  read_csv("./classifications/CN2020_Self_Explanatory_Texts_EN_DE_FR.csv") %>%
+  mutate(CN_CODE = gsub(" ", "", CN_CODE)) %>%
+  # Create HS shorter codes to filter by
+  mutate(HS2 = substr(CN_CODE, 1, 2),
+         HS6 = substr(CN_CODE, 1, 6)) %>%
+  dplyr::filter(nchar(as.character(HS6))==6) %>%
+  # Filter to HS 2 between 50 and 66
+  filter(HS2 >=50, 
+         HS2 <=66) %>%
+  select(HS6) %>%
+  unique()
+
+trade_terms_20 <- 
+  data.frame(HS6 = apply(trade_terms_20, 1, function(x) paste0(as.character(x), ',')))
+
+trade_terms_20 <- 
+  paste(unlist(trade_terms_20), collapse ="") %>%
+  as.data.frame()
+
+write_csv(trade_terms_20, "./textiles/trade_codes/20_trade_terms_search.csv")
+
+# 2019 CN
+
+# Import trade terms
+trade_terms_19 <-
+  # Import latest CN data linked to here
+  read_csv("./classifications/CN2019_Self_Explanatory_Texts_EN_DE_FR.csv") %>%
+  mutate(CN_CODE = gsub(" ", "", CN_CODE)) %>%
+  # Create HS shorter codes to filter by
+  mutate(HS2 = substr(CN_CODE, 1, 2),
+         HS6 = substr(CN_CODE, 1, 6)) %>%
+  dplyr::filter(nchar(as.character(HS6))==6) %>%
+  # Filter to HS 2 between 50 and 66
+  filter(HS2 >=50, 
+         HS2 <=66) %>%
+  select(HS6) %>%
+  unique()
+
+trade_terms_19 <- 
+  data.frame(HS6 = apply(trade_terms_19, 1, function(x) paste0(as.character(x), ',')))
+
+trade_terms_19 <- 
+  paste(unlist(trade_terms_19), collapse ="") %>%
+  as.data.frame()
+
+write_csv(trade_terms_19, "./textiles/trade_codes/19_trade_terms_search.csv")
+
+# 2018 CN
+
+# Import trade terms
+trade_terms_18 <-
+  # Import latest CN data linked to here
+  read_csv("./classifications/CN2018_Self_Explanatory_Texts_EN_DE_FR.csv") %>%
+  mutate(CN_CODE = gsub(" ", "", CN_CODE)) %>%
+  # Create HS shorter codes to filter by
+  mutate(HS2 = substr(CN_CODE, 1, 2),
+         HS6 = substr(CN_CODE, 1, 6)) %>%
+  dplyr::filter(nchar(as.character(HS6))==6) %>%
+  # Filter to HS 2 between 50 and 66
+  filter(HS2 >=50, 
+         HS2 <=66) %>%
+  select(HS6) %>%
+  unique()
+
+trade_terms_18 <- 
+  data.frame(HS6 = apply(trade_terms_18, 1, function(x) paste0(as.character(x), ',')))
+
+trade_terms_18 <- 
+  paste(unlist(trade_terms_18), collapse ="") %>%
+  as.data.frame()
+
+write_csv(trade_terms_18, "./textiles/trade_codes/18_trade_terms_search.csv")
 
 # *******************************************************************************
-# Trade data download
+# Summarise trade data 
 # *******************************************************************************
 #
 
-# UKTradeData - goes back to 2000
-trade_terms_CN8 <- trade_terms %>%
-  # Isolate list of CN8 codes from classification table, column 'CN8', extract unique codes and unlist
-  select(CN8) %>%
-  unique() %>%
-  unlist()
+# Import the data
+trade_all <- 
+  map_df(list.files("./raw_data/textiles_trade/", full.names = TRUE), read_csv)
 
-one <- c("61102091", "58110000")
-
-# If a subset of those codes are sought, these can be selected by index position
-# Using this as in some cases, a memory issue arise with full list
-# trade_terms_CN8 <- trade_terms_CN8[1106:1242]
-
-# Create a for loop that goes through the trade terms, extracts the data using the extractor function (in function script) based on the uktrade wrapper
-# and prints the results to a list of dataframes
-res <- list()
-for (i in seq_along(one)) {
-  res[[i]] <- extractor(one[i])
-
-  print(i)
-  
-}
-
-# Bind the list of returned dataframes to a single dataframe
-bind <-
-  dplyr::bind_rows(res)
-
-# If you have not used the in-built lookup codes in the uktrade R package, describe the flow-types for subsequent aggregation
-bind <- bind %>%
-  mutate(FlowTypeId = gsub(1, 'EU Imports', FlowTypeId),
-         FlowTypeId = gsub(2, 'EU Exports', FlowTypeId),
-         FlowTypeId = gsub(3, 'Non-EU Imports', FlowTypeId),
-         FlowTypeId = gsub(4, 'Non-EU Exports', FlowTypeId)) %>%
-  rename(FlowTypeDescription = FlowTypeId)
-
-# Remove the month identifier in the month ID column to be able to group by year
-# This can be removed for more time-granular data e.g. by month or quarter
-bind$MonthId <-
-  substr(bind$MonthId, 1, 4)
-
-# Summarise results in value, mass and unit terms grouped by year, flow type and trade code as well as broad trade direction
-summary_trade_no_country <- bind %>%
-  group_by(MonthId,
-           FlowTypeDescription,
-           CommodityId) %>%
-  summarise(sum(Value),
-            sum(NetMass),
-            sum(SuppUnit)) %>%
-  rename(Year = MonthId) %>%
-  # Pivot results longer
-  pivot_longer(-c(Year,
-                  FlowTypeDescription,
-                  CommodityId),
+textiles_trade_data <- trade_all %>%
+  # unite(Description, Cn8, Description, sep = " - ") %>%
+  select(2:11) %>%
+  mutate(NetMass = NetMass /1000) %>%
+  mutate(across(is.numeric, round, digits=2)) %>%
+  pivot_longer(-c(Hs2, Hs4, Hs6, Description, Year, FlowType, Country),
                names_to = "Variable",
-               values_to = 'Value') %>%
-  # Convert trade code to character
-  mutate_at(c(3), as.character) %>%
-  left_join(# Join the correspondence codes and the trade data
-    trade_terms,
-    by =join_by("CommodityId" == "CN8")) %>%
-  rename(CN = CommodityId)
-
+               values_to = "Value") %>%
 # Format columns for the tree filter on frontend
-textiles_trade_data2 <- textiles_trade_data %>%
-  unite(HS4, c(HS2,HS4), sep = "-", remove = FALSE) %>%
-  unite(HS6, c(HS4,HS6), sep = "-", remove = FALSE) %>%
-  unite(CN, c(HS6,CN), sep = "-", remove = FALSE)
+  unite(Hs4, c(Hs2,Hs4), sep = "-", remove = FALSE) %>%
+  unite(Hs6, c(Hs4,Hs6), sep = "-", remove = FALSE) 
 
 # Export to database
 DBI::dbWriteTable(con,
-                  "",
-                  summary_trade_no_country,
-                  append: TRUE)
-
-write_csv(textiles_trade_data2,
-          "./cleaned_data/textiles_trade2.csv")
+                  "textiles_trade_update",
+                  textiles_trade_data,
+                  overwrite: TRUE)
 
 #############################
 
-# Making request to API without R package - confirms there are some issues with the package
-# https://api.uktradeinfo.com/OTS?$filter=(MonthId ge 202301 and MonthId le 202312) and ((CommodityId ge -54000000 and CommodityId le -54999999))
-# Not working: https://api.uktradeinfo.com/OTS?$filter=(MonthId ge 202301 and MonthId le 202312) and ((CommodityId ge 54 and CommodityId le 54))
-# https://api.uktradeinfo.com/OTS?$filter=(MonthId%20ge%20202301%20and%20MonthId%20le%20202312)%20and%20((CommodityId%20ge%2054000000%20and%20CommodityId%20le%2066999999))
-raw = GET(paste('https://api.uktradeinfo.com/OTS?$filter=(MonthId%20ge%20202301%20and%20MonthId%20le%20202312)%20and%20((CommodityId%20ge%2054000000%20and%20CommodityId%20le%2054999999))'))
-
-#convert to a character string
-r2 <- rawToChar(raw$content)  
-
-#check the class is character
-class(r2)    
-
-# now extract JSON from string object
-r3 <- fromJSON(r2)
-
-# Extract value
-r4 <- r3$value
-
-r5 <- bind_rows(r4)
-
-write_xlsx(r5,
-           "raw_api_output.xlsx")
-
-# Incorporate skip filter/offset / pagination
-
-# Extract trade terms
-trade_terms_HS6 <-trade_terms %>%
-  # Isolate list of CN8 codes from classification table, column 'CN8', extract unique codes and unlist
-  select(HS6) %>%
-  unique() %>%
-  unlist()
-
-trade_terms_HS6 <- trade_terms_HS6[1:499]
+# COMTRADE route
 
 # Function to use the comtrade R package to extract trade data from the Comtrade API
 comtrade_extractor <- function(x) {
