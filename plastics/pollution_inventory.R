@@ -119,14 +119,18 @@ PI_all <-
   clean_names() %>%
   mutate_at(c('quantity_released_kg'), as.numeric) %>%
   na.omit() %>%
+  mutate(regulated_industry_sector = str_to_sentence(regulated_industry_sector)) %>%
+  mutate(regulated_industry_sub_sector = str_to_sentence(regulated_industry_sub_sector)) %>%
+  group_by(year, route_name, substance_name, regulated_industry_sector, regulated_industry_sub_sector, ea_area_name) %>%
+  summarise(quantity_released_kg = sum(quantity_released_kg)) %>%
   mutate(quantity_released = quantity_released_kg / 1000) %>%
-  unite(regulated_industry_sub_sector, c(regulated_industry_sector, regulated_industry_sub_sector), sep = "-", remove = FALSE)
+  unite(regulated_industry_sub_sector, c(regulated_industry_sector, regulated_industry_sub_sector), sep = "-", remove = FALSE) %>%
+  mutate(quantity_released = round(quantity_released,2))
 
 DBI::dbWriteTable(con,
                   "pollution-inventory",
                   PI_all,
                   overwrite = TRUE)
-
 
 # Route name: The Waste Framework Directive reference for the disposal or recovery activity carried out e.g. D1, R5.
 # 

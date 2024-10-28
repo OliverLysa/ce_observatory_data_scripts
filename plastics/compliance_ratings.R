@@ -22,12 +22,6 @@ require(purrr)
 
 # compliance ratings are used help assess the risks from a regulated facility.
 
-# file.list <- 
-#   list.files("./raw_data/Compliance ratings/",
-#              pattern='*.xlsx')
-# 
-# df <- map_df(list.files("./raw_data/Compliance ratings", full.names = TRUE), read_excel)
-
 compliance_22 <- read_excel("./raw_data/Compliance ratings/2022 Compliance Rating Dataset.xlsx",
                       sheet = 1) %>%
   na.omit() %>%
@@ -94,6 +88,7 @@ compliance_all <-
   ) %>%
   select(5:8) %>%
   clean_names()%>%
+  mutate(regulatory_sector = str_to_sentence(regulatory_sector)) %>%
   count(regulatory_sector, sub_sector, compliance_rating, year, sort = TRUE) %>%
   unite(sub_sector, c(regulatory_sector, sub_sector), sep = "-", remove = FALSE)
 

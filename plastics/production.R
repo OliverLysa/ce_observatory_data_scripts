@@ -1,6 +1,36 @@
 # Prodcom PET
 
-require(zoo)
+# *******************************************************************************
+# Require packages
+# *******************************************************************************
+
+# Package names
+packages <- c(
+  "magrittr",
+  "writexl",
+  "readxl",
+  "dplyr",
+  "tidyverse",
+  "readODS",
+  "data.table",
+  "janitor",
+  "xlsx",
+  "tabulizer",
+  "docxtractr",
+  "campfin",
+  "rjson",
+  "zipcodeR",
+  "ggmap",
+  "zoo")
+
+# Install packages not yet installed
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(packages[!installed_packages])
+}
+
+# Packages loading
+invisible(lapply(packages, library, character.only = TRUE))
 
 Code <- c('22213065',
           '22213067',

@@ -226,22 +226,25 @@ trade_all <-
   map_df(list.files("./raw_data/textiles_trade/", full.names = TRUE), read_csv)
 
 textiles_trade_data <- trade_all %>%
-  # unite(Description, Cn8, Description, sep = " - ") %>%
-  select(2:11) %>%
+  select(2:10) %>%
   mutate(NetMass = NetMass /1000) %>%
   mutate(across(is.numeric, round, digits=2)) %>%
-  pivot_longer(-c(Hs2, Hs4, Hs6, Description, Year, FlowType, Country),
+  pivot_longer(-c(Hs2, Hs4, Hs6, Description, Year, FlowType),
                names_to = "Variable",
                values_to = "Value") %>%
-# Format columns for the tree filter on frontend
-  unite(Hs4, c(Hs2,Hs4), sep = "-", remove = FALSE) %>%
-  unite(Hs6, c(Hs4,Hs6), sep = "-", remove = FALSE) 
+  group_by(Hs2, Hs4, Hs6, Description, Year, FlowType, Variable) %>%
+  dplyr::summarise(Value = sum(Value)) %>%
+  unite(Description, Hs6, Description, sep = " - ", remove = FALSE)
+  
+# # Format columns for the tree filter on frontend
+#   unite(Hs4, c(Hs2,Hs4), sep = "-", remove = FALSE) %>%
+#   unite(Hs6, c(Hs4,Hs6), sep = "-", remove = FALSE) 
 
 # Export to database
 DBI::dbWriteTable(con,
                   "textiles_trade_update",
                   textiles_trade_data,
-                  overwrite: TRUE)
+                  overwrite = TRUE)
 
 #############################
 
