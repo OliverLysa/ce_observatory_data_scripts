@@ -123,9 +123,9 @@ PI_all <-
   mutate(regulated_industry_sub_sector = str_to_sentence(regulated_industry_sub_sector)) %>%
   group_by(year, route_name, substance_name, regulated_industry_sector, regulated_industry_sub_sector, ea_area_name) %>%
   summarise(quantity_released_kg = sum(quantity_released_kg)) %>%
-  mutate(quantity_released = quantity_released_kg / 1000) %>%
+  mutate(quantity_released = quantity_released_kg) %>%
   unite(regulated_industry_sub_sector, c(regulated_industry_sector, regulated_industry_sub_sector), sep = "-", remove = FALSE) %>%
-  mutate(quantity_released = round(quantity_released,2))
+  mutate(quantity_released = round(quantity_released,3))
 
 DBI::dbWriteTable(con,
                   "pollution-inventory",
