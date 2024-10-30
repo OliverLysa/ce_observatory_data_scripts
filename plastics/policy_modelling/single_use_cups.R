@@ -76,7 +76,7 @@ production_data <-
   clean_names() %>%
   mutate_at(c('value'), as.numeric) %>%
   # Estimate share made up of cups
-  mutate(domestic_production = value * 0.2) %>%
+  mutate(domestic_production = value * 0.1) %>%
   select(year, domestic_production)
 
 # Construct apparent consumption estimate
@@ -87,7 +87,10 @@ apparent_consumption_fibre_cups_uk <-
 # https://committees.parliament.uk/writtenevidence/38900/pdf/
 # Fibre cups 92% approximately paper - the rest, plastic
 
-# Plastic cups 
+write_xlsx(apparent_consumption_fibre_cups_uk, 
+           "./cleaned_data/apparent_consumption_fibre_cups_uk.xlsx")
+
+# Plastic cups
 
 # Sense check against estimated units POM and resulting weight
 
