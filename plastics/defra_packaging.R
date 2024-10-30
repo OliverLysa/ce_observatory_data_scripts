@@ -47,6 +47,9 @@ Defra_packaging_all <- read_ods(
                               str_detect(variable, "total_recovered_recycled") ~ "Recovered/recycled")) %>% 
   mutate_at(vars('rate','value'), funs(round(., 2)))
 
+write_xlsx(Defra_packaging_all, 
+           "./cleaned_data/Defra_packaging_all.xlsx")
+
 DBI::dbWriteTable(con,
                   "Defra_packaging",
                   Defra_packaging_all,
