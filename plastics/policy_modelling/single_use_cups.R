@@ -76,7 +76,7 @@ production_data <-
   clean_names() %>%
   mutate_at(c('value'), as.numeric) %>%
   # Estimate share made up of cups
-  mutate(domestic_production = value * 0.1) %>%
+  mutate(domestic_production = value * 0.2) %>%
   select(year, domestic_production)
 
 # Construct apparent consumption estimate
