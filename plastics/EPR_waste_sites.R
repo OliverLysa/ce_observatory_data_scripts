@@ -23,7 +23,8 @@ packages <- c(
   "rjson",
   "zipcodeR",
   "ggmap",
-  "fuzzyjoin")
+  "fuzzyjoin",
+  "DBI")
 
 # Install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
@@ -69,14 +70,22 @@ EPR_sites$location <-
   geocode(EPR_sites$postcode)
 
 # Save table locally
-write_xlsx(EPR_sites, 
-           "./cleaned_data/EPR_sites_location.xlsx")
+write_csv(EPR_sites, 
+           "./cleaned_data/EPR_sites_location.csv")
+
+EPR_sites_final <- EPR_sites %>% 
+  mutate(regime=replace_na(regime, "Other"))
 
 # Prepare table for upload
-geo_data <- csv_data %>%
+geo_data <- EPR_sites_final %>%
   as.data.frame() %>%
   clean_names() %>%
   dplyr::mutate(LONG = location$lon, .before = 1) %>%
   dplyr::mutate(LAT = location$lat, .before = 1) %>%
-  select(1,2,4:10,13:16) %>%
+  select(1,2,3,5,6:8,10:11,15,17) %>%
   na.omit()
+
+DBI::dbWriteTable(con,
+                  "EPR_waste_sites",
+                  geo_data,
+                  overwrite = TRUE)
