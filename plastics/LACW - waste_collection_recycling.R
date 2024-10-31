@@ -211,7 +211,10 @@ Q004_frequency <- WDF_full %>%
 Q005_households <- WDF_full %>%
   filter(question_number == "Q005") %>%
   filter(col_text == "Number of Households") %>%
-  select(authority, year, col_text, row_text, data)
+  select(authority, year, col_text, row_text, data) %>%
+  mutate(data = gsub(",","", data)) # %>%
+  # mutate_at(c('data'), as.numeric) %>%
+  # na.omit()
 
 Q005_frequency <- WDF_full %>%
   filter(question_number == "Q005") %>%
@@ -223,6 +226,37 @@ Q005_all <- Q005_households %>%
 
 # Write
 DBI::dbWriteTable(con,
-                  "WDF_Q005",
+                  "WDF_Q005_alt",
                   Q005_all,
+                  overwrite = TRUE)
+
+# Q007 - How many households are served by a kerbside collection of: 
+
+Q007 <- WDF_full %>%
+  filter(question_number == "Q007") %>%
+  select(authority, year, row_text, data) %>%
+  mutate(data = gsub(",","", data)) %>%
+  mutate_at(c('data'), as.numeric) %>%
+  na.omit()
+
+# Write
+DBI::dbWriteTable(con,
+                  "WDF_Q007",
+                  Q007,
+                  overwrite = TRUE)
+
+# Q011 - Tonnes of material collected from commercial, industrial or other non-household sources by LA or its contractors
+
+Q011 <- WDF_full %>%
+  filter(question_number == "Q011",
+         col_text == "Tonnage collected for recycling") %>%
+  select(authority, year, row_text, material_group, data) %>%
+  mutate(row_text = str_to_title(row_text))
+
+Q011$row_text <- genX(Q011$row_text, " [", "]")
+
+# Write
+DBI::dbWriteTable(con,
+                  "WDF_Q011",
+                  Q011,
                   overwrite = TRUE)
