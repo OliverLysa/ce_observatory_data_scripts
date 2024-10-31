@@ -53,7 +53,7 @@ EPR_sites <- EPR_sites %>%
 
 # Import regime lookup
 lookup <- read_excel("./raw_data/Permitted waste operations - end June 2024.xlsx",
-                        sheet = "Site Type Key")  %>%
+                     sheet = "Site Type Key")  %>%
   row_to_names(2) %>%
   clean_names()
 
@@ -69,12 +69,12 @@ EPR_sites <-
 EPR_sites$location <- 
   geocode(EPR_sites$postcode)
 
+EPR_sites_final <- EPR_sites %>% 
+  mutate(regime=replace_na(regime, "Other"))
+
 # Save table locally
 write_csv(EPR_sites, 
            "./cleaned_data/EPR_sites_location.csv")
-
-EPR_sites_final <- EPR_sites %>% 
-  mutate(regime=replace_na(regime, "Other"))
 
 # Prepare table for upload
 geo_data <- EPR_sites_final %>%

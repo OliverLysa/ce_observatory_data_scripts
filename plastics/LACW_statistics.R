@@ -76,7 +76,8 @@ combined_collection <-
   left_join(collection_flows, composition, "collection_route") %>%
   mutate(value = tonnages * freq) %>%
   select(-c(freq,tonnages)) %>%
-  mutate(across(is.numeric, round, digits=2))
+  mutate(across(is.numeric, round, digits=2)) %>%
+  mutate(collection_route = str_to_title(collection_route))
 
 DBI::dbWriteTable(con,
                   "LACW_composition",
@@ -111,4 +112,6 @@ Q100$period <-
 DBI::dbWriteTable(con,
                   "q100",
                   Q100,
-                  overwrite = TRUE)         
+                  overwrite = TRUE)
+
+
