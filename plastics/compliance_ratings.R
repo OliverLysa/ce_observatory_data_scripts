@@ -89,6 +89,7 @@ compliance_all <-
   select(5:8) %>%
   clean_names()%>%
   mutate(regulatory_sector = str_to_sentence(regulatory_sector)) %>%
+  mutate(sub_sector = str_to_sentence(sub_sector)) %>%
   count(regulatory_sector, sub_sector, compliance_rating, year, sort = TRUE) %>%
   unite(sub_sector, c(regulatory_sector, sub_sector), sep = "-", remove = FALSE)
 

@@ -251,7 +251,10 @@ Q011 <- WDF_full %>%
   filter(question_number == "Q011",
          col_text == "Tonnage collected for recycling") %>%
   select(authority, year, row_text, material_group, data) %>%
-  mutate(row_text = str_to_title(row_text))
+  mutate(row_text = str_to_title(row_text)) %>%
+  mutate_at(c('data'), as.numeric) %>%
+  na.omit() %>%
+  filter(data != 0)
 
 Q011$row_text <- genX(Q011$row_text, " [", "]")
 
