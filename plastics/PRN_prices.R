@@ -73,7 +73,8 @@ prn_prices_yearly <- prn_prices_monthly %>%
   # Calculate mean
   dplyr::summarise(value = mean(value)) %>%
   # Round the value
-  mutate(value = round(value, 1)) 
+  mutate(value = round(value, 1)) %>%
+  mutate_at(c('year'), as.numeric)
   
 # Write CSV
 write_csv(prn_prices_yearly, 
