@@ -52,7 +52,7 @@ prn_prices_monthly <-
   arrange(year) %>%
   mutate(unit = "£ per tonne") %>%
   mutate_at(c('unit'), trimws) %>%
-  unite(year, month, year, sep = " - ")
+  unite(year, year, month, sep = " - ")
 
 # Write to site database using the connection established
 DBI::dbWriteTable(con,
@@ -67,12 +67,13 @@ write_csv(prn_prices_monthly,
 # Get the same values at the level of year by taking an average across months
 
 prn_prices_yearly <- prn_prices_monthly %>%
+  separate(year,c("year","month"),sep="-") %>%
   # Group by variables
   group_by(year, material, variable, unit) %>%
   # Calculate mean
   dplyr::summarise(value = mean(value)) %>%
   # Round the value
-  mutate(value = round(value, 1))
+  mutate(value = round(value, 1)) 
   
 # Write CSV
 write_csv(prn_prices_yearly, 
