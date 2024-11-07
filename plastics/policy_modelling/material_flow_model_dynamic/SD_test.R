@@ -59,33 +59,22 @@ o <- data.frame(ode(y = stocks, times = simtime, func = model,
 
 head(o)
 
-# Set the time period and step. Define the stocks and auxiliaries.
-START <- 0
-FINISH <- 100
-STEP <- 0.25
-simtime <- seq(START, FINISH, by = STEP)
-stocks <- c(sStock = 100)
-auxs <- c(aCapacity = 10000, 
-          aRef.Availability = 1,
-          aRef.GrowthRate = 0.10)
+# Plots and output
+p1<-ggplot()+
+  geom_line(data=o,aes(time,o$sCustomers,color="Customers"))+
+  scale_y_continuous(labels = scales::comma)+
+  ylab("Stock")+
+  xlab("Year") +
+  labs(color="")+
+  theme(legend.position="none")
 
-# Create the function
-model <- function(time, stocks, auxs){
-  with(as.list(c(stocks, auxs)),{
-    aAvailability <- 1 - sStock / aCapacity
-    aEffect <- aAvailability / aRef.Availability
-    aGrowth.Rate <- aRef.GrowthRate * aEffect
-    fNet.Flow <- sStock * aGrowth.Rate
-    dS_dt <- fNet.Flow
-    return(list(c(dS_dt), NetFlow = fNet.Flow,
-                GrowthRate = aGrowth.Rate, 
-                Effect = aEffect,
-                Availability = aAvailability))
-  })
-}
+p2<-ggplot()+
+  geom_line(data=o,aes(time,o$Losses,color="Losses"))+
+  geom_line(data=o,aes(time,o$Recruits,color="Recruits"))+
+  scale_y_continuous(labels = scales::comma)+
+  ylab("Flows")+
+  xlab("Year") +
+  labs(color="")+
+  theme(legend.position="none")
 
-# Create the data frame
-sModel <- data.frame(ode(y = stocks, times = simtime, func = model,
-                         parms = auxs, method = "euler"))
-
-head(sModel)
+p3<-grid.arrange(p1, p2,nrow=2, ncol=1)

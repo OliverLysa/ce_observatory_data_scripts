@@ -82,7 +82,9 @@ production_data <-
 # Construct apparent consumption estimate
 apparent_consumption_fibre_cups_uk <-
   left_join(trade_data, production_data, by=c("year")) %>%
-  mutate(apparent_consumption = domestic_production + net_imports)
+  mutate(domestic_production=replace_na(domestic_production, 0)) %>%
+  mutate(apparent_consumption = domestic_production + net_imports) %>%
+  mutate(moving_average = slider::slide_dbl(apparent_consumption, mean, .before = 2))
 
 # https://committees.parliament.uk/writtenevidence/38900/pdf/
 # Fibre cups 92% approximately paper - the rest, plastic

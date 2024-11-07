@@ -29,7 +29,7 @@ if (any(installed_packages == FALSE)) {
 # Packages loading
 invisible(lapply(packages, library, character.only = TRUE))
 
-recycling_prices <- 
+recycling_prices <-
   read_excel("./raw_data/lets_recycle_prices.xlsx") %>%
   pivot_longer(-c(Year, Application, `Sub-type`),
                names_to = "month",
@@ -40,6 +40,8 @@ recycling_prices <-
   dplyr::mutate_at(c('lower'), trimws) %>%
   mutate(lower = gsub("-", "-", lower)) %>%
   mutate(lower = gsub(" ", "", lower))
+
+# For some reason, am exporting and then re-importing
 
 # write_xlsx(recycling_prices,
 #             "./cleaned_data/recycling_prices.xlsx")

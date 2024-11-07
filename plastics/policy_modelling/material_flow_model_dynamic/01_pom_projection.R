@@ -1,18 +1,33 @@
 ##### **********************
-# Purpose: 
+# Author: Oliver Lysaght
+# Purpose: POM Projection
+
+# https://www.vensim.com/documentation/usr17.html
 
 # *******************************************************************************
-# Require packages
-#********************************************************************************
+# Packages
+# *******************************************************************************
+# Package names
+packages <- c(
+  "magrittr",
+  "writexl",
+  "readxl",
+  "dplyr",
+  "tidyverse",
+  "readODS",
+  "data.table",
+  "janitor",
+  "methods"
+)
 
-require(readxl)
-require(plyr)
-require(dplyr)
-require(tidyverse)
-require(magrittr)
-require(knitr)
-require(ggplot2)
-require(forecast)
+# Install packages not yet installed
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(packages[!installed_packages])
+}
+
+# Packages loading
+invisible(lapply(packages, library, character.only = TRUE))
 
 # *******************************************************************************
 # Options and functions
@@ -27,18 +42,6 @@ options(warn = -1,
 # Analysis
 # *******************************************************************************
 
-# Import the POM data
-pom_data_indicators <- read_xlsx( 
-           "./cleaned_data/packaging_pom_indicators.xlsx") %>%
-  filter(material == "plastic",
-         variable == "Selling",
-         year != "2024") %>%
-  select(1,7) %>%
-  mutate(variable = "Placed on market",
-         type = "Outturn") %>%
-  dplyr::rename(value = 2) %>%
-  mutate_at(c('year','value'), as.numeric)
-
 pom_data_indicators <- read_ods( 
   "./raw_data/UK_Statistics_on_Waste_dataset_September_2024_accessible (1).ods",
   sheet = "Packaging") %>%
@@ -51,6 +54,18 @@ pom_data_indicators <- read_ods(
   mutate(value = value * 1000) %>%
   mutate(variable = "Placed on market",
          type = "Outturn")
+
+# NPWD direct data - Import the POM data
+# pom_data_indicators <- read_xlsx( 
+#   "./cleaned_data/packaging_pom_indicators.xlsx") %>%
+#   filter(material == "plastic",
+#          variable == "Selling",
+#          year != "2024") %>%
+#   select(1,7) %>%
+#   mutate(variable = "Placed on market",
+#          type = "Outturn") %>%
+#   dplyr::rename(value = 2) %>%
+#   mutate_at(c('year','value'), as.numeric)
 
 # *******************************************************************************
 # Population as exogenous variable
@@ -97,8 +112,8 @@ ratio_ts_mod <-
 linforecast <- 
   forecast(ratio_ts_mod, h=28)
 
-# Check residuals of model
-checkresiduals(linforecast)
+# # Check residuals of model
+# checkresiduals(linforecast)
 
 # Print the predictions
 output_lin <- 
@@ -423,10 +438,10 @@ projection_detailed <-
 #### Write to database
 
 # Write table
-DBI::dbWriteTable(con,
-                  "plastic_projection_detailed",
-                  projection_detailed,
-                  overwrite = TRUE)
+# DBI::dbWriteTable(con,
+#                   "plastic_projection_detailed",
+#                   projection_detailed,
+#                   overwrite = TRUE)
 
-write_xlsx(projection_detailed, 
+write_xlsx(projection_detailed,
            "./cleaned_data/plastic_projection_detailed.xlsx")

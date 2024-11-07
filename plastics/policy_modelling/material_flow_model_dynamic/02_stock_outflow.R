@@ -1,9 +1,6 @@
 ##### **********************
 # Author: Oliver Lysaght
-# Purpose:
-# Inputs:
-# Required annual updates:
-# The URL to download from
+# Purpose:Calculate WG and stock from inflow and lifespan
 
 # *******************************************************************************
 # Packages
@@ -16,16 +13,9 @@ packages <- c(
   "dplyr",
   "tidyverse",
   "readODS",
-  "pdftools",
   "data.table",
-  "RSelenium",
-  "netstat",
-  "uktrade",
-  "httr",
-  "jsonlite",
-  "mixdist",
   "janitor",
-  "tabulizer"
+  "methods"
 )
 
 # Install packages not yet installed
@@ -41,9 +31,9 @@ invisible(lapply(packages, library, character.only = TRUE))
 # Functions and options
 # *******************************************************************************
 
-# Import functions
-source("functions.R",
-       local = knitr::knit_global())
+# # Import functions
+# source("functions.R",
+#        local = knitr::knit_global())
 
 # Stop scientific notation of numeric values
 options(scipen = 999)
@@ -54,12 +44,31 @@ not_all_na <- function(x) any(!is.na(x))
 # *******************************************************************************
 # Import data
 
-POM <- read_xlsx(
-  "./cleaned_data/plastic_projection_detailed.xlsx")
+# Import the outturn POM data
+POM_outturn <- read_xlsx(
+  "plastic_projection_detailed.xlsx") %>%
+  filter(variable == "Placed on market",
+         type == "Outturn")
+
+# Import one POM projection
+POM_proj <- read_xlsx(
+  "plastic_projection_detailed.xlsx") %>%
+  filter(variable == "Placed on market",
+         type == "Projection",
+         exogenous_factor == "Population",
+         forecast_type == "linear model, time-series components",
+         level == "Mid")
+
+# Bind these together
+POM_all <- POM_outturn %>%
+  bind_rows(POM_proj) %>%
+  group_by(type, year, material) %>%
+  summarise(value = sum(value)) %>%
+  ungroup()
 
 # Import lifespan data - mean
 lifespan_mean <-
-  read_xlsx("./raw_data/Plastic Waste Generated Tool-2023.xlsm",
+  read_xlsx("Plastic Waste Generated Tool-2023.xlsm",
             sheet = "mean") %>%
   row_to_names(16) %>%
   clean_names() %>%
@@ -73,7 +82,7 @@ lifespan_mean <-
 
 # Import lifespan data - SD
 lifespan_sd <-
-  read_xlsx("./raw_data/Plastic Waste Generated Tool-2023.xlsm",
+  read_xlsx("Plastic Waste Generated Tool-2023.xlsm",
             sheet = "std dev") %>%
   row_to_names(16) %>%
   clean_names() %>%
@@ -88,16 +97,22 @@ lifespan_sd <-
 # Join the data
 lifespan_data <- left_join(lifespan_mean, lifespan_sd) %>%
   mutate_at(c('mean','sd','year'), as.numeric) %>%
-  group_by(sector, year) %>%
-  summarise(shape = mean(mean),
+  dplyr::group_by(sector, year) %>%
+  dplyr::summarise(shape = mean(mean),
             scale = mean(sd)) %>%
   dplyr::filter(! year < 2000) %>%
-  mutate(value = 2000000, .before = shape) %>%
+  mutate(shape = 1.27,
+         scale = 0.5) %>%
   ungroup()
 
+# Join inflow and lifespan data
+lifespan_data <- left_join(POM_all, lifespan_data) %>%
+  arrange(year) %>%
+  fill(c(5:7), .direction = 'down')
+  
 # Set up dataframe for outflow calculation
 year_first <- min(as.integer(lifespan_data$year))
-year_last <- max(as.integer(lifespan_data$year)) + 12
+year_last <- max(as.integer(lifespan_data$year))
 years <- c(unlist(year_first:year_last))
 empty <-
   as.data.frame(matrix(NA, ncol = length(years), nrow = nrow(lifespan_data)))
@@ -106,6 +121,9 @@ colnames(empty) <- years
 # Add the empty columns to inflow weibull dataframe and remove the empty 
 inflow_outflow <- cbind(lifespan_data, empty)
 rm(empty)
+
+# Difficult to approximate lifespan using the weibull distribution
+# Update with normal distribution 
 
 # Calculate WEEE from inflow year based on shape and scale parameters
 for (i in year_first:year_last) {
@@ -118,20 +136,21 @@ for (i in year_first:year_last) {
       scale = inflow_outflow[(inflow_outflow$POM_dif >= 0), "scale"],
       log = FALSE
     )
-  weee <-
+  wg <-
     wb * inflow_outflow[(inflow_outflow$POM_dif >= 0), "value"]
   inflow_outflow[(inflow_outflow$POM_dif >= 0), as.character(i)] <-
-    weee
+    wg
 }
 
 # Make long format aggregating by year outflow (i.e. suppressing year POM)
 outflow <- inflow_outflow %>%
-  select(-c(shape,
+  select(-c(type, 
+            shape,
             scale, 
             POM_dif,
             value,
             year)) %>%
-  pivot_longer(-c(sector),
+  pivot_longer(-c(sector, material),
                names_to = "year",
                values_to = "value_outflow") %>%
   na.omit() %>%
@@ -140,7 +159,7 @@ outflow <- inflow_outflow %>%
   mutate_at(c('year'), as.numeric)
 
 inflow <- inflow_outflow %>%
-  select(1:3) %>%
+  select(2:4) %>%
   rename(pom = value)
 
 inflow_outflow <- full_join(inflow, outflow)
@@ -169,3 +188,10 @@ all_variables <- tbl_stock %>%
                   year),
                names_to = "variable",
                values_to = "value")
+
+write_csv(all_variables,
+           "stock_outflow.csv")
+
+# ggplot(data=all_variables, aes(x=year, y=value, color=variable)) +
+#   geom_line()+
+#   geom_point()

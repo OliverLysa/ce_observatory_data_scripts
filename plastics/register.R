@@ -43,17 +43,19 @@ invisible(lapply(packages, library, character.only = TRUE))
 
 # Import csv file-list
 files_list <- 
-  list.files("./plastics/NPWD_registers/csv",
+  list.files("./plastics/NPWD_registers/updated/NPWD-JS-PYTHON-PDF-DATA-EXTRACTION/csv",
              pattern='.csv')
 
 # Import data and create postcode column
 csv_data <- 
-  lapply(paste("./plastics/NPWD_registers/csv/",
+  lapply(paste("./plastics/NPWD_registers/updated/NPWD-JS-PYTHON-PDF-DATA-EXTRACTION/csv/",
                files_list,sep = ""), read_csv) %>%
   dplyr::bind_rows() %>%
   mutate(year = substrRight(last_changed, 4)) %>%
   mutate(postcode = substrRight(site_address, 8)) %>%
-  mutate_at(c('postcode'), trimws) 
+  mutate_at(c('postcode'), trimws)
+
+# csv_data$postcode <- sub(".*? ", "", csv_data$postcode)
 
 # Convert postcode to lat/long
 # Require an API key from Google Maps Platform
@@ -74,9 +76,9 @@ DBI::dbWriteTable(con,
                   geo_data,
                   overwrite = TRUE)
 
-write_xlsx(geo_data,
-           "./cleaned_data/register_geo_data.xlsx")
-
-leaflet(geo_data) %>% addTiles() %>%
-  addCircles(lng = ~LONG, lat = ~LAT, 
-                   popup = ~accredited_organisation)
+# write_xlsx(geo_data,
+#            "./cleaned_data/register_geo_data.xlsx")
+# 
+# leaflet(geo_data) %>% addTiles() %>%
+#   addCircles(lng = ~LONG, lat = ~LAT, 
+#                    popup = ~accredited_organisation)

@@ -1,0 +1,140 @@
+{UTF-8}
+Chemical  = A FUNCTION OF( Recycling)
+	~	
+	~		|
+
+Formal domestic treatment  = A FUNCTION OF( Waste collected)
+	~	
+	~		|
+
+Incineration  = A FUNCTION OF( Residual treatment)
+	~	
+	~		|
+
+Landfill  = A FUNCTION OF( )
+	~	
+	~		|
+
+Littering  = A FUNCTION OF( Waste generated)
+	~	
+	~		|
+
+Mechanical  = A FUNCTION OF( Recycling)
+	~	
+	~		|
+
+Mismanaged  = A FUNCTION OF( Waste collected)
+	~	
+	~		|
+
+Placed on market  = A FUNCTION OF( )
+	~	
+	~		|
+
+Recycling  = A FUNCTION OF( Formal domestic treatment)
+	~	
+	~		|
+
+Residual treatment  = A FUNCTION OF( Formal domestic treatment)
+	~	
+	~		|
+
+Treated overseas  = A FUNCTION OF( Waste collected)
+	~	
+	~		|
+
+Waste collected  = A FUNCTION OF( Waste generated)
+	~	
+	~		|
+
+Waste generated  = A FUNCTION OF( Placed on market)
+	~	
+	~		|
+
+********************************************************
+	.Control
+********************************************************~
+		Simulation Control Parameters
+	|
+
+FINAL TIME  = 100
+	~	Month
+	~	The final time for the simulation.
+	|
+
+INITIAL TIME  = 0
+	~	Month
+	~	The initial time for the simulation.
+	|
+
+SAVEPER  = 
+        TIME STEP
+	~	Month [0,?]
+	~	The frequency with which output is stored.
+	|
+
+TIME STEP  = 1
+	~	Month [0,?]
+	~	The time step for the simulation.
+	|
+
+\\\---/// Sketch information - do not modify anything except names
+V300  Do not put anything below this section - it will be ignored
+*View 1
+$-1--1--1,0,|12||-1--1--1|-1--1--1|-1--1--1|-1--1--1|-1--1--1|96,96,62,0
+10,1,Placed on market,656,649,79,33,8,3,0,0,-1,0,0,0,0,0,0,0,0,0
+10,2,Waste generated,903,655,42,22,8,3,0,0,-1,0,0,0,0,0,0,0,0,0
+10,3,Waste collected,1103,618,42,22,8,3,0,0,-1,0,0,0,0,0,0,0,0,0
+10,4,Littering,1104,717,42,22,8,3,0,0,-1,0,0,0,0,0,0,0,0,0
+10,5,Treated overseas,1346,580,42,22,8,3,0,0,-1,0,0,0,0,0,0,0,0,0
+10,6,Mismanaged,1288,641,44,22,8,3,0,0,-1,0,0,0,0,0,0,0,0,0
+10,7,Formal domestic treatment,1284,740,42,23,8,3,0,0,-1,0,0,0,0,0,0,0,0,0
+10,8,Recycling,1491,704,42,22,8,3,0,0,-1,0,0,0,0,0,0,0,0,0
+10,9,Mechanical,1672,672,44,22,8,3,0,0,-1,0,0,0,0,0,0,0,0,0
+10,10,Chemical,1668,740,42,22,8,3,0,0,-1,0,0,0,0,0,0,0,0,0
+10,11,Residual treatment,1483,808,42,22,8,3,0,0,-1,0,0,0,0,0,0,0,0,0
+10,12,Incineration,1673,802,52,22,8,3,0,0,-1,0,0,0,0,0,0,0,0,0
+10,13,Landfill,1674,869,42,22,8,3,0,0,-1,0,0,0,0,0,0,0,0,0
+1,14,1,2,1,0,0,0,0,192,0,-1--1--1,,1|(776,579)|
+1,15,2,3,1,0,0,0,0,192,0,-1--1--1,,1|(967,574)|
+1,16,3,5,1,0,0,0,0,192,0,-1--1--1,,1|(1196,558)|
+1,17,2,4,1,0,0,0,0,192,0,-1--1--1,,1|(980,721)|
+1,18,3,6,0,0,0,0,0,192,0,-1--1--1,,1|(0,0)|
+1,19,3,7,0,0,0,0,0,192,0,-1--1--1,,1|(0,0)|
+1,20,7,8,0,0,0,0,0,192,0,-1--1--1,,1|(0,0)|
+1,21,7,11,0,0,0,0,0,192,0,-1--1--1,,1|(0,0)|
+1,22,8,9,0,0,0,0,0,192,0,-1--1--1,,1|(0,0)|
+1,23,8,10,0,0,0,0,0,192,0,-1--1--1,,1|(0,0)|
+1,24,11,12,0,0,0,0,0,192,0,-1--1--1,,1|(0,0)|
+///---\\\
+:L<%^E!@
+5:Waste collected
+9:current
+19:62,0
+24:0
+25:0
+26:0
+23:0
+15:0,0,0,0,0,0
+27:0,
+34:0,
+42:0
+72:0
+73:0
+95:0
+96:0
+97:0
+77:0
+78:0
+102:1
+93:0
+94:0
+92:0
+91:0
+90:0
+87:0
+75:
+43:
+103:8,8,8,3,8
+105:0,0,0,0,0,0,0,0,0,0
+104:Courier|12||0-0-0|0-0-0|-1--1--1|0-0-255|192-192-192|-1--1--1
