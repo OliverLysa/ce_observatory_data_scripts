@@ -1,0 +1,121 @@
+{
+  "dimensions": [],
+  "variables": [
+    {
+      "id": "_final_time",
+      "index": 1
+    },
+    {
+      "id": "_initial_time",
+      "index": 2
+    },
+    {
+      "id": "_time_step",
+      "index": 3
+    },
+    {
+      "id": "_la_collected_household",
+      "index": 4
+    },
+    {
+      "id": "_la_collected_other",
+      "index": 5
+    },
+    {
+      "id": "_litering_rate",
+      "index": 6
+    },
+    {
+      "id": "_normal_rate",
+      "index": 7
+    },
+    {
+      "id": "_rate_domestic",
+      "index": 8
+    },
+    {
+      "id": "_rate_dumped",
+      "index": 9
+    },
+    {
+      "id": "_rate_of_recycling",
+      "index": 10
+    },
+    {
+      "id": "_rate_overseas",
+      "index": 11
+    },
+    {
+      "id": "_residual_rate",
+      "index": 12
+    },
+    {
+      "id": "_wmc_collected",
+      "index": 13
+    },
+    {
+      "id": "_time",
+      "index": 14
+    },
+    {
+      "id": "_formal_domestic_treatment",
+      "index": 15
+    },
+    {
+      "id": "_waste_collected",
+      "index": 16
+    },
+    {
+      "id": "_waste_generated",
+      "index": 17
+    },
+    {
+      "id": "_placed_on_market_data",
+      "index": 18
+    },
+    {
+      "id": "_placed_on_market",
+      "index": 19
+    },
+    {
+      "id": "_collection",
+      "index": 20
+    },
+    {
+      "id": "_littering",
+      "index": 21
+    },
+    {
+      "id": "_mismanaged",
+      "index": 22
+    },
+    {
+      "id": "_saveper",
+      "index": 23
+    },
+    {
+      "id": "_sent_for_recycling",
+      "index": 24
+    },
+    {
+      "id": "_sent_for_residual_treatment",
+      "index": 25
+    },
+    {
+      "id": "_sent_overseas",
+      "index": 26
+    },
+    {
+      "id": "_waste_collected_sent_to_formal_domestic_treatment",
+      "index": 27
+    },
+    {
+      "id": "_pom",
+      "index": 28
+    },
+    {
+      "id": "_waste_generation_rate",
+      "index": 29
+    }
+  ]
+}

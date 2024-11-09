@@ -1,0 +1,165 @@
+_lookup1: lookup
+refId(__lookup1)
+hasInitValue(false)
+
+Collection: aux
+= (la collected household+la collected other+wmc collected)*Waste generated
+refId(_collection)
+hasInitValue(false)
+refs(_la_collected_household, _la_collected_other, _wmc_collected, _waste_generated)
+
+FINAL TIME: const
+= 2042
+refId(_final_time)
+hasInitValue(false)
+
+Formal domestic treatment: level
+= INTEG(Waste collected sent to formal domestic treatment-Sent for recycling-Sent for residual treatment,900000)
+refId(_formal_domestic_treatment)
+hasInitValue(true)
+refs(_waste_collected_sent_to_formal_domestic_treatment, _sent_for_recycling, _sent_for_residual_treatment)
+
+INITIAL TIME: const
+= 2012
+refId(_initial_time)
+hasInitValue(false)
+
+la collected household: const
+= 0.5
+refId(_la_collected_household)
+hasInitValue(false)
+
+la collected other: const
+= 0.2
+refId(_la_collected_other)
+hasInitValue(false)
+
+litering rate: const
+= 0.1
+refId(_litering_rate)
+hasInitValue(false)
+
+Littering: aux
+= litering rate*Waste generated
+refId(_littering)
+hasInitValue(false)
+refs(_litering_rate, _waste_generated)
+
+Mismanaged: aux
+= rate dumped*Waste collected
+refId(_mismanaged)
+hasInitValue(false)
+refs(_rate_dumped, _waste_collected)
+
+normal rate: const
+= 1
+refId(_normal_rate)
+hasInitValue(false)
+
+Placed on market: level
+= INTEG(Placed On Market data-POM,Placed On Market data)
+refId(_placed_on_market)
+hasInitValue(true)
+refs(_placed_on_market_data, _pom)
+initRefs(_placed_on_market_data)
+
+Placed On Market data: aux
+= WITH LOOKUP(Time,([(0,0)-(10,10)],(2012,2554750),(2013,2260620),(2014,2221040),(2015,2261020),(2016,2261020),(2017,2261020),(2018,2362060),(2019,2473110),(2020,2491780),(2021,2515490),(2022,2246010),(2023,2433790),(2024,2448580),(2025,2460630),(2026,2469870),(2027,2476250),(2030,2493120),(2035,2514140),(2040,2529710),(2042,2534900)))
+refId(_placed_on_market_data)
+hasInitValue(false)
+refs(_time)
+
+POM: aux
+= Placed on market
+refId(_pom)
+hasInitValue(false)
+refs(_placed_on_market)
+
+rate domestic: const
+= 0.4
+refId(_rate_domestic)
+hasInitValue(false)
+
+rate dumped: const
+= 0.05
+refId(_rate_dumped)
+hasInitValue(false)
+
+rate of recycling: const
+= 0.4
+refId(_rate_of_recycling)
+hasInitValue(false)
+
+rate overseas: const
+= 0.55
+refId(_rate_overseas)
+hasInitValue(false)
+
+residual rate: const
+= 0.6
+refId(_residual_rate)
+hasInitValue(false)
+
+SAVEPER: aux
+= TIME STEP
+refId(_saveper)
+hasInitValue(false)
+refs(_time_step)
+
+Sent for recycling: aux
+= Formal domestic treatment*rate of recycling
+refId(_sent_for_recycling)
+hasInitValue(false)
+refs(_formal_domestic_treatment, _rate_of_recycling)
+
+Sent for residual treatment: aux
+= Formal domestic treatment*residual rate
+refId(_sent_for_residual_treatment)
+hasInitValue(false)
+refs(_formal_domestic_treatment, _residual_rate)
+
+Sent overseas: aux
+= rate overseas*Waste collected
+refId(_sent_overseas)
+hasInitValue(false)
+refs(_rate_overseas, _waste_collected)
+
+Time: const
+= 
+refId(_time)
+hasInitValue(false)
+
+TIME STEP: const
+= 1
+refId(_time_step)
+hasInitValue(false)
+
+Waste collected: level
+= INTEG(Collection-Mismanaged-Sent overseas-Waste collected sent to formal domestic treatment,2e+06)
+refId(_waste_collected)
+hasInitValue(true)
+refs(_collection, _mismanaged, _sent_overseas, _waste_collected_sent_to_formal_domestic_treatment)
+
+Waste collected sent to formal domestic treatment: aux
+= rate domestic*Waste collected
+refId(_waste_collected_sent_to_formal_domestic_treatment)
+hasInitValue(false)
+refs(_rate_domestic, _waste_collected)
+
+Waste generated: level
+= INTEG(Waste generation rate-Collection-Littering,2.55475e+06)
+refId(_waste_generated)
+hasInitValue(true)
+refs(_waste_generation_rate, _collection, _littering)
+
+Waste generation rate: aux
+= normal rate*POM
+refId(_waste_generation_rate)
+hasInitValue(false)
+refs(_normal_rate, _pom)
+
+wmc collected: const
+= 0.2
+refId(_wmc_collected)
+hasInitValue(false)
+

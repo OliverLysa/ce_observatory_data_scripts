@@ -1,0 +1,14 @@
+{
+  "inputVarNames": [
+    "la collected household"
+  ],
+  "outputVarNames": [
+    "Placed on market",
+    "Sent for recycling",
+    "Waste collected"
+  ],
+  "externalDatfiles": [],
+  "bundleListing": false,
+  "customLookups": false,
+  "customOutputs": false
+}

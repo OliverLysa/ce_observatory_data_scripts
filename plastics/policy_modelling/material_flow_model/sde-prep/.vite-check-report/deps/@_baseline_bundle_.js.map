@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../node_modules/@sdeverywhere/plugin-check/template-report/src/empty-bundle.ts"],
+  "sourcesContent": ["// Copyright (c) 2022 Climate Interactive / New Venture Fund\n\nimport type { Bundle } from '@sdeverywhere/check-core'\n\n/*\n * This module serves two purposes:\n *\n * 1. It is configured as the default path alias in the tsconfig files so\n *    that TypeScript does not complain.  (The actual bundles will be set\n *    up using aliases in the Vite config file.)\n *\n * 2. It is used as a default no-op bundle in the case where a baseline\n *    bundle is not used (in which case no comparison tests will be run\n *    and only the current bundle will be checked).\n */\n\nexport function createBundle(): Bundle {\n  return {\n    version: -1,\n    modelSpec: undefined,\n    initModel: () => undefined\n  }\n}\n"],
+  "mappings": ";;;AAgBO,SAAS,eAAuB;AACrC,SAAO;AAAA,IACL,SAAS;AAAA,IACT,WAAW;AAAA,IACX,WAAW,MAAM;AAAA,EACnB;AACF;",
+  "names": []
+}
