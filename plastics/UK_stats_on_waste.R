@@ -38,10 +38,10 @@ waste_gen_england <- read_ods("./raw_data/UK_Stats_Waste.ods",
   clean_names() %>%
   select(-22) %>%
   slice(-1) %>%
-  unite(EWC_STAT, na_2, na_3, sep = " - ") %>%
+  unite(ewc_stat, na_2, na_3, sep = " - ") %>%
   rename(year = 1,
          type = 3) %>%
-  pivot_longer(-c(year, EWC_STAT, type),
+  pivot_longer(-c(year, ewc_stat, type),
                names_to = "category",
                values_to = "value") %>%
   mutate_at(c('value'), as.numeric) %>%
@@ -115,7 +115,10 @@ stats_all <-
       waste_treatment_england,
       waste_treatment_UK), 
     use.names = FALSE) %>%
-  mutate(value = round(value, 2))
+  mutate(value = round(value, 2)) %>%
+  filter(type != "Total") %>%
+  mutate(variable = str_to_sentence(variable)) %>%
+  dplyr::filter(!grepl('Total', ewc_stat))
 
 DBI::dbWriteTable(con,
                   "waste_generation_treatment",
