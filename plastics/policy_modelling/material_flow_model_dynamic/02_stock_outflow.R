@@ -66,6 +66,8 @@ POM_all <- POM_outturn %>%
   summarise(value = sum(value)) %>%
   ungroup()
 
+write_xlsx(POM_all, "POM_all.xlsx")
+
 # Import lifespan data - mean
 lifespan_mean <-
   read_xlsx("Plastic Waste Generated Tool-2023.xlsm",
@@ -192,6 +194,6 @@ all_variables <- tbl_stock %>%
 write_csv(all_variables,
            "stock_outflow.csv")
 
-# ggplot(data=all_variables, aes(x=year, y=value, color=variable)) +
-#   geom_line()+
-#   geom_point()
+ggplot(data=all_variables, aes(x=year, y=value, color=variable)) +
+  geom_line()+
+  geom_point()
