@@ -22,23 +22,7 @@ Scripts in this repository are largely written in the programming language R. Pl
 
 The Python programming language has also been used as part of the project. Python scripts are in some cases presented within [Jupyter Notebooks](https://jupyter.org/install) - an open source IDE that requires installing the jupyter-notebook package in your Python environment, more information about which can be found [here](https://www.python.org/downloads/). In some cases, .py Python scripts are also used. These can be viewed and modified in a code editor such as Visual Studio Code and ran in the terminal/command line.
 
-The javascript programming language has been used for some scripts. With node installed, these can be ran from the terminal by, within the project folder, running 'node name of script.js'. 
-
-# Folder and file descriptions
-
-## scripts
-
-functions.R
-
-A collection of custom functions regularly used throughout the data processing pipeline and not otherwise provided in R packages.
-
-### Product-group specific scripts
-
-[Electronics scripts readme](https://github.com/OliverLysa/ce_observatory_data_scripts/blob/main/electronics/electronics_readme.md)
-
-# Updates
-
-The observatory has been designed to incorporate new data as it becomes available to help with timely insight, trend assessment, monitoring and evaluation. Data are updated through scheduled extraction scripts.
+The javascript programming language has been used for some scripts. With node installed, these can be ran from the terminal by, within the project folder, running 'node name of script.js'.
 
 ## Feedback
 
