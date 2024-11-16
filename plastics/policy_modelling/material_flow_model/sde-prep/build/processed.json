@@ -83,31 +83,13 @@
       "varIndex": 9
     },
     {
-      "refId": "_rate_of_recycling",
-      "varName": "_rate_of_recycling",
-      "hasInitValue": false,
-      "varType": "const",
-      "modelLHS": "rate of recycling",
-      "modelFormula": "0.4",
-      "varIndex": 10
-    },
-    {
       "refId": "_rate_overseas",
       "varName": "_rate_overseas",
       "hasInitValue": false,
       "varType": "const",
       "modelLHS": "rate overseas",
       "modelFormula": "0.55",
-      "varIndex": 11
-    },
-    {
-      "refId": "_residual_rate",
-      "varName": "_residual_rate",
-      "hasInitValue": false,
-      "varType": "const",
-      "modelLHS": "residual rate",
-      "modelFormula": "0.6",
-      "varIndex": 12
+      "varIndex": 10
     },
     {
       "refId": "_wmc_collected",
@@ -116,7 +98,7 @@
       "varType": "const",
       "modelLHS": "wmc collected",
       "modelFormula": "0.2",
-      "varIndex": 13
+      "varIndex": 11
     },
     {
       "refId": "_time",
@@ -125,21 +107,7 @@
       "varType": "const",
       "modelLHS": "Time",
       "modelFormula": "",
-      "varIndex": 14
-    },
-    {
-      "refId": "_formal_domestic_treatment",
-      "varName": "_formal_domestic_treatment",
-      "references": [
-        "_waste_collected_sent_to_formal_domestic_treatment",
-        "_sent_for_recycling",
-        "_sent_for_residual_treatment"
-      ],
-      "hasInitValue": true,
-      "varType": "level",
-      "modelLHS": "Formal domestic treatment",
-      "modelFormula": "INTEG(Waste collected sent to formal domestic treatment-Sent for recycling-Sent for residual treatment,900000)",
-      "varIndex": 15
+      "varIndex": 12
     },
     {
       "refId": "_waste_collected",
@@ -154,7 +122,7 @@
       "varType": "level",
       "modelLHS": "Waste collected",
       "modelFormula": "INTEG(Collection-Mismanaged-Sent overseas-Waste collected sent to formal domestic treatment,2e+06)",
-      "varIndex": 16
+      "varIndex": 13
     },
     {
       "refId": "_waste_generated",
@@ -168,7 +136,7 @@
       "varType": "level",
       "modelLHS": "Waste generated",
       "modelFormula": "INTEG(Waste generation rate-Collection-Littering,2.55475e+06)",
-      "varIndex": 17
+      "varIndex": 14
     },
     {
       "refId": "_placed_on_market_data",
@@ -180,7 +148,7 @@
       "varType": "aux",
       "modelLHS": "Placed On Market data",
       "modelFormula": "WITH LOOKUP(Time,([(0,0)-(10,10)],(2012,2554750),(2013,2260620),(2014,2221040),(2015,2261020),(2016,2261020),(2017,2261020),(2018,2362060),(2019,2473110),(2020,2491780),(2021,2515490),(2022,2246010),(2023,2433790),(2024,2448580),(2025,2460630),(2026,2469870),(2027,2476250),(2030,2493120),(2035,2514140),(2040,2529710),(2042,2534900)))",
-      "varIndex": 18
+      "varIndex": 15
     },
     {
       "refId": "_placed_on_market",
@@ -196,7 +164,7 @@
       "varType": "level",
       "modelLHS": "Placed on market",
       "modelFormula": "INTEG(Placed On Market data-POM,Placed On Market data)",
-      "varIndex": 19
+      "varIndex": 16
     },
     {
       "refId": "_collection",
@@ -211,7 +179,7 @@
       "varType": "aux",
       "modelLHS": "Collection",
       "modelFormula": "(la collected household+la collected other+wmc collected)*Waste generated",
-      "varIndex": 20
+      "varIndex": 17
     },
     {
       "refId": "_littering",
@@ -224,7 +192,7 @@
       "varType": "aux",
       "modelLHS": "Littering",
       "modelFormula": "litering rate*Waste generated",
-      "varIndex": 21
+      "varIndex": 18
     },
     {
       "refId": "_mismanaged",
@@ -237,7 +205,7 @@
       "varType": "aux",
       "modelLHS": "Mismanaged",
       "modelFormula": "rate dumped*Waste collected",
-      "varIndex": 22
+      "varIndex": 19
     },
     {
       "refId": "_saveper",
@@ -249,33 +217,7 @@
       "varType": "aux",
       "modelLHS": "SAVEPER",
       "modelFormula": "TIME STEP",
-      "varIndex": 23
-    },
-    {
-      "refId": "_sent_for_recycling",
-      "varName": "_sent_for_recycling",
-      "references": [
-        "_formal_domestic_treatment",
-        "_rate_of_recycling"
-      ],
-      "hasInitValue": false,
-      "varType": "aux",
-      "modelLHS": "Sent for recycling",
-      "modelFormula": "Formal domestic treatment*rate of recycling",
-      "varIndex": 24
-    },
-    {
-      "refId": "_sent_for_residual_treatment",
-      "varName": "_sent_for_residual_treatment",
-      "references": [
-        "_formal_domestic_treatment",
-        "_residual_rate"
-      ],
-      "hasInitValue": false,
-      "varType": "aux",
-      "modelLHS": "Sent for residual treatment",
-      "modelFormula": "Formal domestic treatment*residual rate",
-      "varIndex": 25
+      "varIndex": 20
     },
     {
       "refId": "_sent_overseas",
@@ -288,7 +230,7 @@
       "varType": "aux",
       "modelLHS": "Sent overseas",
       "modelFormula": "rate overseas*Waste collected",
-      "varIndex": 26
+      "varIndex": 21
     },
     {
       "refId": "_waste_collected_sent_to_formal_domestic_treatment",
@@ -301,7 +243,7 @@
       "varType": "aux",
       "modelLHS": "Waste collected sent to formal domestic treatment",
       "modelFormula": "rate domestic*Waste collected",
-      "varIndex": 27
+      "varIndex": 22
     },
     {
       "refId": "_pom",
@@ -313,7 +255,7 @@
       "varType": "aux",
       "modelLHS": "POM",
       "modelFormula": "Placed on market",
-      "varIndex": 28
+      "varIndex": 23
     },
     {
       "refId": "_waste_generation_rate",
@@ -326,7 +268,7 @@
       "varType": "aux",
       "modelLHS": "Waste generation rate",
       "modelFormula": "normal rate*POM",
-      "varIndex": 29
+      "varIndex": 24
     }
   ]
 }

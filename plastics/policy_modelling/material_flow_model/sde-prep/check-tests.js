@@ -1,4 +1,46 @@
-const g = `# yaml-language-server: $schema=node_modules/@sdeverywhere/check-core/schema/check.schema.json
+const b = `# yaml-language-server: $schema=node_modules/@sdeverywhere/check-core/schema/check.schema.json
+
+# NOTE: This is just a simple check to get you started.  Replace "Some output" with
+# the name of some variable you'd like to test.  Additional tests can be developed
+# in the "playground" (beta) inside the model-check report.
+- describe: Some output
+  tests:
+    - it: should be > 0 for all input scenarios
+      scenarios:
+        - preset: matrix
+      datasets:
+        - name: Some output
+      predicates:
+        - gt: 0
+`, v = `# yaml-language-server: $schema=node_modules/@sdeverywhere/check-core/schema/check.schema.json
+
+# NOTE: This is just a simple check to get you started.  Replace "Some output" with
+# the name of some variable you'd like to test.  Additional tests can be developed
+# in the "playground" (beta) inside the model-check report.
+- describe: Some output
+  tests:
+    - it: should be > 0 for all input scenarios
+      scenarios:
+        - preset: matrix
+      datasets:
+        - name: Some output
+      predicates:
+        - gt: 0
+`, g = `# yaml-language-server: $schema=node_modules/@sdeverywhere/check-core/schema/check.schema.json
+
+# NOTE: This is just a simple check to get you started.  Replace "Some output" with
+# the name of some variable you'd like to test.  Additional tests can be developed
+# in the "playground" (beta) inside the model-check report.
+- describe: Some output
+  tests:
+    - it: should be > 0 for all input scenarios
+      scenarios:
+        - preset: matrix
+      datasets:
+        - name: Some output
+      predicates:
+        - gt: 0
+`, w = `# yaml-language-server: $schema=node_modules/@sdeverywhere/check-core/schema/check.schema.json
 
 # NOTE: This is just a simple check to get you started.  Replace "Some output" with
 # the name of some variable you'd like to test.  Additional tests can be developed
@@ -13,28 +55,31 @@ const g = `# yaml-language-server: $schema=node_modules/@sdeverywhere/check-core
       predicates:
         - gt: 0
 `, f = /* @__PURE__ */ Object.assign({
-  "../../../../../stock-flow-version31.check.yaml": g
-}), y = [];
+  "../../../../../stock-flow-version31.check.yaml": b,
+  "../../../../../updated/Updated-stock-flow-v2.check.yaml": v,
+  "../../../../../updated_2/Updated-stock-flow-v3.check.yaml": g,
+  "../../../../../updated_test/Updated-stock-flow-v3.check.yaml": w
+}), k = [];
 for (const s of Object.keys(f)) {
   const a = f[s];
-  y.push(a);
+  k.push(a);
 }
-const k = /* @__PURE__ */ new Map([
+const S = /* @__PURE__ */ new Map([
   // ['Model_old_name', 'Model_new_name']
 ]);
-async function w(s, a, t) {
+async function V(s, a, t) {
   let c;
   if (s && s.version === a.version) {
-    const u = _(s, a);
+    const l = j(s, a);
     c = {
       baseline: {
         name: (t == null ? void 0 : t.bundleNameL) || "baseline",
         bundle: s
       },
       thresholds: [1, 5, 10],
-      specs: [u],
+      specs: [l],
       datasets: {
-        renamedDatasetKeys: k
+        renamedDatasetKeys: S
       }
     };
   }
@@ -44,58 +89,58 @@ async function w(s, a, t) {
       bundle: a
     },
     check: {
-      tests: y
+      tests: k
     },
     comparison: c
   };
 }
-function _(s, a) {
-  const t = /* @__PURE__ */ new Set(), c = (n, i) => {
+function j(s, a) {
+  const t = /* @__PURE__ */ new Set(), c = (n, o) => {
     for (const e of n.modelSpec.inputVars.values())
-      t.add(e.inputId), i.set(e.inputId, e);
-  }, u = /* @__PURE__ */ new Map(), d = /* @__PURE__ */ new Map();
-  c(s, u), c(a, d);
-  const l = [];
-  l.push({
+      t.add(e.inputId), o.set(e.inputId, e);
+  }, l = /* @__PURE__ */ new Map(), d = /* @__PURE__ */ new Map();
+  c(s, l), c(a, d);
+  const r = [];
+  r.push({
     kind: "scenario-with-all-inputs",
     id: "all_inputs_at_default",
     title: "All inputs",
     subtitle: "at default",
     position: "default"
   });
-  const m = (n, i) => {
+  const m = (n, o) => {
     var h;
-    const e = u.get(n), o = d.get(n);
-    if (e === void 0 || o === void 0)
+    const e = l.get(n), i = d.get(n);
+    if (e === void 0 || i === void 0)
       return;
-    if (i === "min") {
-      if (e.minValue === e.defaultValue && o.minValue === o.defaultValue)
+    if (o === "min") {
+      if (e.minValue === e.defaultValue && i.minValue === i.defaultValue)
         return;
-    } else if (e.maxValue === e.defaultValue && o.maxValue === o.defaultValue)
+    } else if (e.maxValue === e.defaultValue && i.maxValue === i.defaultValue)
       return;
-    const p = o || e, r = (h = p.relatedItem) == null ? void 0 : h.locationPath, v = r ? r[r.length - 1] : p.varName;
-    l.push({
+    const p = i || e, u = (h = p.relatedItem) == null ? void 0 : h.locationPath, _ = u ? u[u.length - 1] : p.varName;
+    r.push({
       kind: "scenario-with-inputs",
-      id: `id_${n}_at_${i}`,
-      title: v,
-      subtitle: `at ${i}`,
+      id: `id_${n}_at_${o}`,
+      title: _,
+      subtitle: `at ${o}`,
       inputs: [
         {
           kind: "input-at-position",
           inputName: `id ${n}`,
-          position: i
+          position: o
         }
       ]
     });
-  }, b = [...t];
-  for (const n of b)
+  }, y = [...t];
+  for (const n of y)
     m(n, "min"), m(n, "max");
   return {
-    scenarios: l,
+    scenarios: r,
     scenarioGroups: [],
     viewGroups: []
   };
 }
 export {
-  w as getConfigOptions
+  V as getConfigOptions
 };

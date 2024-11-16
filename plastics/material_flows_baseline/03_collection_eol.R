@@ -55,6 +55,7 @@ waste_generated <- read_csv(
 
 #######################
 ## Collection stage
+# Variables
 
 # Collection
 collection_shares <- read_csv(

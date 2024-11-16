@@ -21,18 +21,6 @@
   varType: const
   modelLHS: FINAL TIME
   modelFormula: '2042'
-- refId: _formal_domestic_treatment
-  varName: _formal_domestic_treatment
-  references:
-    - _waste_collected_sent_to_formal_domestic_treatment
-    - _sent_for_recycling
-    - _sent_for_residual_treatment
-  hasInitValue: true
-  varType: level
-  modelLHS: Formal domestic treatment
-  modelFormula: >-
-    INTEG(Waste collected sent to formal domestic treatment-Sent for
-    recycling-Sent for residual treatment,900000)
 - refId: _initial_time
   varName: _initial_time
   hasInitValue: false
@@ -122,24 +110,12 @@
   varType: const
   modelLHS: rate dumped
   modelFormula: '0.05'
-- refId: _rate_of_recycling
-  varName: _rate_of_recycling
-  hasInitValue: false
-  varType: const
-  modelLHS: rate of recycling
-  modelFormula: '0.4'
 - refId: _rate_overseas
   varName: _rate_overseas
   hasInitValue: false
   varType: const
   modelLHS: rate overseas
   modelFormula: '0.55'
-- refId: _residual_rate
-  varName: _residual_rate
-  hasInitValue: false
-  varType: const
-  modelLHS: residual rate
-  modelFormula: '0.6'
 - refId: _saveper
   varName: _saveper
   references:
@@ -148,24 +124,6 @@
   varType: aux
   modelLHS: SAVEPER
   modelFormula: TIME STEP
-- refId: _sent_for_recycling
-  varName: _sent_for_recycling
-  references:
-    - _formal_domestic_treatment
-    - _rate_of_recycling
-  hasInitValue: false
-  varType: aux
-  modelLHS: Sent for recycling
-  modelFormula: Formal domestic treatment*rate of recycling
-- refId: _sent_for_residual_treatment
-  varName: _sent_for_residual_treatment
-  references:
-    - _formal_domestic_treatment
-    - _residual_rate
-  hasInitValue: false
-  varType: aux
-  modelLHS: Sent for residual treatment
-  modelFormula: Formal domestic treatment*residual rate
 - refId: _sent_overseas
   varName: _sent_overseas
   references:

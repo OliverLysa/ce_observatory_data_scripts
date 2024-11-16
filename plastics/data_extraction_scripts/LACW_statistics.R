@@ -71,13 +71,35 @@ collection_flows <- read_ods("./raw_data/WFH_England_Data_202223.ods",
   group_by(collection_route, year) %>%
   summarise(tonnages = sum(tonnages)) %>%
   mutate(tonnages = tonnages *1000)
-  
+
+# # download.file(
+# #   "https://assets.publishing.service.gov.uk/media/65e1b9ec3f6945001103606d/LA_and_Regional_Spreadsheet_2022-23_for_Web_revised.ods",
+# #   "./raw_data/LA_collection.ods")
+# # 
+collection_flows_LA <- read_ods("./raw_data/LA_collection.ods",
+                             sheet = "Table_1") %>%
+  row_to_names(3) %>%
+  select(1,2,5,6,21:23) %>%
+  clean_names() %>%
+  filter(authority_type != "Collection") %>%
+  mutate_at(c(5:7), as.numeric) %>%
+  group_by(financial_year) %>%
+  summarise(recycling = sum(local_authority_collected_waste_sent_for_recycling_composting_reuse_tonnes),
+            residual = sum(local_authority_collected_waste_not_sent_for_recycling_tonnes),
+            rejects = sum(local_authority_collected_estimated_rejects_tonnes)) %>%
+  select(-rejects) %>%
+  pivot_longer(-financial_year,
+               names_to = "collection_route",
+               values_to = "tonnages")
+
+#  Join data
 combined_collection <-
-  left_join(collection_flows, composition, "collection_route") %>%
+  left_join(collection_flows_LA, composition, "collection_route") %>%
   mutate(value = tonnages * freq) %>%
   select(-c(freq,tonnages)) %>%
   mutate(across(is.numeric, round, digits=2)) %>%
-  mutate(collection_route = str_to_title(collection_route))
+  mutate(collection_route = str_to_title(collection_route)) %>%
+  rename(year = financial_year)
 
 DBI::dbWriteTable(con,
                   "LACW_composition",

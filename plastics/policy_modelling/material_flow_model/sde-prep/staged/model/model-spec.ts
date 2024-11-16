@@ -4,6 +4,6 @@ export const inputVarIds: string[] = [
 ]
 export const outputVarIds: string[] = [
   "_placed_on_market",
-  "_sent_for_recycling",
-  "_waste_collected"
+  "_waste_collected",
+  "_waste_generated"
 ]

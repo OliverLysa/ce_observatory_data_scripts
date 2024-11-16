@@ -230,3 +230,22 @@ DBI::dbWriteTable(con,
                   "BASL",
                   BASL_all,
                   overwrite = TRUE)
+
+
+## Data from Matt
+
+BASL_2024 <- read_excel("./raw_data/UK businesses activity, size and location/BASL_2024.xlsx",
+                        sheet = "Table 17") %>%
+  row_to_names(3) %>%
+  clean_names() %>%
+  select(1,6:15) %>%
+  rename_with(~ str_remove(., ".*?_"), everything()) %>%
+  rename(SIC = 1) %>%
+  separate(SIC,c("SIC","Description"),sep=" : ") %>%
+  mutate_at(c('SIC','Description'), trimws) %>%
+  pivot_longer(-c(SIC, Description),
+               names_to = "Region",
+               values_to = "value") %>%
+  mutate(Region = gsub("_", " ", Region)) %>%
+  mutate(Region = str_to_title(Region)) %>%
+  mutate(year = "2024")

@@ -123,7 +123,6 @@ inflow_outflow <- cbind(lifespan_data, empty)
 rm(empty)
 
 # Difficult to approximate lifespan using the weibull distribution
-# Update with normal distribution 
 
 # May need to add more fine-grain intervals for the normal distribution
 # Calculate WEEE from inflow year based on shape and scale parameters
@@ -146,57 +145,64 @@ for (i in year_first:year_last) {
 # Make long format aggregating by year outflow (i.e. suppressing year POM)
 outflow <- inflow_outflow %>%
   select(-c(type, 
-            shape,
-            scale, 
-            POM_dif,
-            value,
-            year)) %>%
-  pivot_longer(-c(sector, material),
-               names_to = "year",
+            mean,
+            sd, 
+            POM_dif)) %>%
+  pivot_longer(-c(sector, material, value, year),
+               names_to = "year_outflow",
                values_to = "value_outflow") %>%
-  na.omit() %>%
-  group_by(sector, year) %>%
-  summarise(outflow = sum(value_outflow)) %>%
-  mutate_at(c('year'), as.numeric)
+  na.omit() 
 
-inflow <- inflow_outflow %>%
-  select(2:4) %>%
-  rename(pom = value)
+# Filter to match in the same year
+outflow <- 
+  outflow[outflow$year==outflow$year_outflow, ]
 
-inflow_outflow <- full_join(inflow, outflow)
-
-## STOCK CALCULATION
-
-# Calculate cumulative sums per group
-tbl_stock <- data.table(inflow_outflow)
-tbl_stock[, inflow_cumsum := cumsum(pom), by = list(sector)]
-tbl_stock[, outflow_cumsum := cumsum(outflow), by = list(sector)]
-
-# Calculate stock by year subtracting cumulative outflows from cumulative inflows
-tbl_stock$stock <-
-  tbl_stock$inflow_cumsum - tbl_stock$outflow_cumsum
-# Convert into dataframe
-tbl_stock <- as.data.frame(tbl_stock)
-
-# Select columns of interest for merge
-all_variables <- tbl_stock %>%
-  select(c("sector",
-           "year",
-           "pom",
-           "outflow",
-           "stock")) %>%
-  pivot_longer(-c(sector,
-                  year),
+inflow_outflow_stock <- outflow %>%
+  rename(POM = value,
+         WG = value_outflow) %>%
+  select(year,
+         material,
+         sector,
+         POM,
+         WG) %>%
+  mutate(stock = 0) %>%
+  pivot_longer(-c(year,
+                  material,
+                  sector),
                names_to = "variable",
                values_to = "value")
 
-write_csv(all_variables,
-           "stock_outflow.csv")
+write_csv(inflow_outflow_stock,
+           "inflow_outflow_stock.csv")
 
-ggplot(data=all_variables, aes(x=year, y=value, color=variable)) +
-  geom_line()+
-  geom_point()
+## STOCK CALCULATION
 
-x <- seq(from = -5, to = 5, by = 0.05)
-norm_dat <- data.frame(x = x, pdf = dnorm(x))
-ggplot(norm_dat) + geom_line(aes(x = x, y = pdf))
+# # Calculate cumulative sums per group
+# tbl_stock <- data.table(inflow_outflow)
+# tbl_stock[, inflow_cumsum := cumsum(pom), by = list(sector)]
+# tbl_stock[, outflow_cumsum := cumsum(outflow), by = list(sector)]
+# 
+# # Calculate stock by year subtracting cumulative outflows from cumulative inflows
+# tbl_stock$stock <-
+#   tbl_stock$inflow_cumsum - tbl_stock$outflow_cumsum
+# # Convert into dataframe
+# tbl_stock <- as.data.frame(tbl_stock)
+# 
+# # Select columns of interest for merge
+# all_variables <- tbl_stock %>%
+#   select(c("sector",
+#            "year",
+#            "pom",
+#            "outflow",
+#            "stock")) %>%
+#   pivot_longer(-c(sector,
+#                   year),
+#                names_to = "variable",
+#                values_to = "value")
+# 
+# write_csv(all_variables,
+#            "stock_outflow.csv")
+# 
+# ggplot(data=all_variables, aes(x=year, y=value, color=variable)) +
+#   geom_line()+
+#   geom_point()

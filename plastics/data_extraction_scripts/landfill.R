@@ -326,3 +326,17 @@ DBI::dbWriteTable(con,
 
 write_csv(Landfill_EWC, 
           "./cleaned_data/Landfill_EWC.csv")
+
+Decription
+# EWC code
+# plastic packaging 
+# 15 01 02
+
+# plastic 
+# 17 02 03
+
+# waste plastic  
+# 04 02 21
+# textile packaging
+# 
+

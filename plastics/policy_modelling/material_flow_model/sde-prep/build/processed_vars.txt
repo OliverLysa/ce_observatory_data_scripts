@@ -13,12 +13,6 @@ FINAL TIME: const
 refId(_final_time)
 hasInitValue(false)
 
-Formal domestic treatment: level
-= INTEG(Waste collected sent to formal domestic treatment-Sent for recycling-Sent for residual treatment,900000)
-refId(_formal_domestic_treatment)
-hasInitValue(true)
-refs(_waste_collected_sent_to_formal_domestic_treatment, _sent_for_recycling, _sent_for_residual_treatment)
-
 INITIAL TIME: const
 = 2012
 refId(_initial_time)
@@ -85,19 +79,9 @@ rate dumped: const
 refId(_rate_dumped)
 hasInitValue(false)
 
-rate of recycling: const
-= 0.4
-refId(_rate_of_recycling)
-hasInitValue(false)
-
 rate overseas: const
 = 0.55
 refId(_rate_overseas)
-hasInitValue(false)
-
-residual rate: const
-= 0.6
-refId(_residual_rate)
 hasInitValue(false)
 
 SAVEPER: aux
@@ -105,18 +89,6 @@ SAVEPER: aux
 refId(_saveper)
 hasInitValue(false)
 refs(_time_step)
-
-Sent for recycling: aux
-= Formal domestic treatment*rate of recycling
-refId(_sent_for_recycling)
-hasInitValue(false)
-refs(_formal_domestic_treatment, _rate_of_recycling)
-
-Sent for residual treatment: aux
-= Formal domestic treatment*residual rate
-refId(_sent_for_residual_treatment)
-hasInitValue(false)
-refs(_formal_domestic_treatment, _residual_rate)
 
 Sent overseas: aux
 = rate overseas*Waste collected

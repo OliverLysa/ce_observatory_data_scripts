@@ -35,7 +35,6 @@ options(scipen = 999)
 ## DEFRA OFFICIAL PACKAGING
 
 # Defra packaging statistics
-
 Defra_packaging_all <- read_ods( 
   "./raw_data/UK_Statistics_on_Waste_dataset_September_2024_accessible (1).ods",
   sheet = "Packaging") %>%
@@ -60,8 +59,8 @@ Defra_packaging_all <- read_ods(
 
 # Report Packaging Data System
 
-# NPWD Raw Data 
 
+# NPWD Raw Data 
 pom_files <- 
   list.files("./raw_data/NPWD_downloads",
              pattern='Consolidated.+xls')
@@ -127,7 +126,8 @@ conversion_factors_hs_plastic_keys <- read_docx("./raw_data/2024 August_DRAFT Pl
   mutate_at(c('plastic_content_tentative','hs_code'), as.numeric) %>%
   fill(plastic_content_tentative)
 
-write_xlsx(conversion_factors_hs_plastic_keys, "conversion_factors_hs_plastic_keys.xlsx")
+write_xlsx(conversion_factors_hs_plastic_keys, 
+           "conversion_factors_hs_plastic_keys.xlsx")
 
 # Import UK-specific polymer conversion
 UK_polymer_breakdown <- read_xlsx( 
@@ -142,11 +142,11 @@ UK_polymer_breakdown <- read_xlsx(
 trade_indicators <- 
   left_join(trade_data, conversion_factors_hs_plastic_keys, by=c("Hs6" = "hs_code")) %>%
   mutate(kg = NetMass * plastic_content_tentative) %>%
-  left_join(UK_polymer_breakdown, by=c("Year" = "Year")) %>%
+  # left_join(UK_polymer_breakdown, by=c("Year" = "Year")) %>%
   # filter(Polymer == "PET") %>%
-  mutate(pet_kg = value * kg) %>%
+  # mutate(pet_kg = value * kg) %>%
   dplyr::group_by(FlowType) %>%
-  dplyr::summarise(tonnes = sum(pet_kg)/1000) %>%
+  dplyr::summarise(tonnes = sum(kg)/1000) %>%
   pivot_wider(names_from = FlowType,
               values_from = tonnes) %>%
   clean_names() %>%
@@ -242,4 +242,5 @@ domestic_production_indicators <-
 # Construct apparent consumption estimate
 apparent_consumption_plastic_packaging <-
   left_join(trade_indicators, domestic_production_indicators, by=c("year")) %>%
-  mutate(apparent_consumption = domestic_production + net_imports)
+  mutate(apparent_consumption = domestic_production + net_imports) %>%
+  select(year, eu_exports, eu_imports, non_eu_exports, non_eu_imports, net_imports, domestic_production, apparent_consumption)

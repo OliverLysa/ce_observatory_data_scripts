@@ -20,9 +20,9 @@ export const graphSpecs: GraphSpec[] = [
         "lineStyle": "line"
       },
       {
-        "varId": "_sent_for_recycling",
-        "varName": "Sent for recycling",
-        "labelKey": "graph_dataset_label__sent_for_recycling",
+        "varId": "_waste_generated",
+        "varName": "Waste generated",
+        "labelKey": "graph_dataset_label__waste_generated",
         "color": "#d33700",
         "lineStyle": "line"
       },
@@ -41,7 +41,7 @@ export const graphSpecs: GraphSpec[] = [
       },
       {
         "color": "#d33700",
-        "labelKey": "graph_dataset_label__sent_for_recycling"
+        "labelKey": "graph_dataset_label__waste_generated"
       },
       {
         "color": "#53bb37",

@@ -2,7 +2,6 @@
 let __lookup1;
 let _collection;
 let _final_time;
-let _formal_domestic_treatment;
 let _initial_time;
 let _la_collected_household;
 let _la_collected_other;
@@ -15,12 +14,8 @@ let _placed_on_market_data;
 let _pom;
 let _rate_domestic;
 let _rate_dumped;
-let _rate_of_recycling;
 let _rate_overseas;
-let _residual_rate;
 let _saveper;
-let _sent_for_recycling;
-let _sent_for_residual_treatment;
 let _sent_overseas;
 let _time_step;
 let _waste_collected;
@@ -179,12 +174,8 @@ function initConstants0() {
   _rate_domestic = 0.4;
   // rate dumped = 0.05
   _rate_dumped = 0.05;
-  // rate of recycling = 0.4
-  _rate_of_recycling = 0.4;
   // rate overseas = 0.55
   _rate_overseas = 0.55;
-  // residual rate = 0.6
-  _residual_rate = 0.6;
   // wmc collected = 0.2
   _wmc_collected = 0.2;
 }
@@ -197,8 +188,6 @@ function initConstants0() {
 }
 
 function initLevels0() {
-  // Formal domestic treatment = INTEG(Waste collected sent to formal domestic treatment-Sent for recycling-Sent for residual treatment,900000)
-  _formal_domestic_treatment = 900000.0;
   // Waste collected = INTEG(Collection-Mismanaged-Sent overseas-Waste collected sent to formal domestic treatment,2e+06)
   _waste_collected = 2000000.0;
   // Waste generated = INTEG(Waste generation rate-Collection-Littering,2.55475e+06)
@@ -225,10 +214,6 @@ function evalAux0() {
   _placed_on_market_data = fns.WITH_LOOKUP(_time, __lookup1);
   // SAVEPER = TIME STEP
   _saveper = _time_step;
-  // Sent for recycling = Formal domestic treatment*rate of recycling
-  _sent_for_recycling = _formal_domestic_treatment * _rate_of_recycling;
-  // Sent for residual treatment = Formal domestic treatment*residual rate
-  _sent_for_residual_treatment = _formal_domestic_treatment * _residual_rate;
   // Sent overseas = rate overseas*Waste collected
   _sent_overseas = _rate_overseas * _waste_collected;
   // Waste collected sent to formal domestic treatment = rate domestic*Waste collected
@@ -245,8 +230,6 @@ function evalAux0() {
 }
 
 function evalLevels0() {
-  // Formal domestic treatment = INTEG(Waste collected sent to formal domestic treatment-Sent for recycling-Sent for residual treatment,900000)
-  _formal_domestic_treatment = fns.INTEG(_formal_domestic_treatment, _waste_collected_sent_to_formal_domestic_treatment - _sent_for_recycling - _sent_for_residual_treatment);
   // Placed on market = INTEG(Placed On Market data-POM,Placed On Market data)
   _placed_on_market = fns.INTEG(_placed_on_market, _placed_on_market_data - _pom);
   // Waste collected = INTEG(Collection-Mismanaged-Sent overseas-Waste collected sent to formal domestic treatment,2e+06)
@@ -270,20 +253,20 @@ function evalLevels0() {
 
 /*export*/ const outputVarIds = [
   '_placed_on_market',
-  '_sent_for_recycling',
-  '_waste_collected'
+  '_waste_collected',
+  '_waste_generated'
 ];
 
 /*export*/ const outputVarNames = [
   'Placed on market',
-  'Sent for recycling',
-  'Waste collected'
+  'Waste collected',
+  'Waste generated'
 ];
 
 /*export*/ function storeOutputs(storeValue /*: (value: number) => void*/) {
   storeValue(_placed_on_market);
-  storeValue(_sent_for_recycling);
   storeValue(_waste_collected);
+  storeValue(_waste_generated);
 }
 
 /*export*/ function storeOutput(varSpec /*: VarSpec*/, storeValue /*: (value: number) => void*/) {

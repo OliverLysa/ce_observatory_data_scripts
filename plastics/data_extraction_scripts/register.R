@@ -29,33 +29,22 @@ if (any(installed_packages == FALSE)) {
 # Packages loading
 invisible(lapply(packages, library, character.only = TRUE))
 
-# Accredited reprocessors
-
-#### Data for mapping reprocessors
-
-# # Specify JSON file
-# json_2024 <- 
-#   fromJSON(file="./plastics/NPWD_registers/json/final_json_Public Register 2024.json")
-# 
-# # Output
-# output_dataframe <- data.frame(matrix(unlist(json_2024), 
-#                                      ncol = length(json_data[[1]]), byrow = TRUE), stringsAsFactors = FALSE)
+#### Data for mapping reprocessors and exporters
 
 # Import csv file-list
 files_list <- 
-  list.files("./plastics/NPWD_registers/updated/NPWD-JS-PYTHON-PDF-DATA-EXTRACTION/csv",
+  list.files("./plastics/data_extraction_scripts/NPWD_registers/updated/NPWD-JS-PYTHON-PDF-DATA-EXTRACTION/csv",
              pattern='.csv')
 
 # Import data and create postcode column
 csv_data <- 
-  lapply(paste("./plastics/NPWD_registers/updated/NPWD-JS-PYTHON-PDF-DATA-EXTRACTION/csv/",
+  lapply(paste("./plastics/data_extraction_scripts/NPWD_registers/updated/NPWD-JS-PYTHON-PDF-DATA-EXTRACTION/csv/",
                files_list,sep = ""), read_csv) %>%
   dplyr::bind_rows() %>%
   mutate(year = substrRight(last_changed, 4)) %>%
   mutate(postcode = substrRight(site_address, 8)) %>%
-  mutate_at(c('postcode'), trimws)
-
-# csv_data$postcode <- sub(".*? ", "", csv_data$postcode)
+  mutate_at(c('postcode'), trimws) %>%
+  mutate(postcode = gsub(" ", "", postcode))
 
 # Convert postcode to lat/long
 # Require an API key from Google Maps Platform
@@ -69,12 +58,16 @@ geo_data <- csv_data %>%
   dplyr::mutate(LONG = location$lon, .before = 1) %>%
   dplyr::mutate(LAT = location$lat, .before = 1) %>%
   select(1,2,4:10,13:16) %>%
-  na.omit()
+  na.omit() %>%
+  arrange(year)
 
 DBI::dbWriteTable(con,
                   "Packaging_reprocessors_spatial",
                   geo_data,
                   overwrite = TRUE)
+
+uncoded <- geo_data %>%
+  filter(if_any(c(LAT,LONG), is.na))
 
 # write_xlsx(geo_data,
 #            "./cleaned_data/register_geo_data.xlsx")

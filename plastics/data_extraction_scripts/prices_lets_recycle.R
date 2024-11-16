@@ -43,8 +43,8 @@ recycling_prices <-
 
 # For some reason, am exporting and then re-importing
 
-# write_xlsx(recycling_prices,
-#             "./cleaned_data/recycling_prices.xlsx")
+write_xlsx(recycling_prices,
+            "./cleaned_data/recycling_prices.xlsx")
 
 recycling_prices <- 
   read_excel("./cleaned_data/recycling_prices.xlsx") %>%

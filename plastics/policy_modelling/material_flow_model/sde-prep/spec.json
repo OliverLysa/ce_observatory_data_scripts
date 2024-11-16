@@ -4,8 +4,8 @@
   ],
   "outputVarNames": [
     "Placed on market",
-    "Sent for recycling",
-    "Waste collected"
+    "Waste collected",
+    "Waste generated"
   ],
   "externalDatfiles": [],
   "bundleListing": false,

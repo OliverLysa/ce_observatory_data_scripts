@@ -73,7 +73,6 @@ source("./scripts/functions.R",
 #               "./raw_data/LACW/WDF_full_2015_16.csv")
 # 
 
-
 # # Download the data
 # download.file("http://data.defra.gov.uk/Waste/201314_england_wastedata.csv",
 #               "./raw_data/LACW/WDF_full_2013_14.csv")
@@ -245,6 +244,19 @@ DBI::dbWriteTable(con,
                   Q007,
                   overwrite = TRUE)
 
+
+# Q010 - Tonnes of material collected through kerbside schemes from household sources by LA or its contractors 
+Q010 <- WDF_full %>%
+  filter(question_number == "Q010",
+         col_text == "Tonnage collected for recycling") %>%
+  select(authority, year, row_text, material_group, data) %>%
+  mutate(row_text = str_to_title(row_text)) %>%
+  mutate_at(c('data'), as.numeric) %>%
+  na.omit() %>%
+  filter(data != 0) %>%
+  group_by(year, row_text, material_group) %>%
+  summarise(value = sum(data))
+
 # Q011 - Tonnes of material collected from commercial, industrial or other non-household sources by LA or its contractors
 
 Q011 <- WDF_full %>%
@@ -257,6 +269,18 @@ Q011 <- WDF_full %>%
   filter(data != 0)
 
 Q011$row_text <- genX(Q011$row_text, " [", "]")
+
+# Q012 - Tonnes of material collected through kerbside schemes by non-contracted voluntary/community sector from household sources 
+Q012 <- WDF_full %>%
+  filter(question_number == "Q012",
+         col_text == "Tonnage collected for recycling") %>%
+  select(authority, year, row_text, material_group, data) %>%
+  mutate(row_text = str_to_title(row_text)) %>%
+  mutate_at(c('data'), as.numeric) %>%
+  na.omit() %>%
+  filter(data != 0) %>%
+  group_by(year) %>%
+  summarise(value = sum(data))
 
 # Write
 DBI::dbWriteTable(con,

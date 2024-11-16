@@ -38,84 +38,64 @@
       "index": 9
     },
     {
-      "id": "_rate_of_recycling",
+      "id": "_rate_overseas",
       "index": 10
     },
     {
-      "id": "_rate_overseas",
+      "id": "_wmc_collected",
       "index": 11
     },
     {
-      "id": "_residual_rate",
+      "id": "_time",
       "index": 12
     },
     {
-      "id": "_wmc_collected",
+      "id": "_waste_collected",
       "index": 13
     },
     {
-      "id": "_time",
+      "id": "_waste_generated",
       "index": 14
     },
     {
-      "id": "_formal_domestic_treatment",
+      "id": "_placed_on_market_data",
       "index": 15
     },
     {
-      "id": "_waste_collected",
+      "id": "_placed_on_market",
       "index": 16
     },
     {
-      "id": "_waste_generated",
+      "id": "_collection",
       "index": 17
     },
     {
-      "id": "_placed_on_market_data",
+      "id": "_littering",
       "index": 18
     },
     {
-      "id": "_placed_on_market",
+      "id": "_mismanaged",
       "index": 19
     },
     {
-      "id": "_collection",
+      "id": "_saveper",
       "index": 20
     },
     {
-      "id": "_littering",
+      "id": "_sent_overseas",
       "index": 21
     },
     {
-      "id": "_mismanaged",
+      "id": "_waste_collected_sent_to_formal_domestic_treatment",
       "index": 22
     },
     {
-      "id": "_saveper",
+      "id": "_pom",
       "index": 23
     },
     {
-      "id": "_sent_for_recycling",
-      "index": 24
-    },
-    {
-      "id": "_sent_for_residual_treatment",
-      "index": 25
-    },
-    {
-      "id": "_sent_overseas",
-      "index": 26
-    },
-    {
-      "id": "_waste_collected_sent_to_formal_domestic_treatment",
-      "index": 27
-    },
-    {
-      "id": "_pom",
-      "index": 28
-    },
-    {
       "id": "_waste_generation_rate",
-      "index": 29
+      "index": 24
     }
   ]
 }
