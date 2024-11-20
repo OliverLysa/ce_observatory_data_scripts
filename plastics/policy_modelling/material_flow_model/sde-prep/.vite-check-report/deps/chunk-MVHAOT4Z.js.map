@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../node_modules/@sdeverywhere/plugin-check/template-report/polyfills/noop-polyfills.ts"],
-  "sourcesContent": ["// Copyright (c) 2022 Climate Interactive / New Venture Fund\n\n/*\n * This file contains no-op polyfills for the small set of Node APIs that are\n * referenced by the Node implementation of the threads.js package (which is\n * used by the default generated bundle any custom bundle that uses the\n * `@sdeverywhere/runtime-async` package).  These polyfills are not actually\n * used at runtime in the browser because they are only referenced in the\n * (unused) Node code path.\n */\n\n// from 'events'\nexport class EventEmitter {}\n\n// from 'os'\nexport function cpus(): number {\n  return 1\n}\n\n// from 'path'\nexport function dirname(): string {\n  return ''\n}\n\n// from 'path'\nexport function isAbsolute(): boolean {\n  return false\n}\n\n// from 'path'\nexport function join(): string {\n  return ''\n}\n\n// from 'util'\nexport function fileURLToPath(): string {\n  return ''\n}\n"],
-  "mappings": ";AAYO,IAAM,eAAN,MAAmB;AAAC;AAGpB,SAAS,OAAe;AAC7B,SAAO;AACT;AAGO,SAAS,UAAkB;AAChC,SAAO;AACT;AAGO,SAAS,aAAsB;AACpC,SAAO;AACT;AAGO,SAAS,OAAe;AAC7B,SAAO;AACT;AAGO,SAAS,gBAAwB;AACtC,SAAO;AACT;",
-  "names": []
-}

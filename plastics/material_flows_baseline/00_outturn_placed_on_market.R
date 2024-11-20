@@ -55,7 +55,8 @@ Defra_packaging_all <- read_ods(
   mutate(rate = rate * 100) %>%
   mutate(variable = case_when(str_detect(variable, "packaging_waste_arising") ~ "Arisings",
                               str_detect(variable, "total_recovered_recycled") ~ "Recovered/recycled")) %>% 
-  mutate_at(vars('rate','value'), funs(round(., 2)))
+  mutate_at(vars('rate','value'), funs(round(., 2))) %>%
+  write_xlsx("./cleaned_data/defra_packaging_all.xlsx")
 
 # Report Packaging Data System
 
@@ -244,3 +245,5 @@ apparent_consumption_plastic_packaging <-
   left_join(trade_indicators, domestic_production_indicators, by=c("year")) %>%
   mutate(apparent_consumption = domestic_production + net_imports) %>%
   select(year, eu_exports, eu_imports, non_eu_exports, non_eu_imports, net_imports, domestic_production, apparent_consumption)
+
+

@@ -1,5 +1,7 @@
+# Purpose: Upload PRN data from Lets Recycle to the Data Observatory Database
+
 # *******************************************************************************
-# Require packages
+# Require packages and setup
 # *******************************************************************************
 
 # Package names
@@ -22,12 +24,19 @@ if (any(installed_packages == FALSE)) {
 # Packages loading
 invisible(lapply(packages, library, character.only = TRUE))
 
+# con <- dbConnect(RPostgres::Postgres(),
+#                  dbname = 'postgres', 
+#                  host = 'aws-0-eu-west-2.pooler.supabase.com',
+#                  port = 6543,
+#                  user = 'postgres.qowfjhidbxhtdgvknybu',
+#                  password = rstudioapi::askForPassword("Database password"))
+
 # *******************************************************************************
 ## Extraction
 
 prn_prices_monthly <- 
   # Read the raw data in
-  read_excel("./raw_data/PRNdata_2018_2023.xlsx") %>%
+  read_excel("./raw_data/PRNdata_2013_2023.xlsx") %>%
   # Remove the units in column names
   rename_with(~ str_remove(., " .*"), everything()) %>%
   # Fill the month column so every row has its month show
@@ -44,45 +53,44 @@ prn_prices_monthly <-
   # Create an middle/average from the lower and upper
   rowwise() %>% 
   mutate(average=mean(c(lower, upper), na.rm=T)) %>%
+  # where there is only one value in the raw data, add in the na
+  mutate(upper = coalesce(upper, lower)) %>%
   # Pivot longer again to get a variable column
   # First you set which columns won't be pivoted
   pivot_longer(-c(month, year, material),
-               # Then the names for the other columns
+               # Then the names for the other columns which will be pivoted
                names_to = "variable", values_to = "value") %>%
+  # Arrange the year column in order
   arrange(year) %>%
+  # Add a column for the unit
   mutate(unit = "£ per tonne") %>%
+  # Trim white space in the unit column
   mutate_at(c('unit'), trimws) %>%
   unite(year, year, month, sep = " - ")
 
-# Write to site database using the connection established
-DBI::dbWriteTable(con,
-                  "prn_prices_monthly",
-                  prn_prices_monthly,
-                  overwrite = TRUE)
-
-# Write CSV
-write_csv(prn_prices_monthly, 
-          "./cleaned_data/prn_prices_monthly.csv")
+# # Write to site database using the connection established
+# DBI::dbWriteTable(con,
+#                   "prn_prices_monthly",
+#                   prn_prices_monthly,
+#                   overwrite = TRUE)
 
 # Get the same values at the level of year by taking an average across months
 
 prn_prices_yearly <- prn_prices_monthly %>%
+  # Separate the year and month column
   separate(year,c("year","month"),sep="-") %>%
-  # Group by variables
+  # Specify the group by variables
   group_by(year, material, variable, unit) %>%
   # Calculate mean
   dplyr::summarise(value = mean(value)) %>%
   # Round the value
   mutate(value = round(value, 1)) %>%
+  # Make year numeric
   mutate_at(c('year'), as.numeric)
-  
-# Write CSV
-write_csv(prn_prices_yearly, 
-          "./cleaned_data/prn_prices_yearly.csv")
 
-# Write to site database using the connection established
-DBI::dbWriteTable(con,
-                  "prn_prices_yearly",
-                  prn_prices_yearly,
-                  overwrite = TRUE)
+# # Write to site database using the connection established
+# DBI::dbWriteTable(con,
+#                   "prn_prices_yearly",
+#                   prn_prices_yearly,
+#                   overwrite = TRUE)
 

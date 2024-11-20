@@ -110,7 +110,7 @@ summary_table <-
   mutate_at(c('value'), as.numeric) %>%
   group_by(year, category, variable) %>%
   summarise(value = sum(value)) %>%
-  filter(year != "2024") %>%
+  # filter(year != "2024") %>%
   mutate(unit=ifelse(grepl("PRNs", variable), "PRNs (Number)", "Tonnages")) %>%
   dplyr::filter(!grepl('TOTAL', category)) %>%
   mutate(identifier = 4)
@@ -188,7 +188,7 @@ quarterly_recycling_df %>%
   mutate_at(c('value'), as.numeric) %>%
   group_by(year, mat1, mat2, variable) %>%
   summarise(value = sum(value,na.rm =TRUE)) %>%
-  filter(year != "2024") %>%
+  # filter(year != "2024") %>%
   dplyr::filter(!grepl('Total', mat2)) %>%
   unite(mat2, c(mat1, mat2), sep = "-", remove = FALSE) %>%
   # mutate(mat2 = gsub("\\(.*", "", mat2)) 
@@ -330,7 +330,8 @@ pom_data <-
   pivot_longer(-c(year, table, variable),
                names_to = "material",
                values_to = "value") %>%
-  mutate(identifier = 4)
+  mutate(identifier = 4) %>%
+  mutate(material = str_to_sentence(material))
 
 pom_data_indicators <- pom_data %>%
   select(-identifier) %>%
