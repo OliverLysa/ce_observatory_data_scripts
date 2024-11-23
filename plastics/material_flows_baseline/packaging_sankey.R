@@ -56,6 +56,8 @@ POM_2 <- POM_packaging_composition %>%
          target,
          material,
          value)
+
+# Scale to England and Wales based on population/final demand
   
 ############## WASTE GENERATED
 
@@ -84,16 +86,23 @@ WG <- read_csv("inflow_outflow_stock.csv") %>%
          material,
          value)
 
+# Scale to England and Wales based on population/final demand
+
 ############## COLLECTION AND LITTERING
 
+# England collection
+# https://statswales.gov.wales/Catalogue/Environment-and-Countryside/Waste-Management/Local-Authority-Municipal-Waste/annualwastereusedrecycledcomposted-by-localauthority-source-year
 
+# Wales collection
 
 ############## TREATMENT 1
 
 # WASTE TRADE
+# Apportioned based on share of accredited exporters and accounting for size
 
 # 
 
+# Break down into geographies
 
 
 

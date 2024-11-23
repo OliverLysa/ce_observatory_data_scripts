@@ -54,7 +54,15 @@ Defra_packaging_all <- read_ods(
   mutate(value = value * 1000) %>%
   mutate(rate = rate * 100) %>%
   mutate(variable = case_when(str_detect(variable, "packaging_waste_arising") ~ "Arisings",
-                              str_detect(variable, "total_recovered_recycled") ~ "Recovered/recycled")) %>% 
+                              str_detect(variable, "total_recovered_recycled") ~ "Recovered/recycled")) %>%
+  # filter(variable == "Arisings") %>%
+  # group_by(year) %>%
+  # summarise(total = sum(value)) %>%
+  # filter(year %in% c("2012", "2023"),
+  #        variable == "Arisings") %>%
+  # group_by(material) %>% 
+  # arrange(year, .by_group = TRUE) %>%
+  # mutate(pct_change = (total/lag(total) - 1)*100) 
   mutate_at(vars('rate','value'), funs(round(., 2))) %>%
   write_xlsx("./cleaned_data/defra_packaging_all.xlsx")
 
@@ -98,6 +106,11 @@ pom_data <-
                names_to = "material",
                values_to = "value") %>%
   mutate(identifier = 4)
+  # filter(material == "plastic",
+  #        year == "2023") %>%
+  # select(-c(material, identifier)) %>%
+  # pivot_wider(names_from = table, 
+  #             values_from = value) 
 
 ############ APPARENT CONSUMPTION
 
