@@ -17,7 +17,8 @@ packages <- c(
   "readODS",
   "data.table",
   "janitor",
-  "methods"
+  "methods",
+  "forecast"
 )
 
 # Install packages not yet installed
@@ -106,7 +107,6 @@ ratio_ts <-
 
 # Create a linear forecast model
 ratio_ts_mod <- 
-  tslm(ratio_ts ~ trend)
 
 # Produce 28 predictions
 linforecast <- 
@@ -420,28 +420,111 @@ projection_kpi_all <- projection_kpi %>%
 # Detailed chart
 
 plastic_packaging_composition_breakdown <- read_xlsx( 
-  "./cleaned_data/plastic_packaging_composition.xlsx") %>%
-  select(-Total) %>%
-  filter(Category != "Total") %>%
-  pivot_longer(-c(Year, Source, Category, Type),
+  "./cleaned_data/plastic_packaging_composition.xlsx",
+  sheet = 1) %>%
+  select(-`Source URL`) %>%
+  pivot_longer(-c(Year, Category, Type),
              names_to = "Material sub-type",
              values_to = "proportion") %>%
   mutate(material = "Plastic") %>%
-  dplyr::rename("application" = Type)
+  clean_names() %>%
+  dplyr::rename("application" = type) %>%
+  filter(year == 2021)
 
-projection_detailed <- 
+projection_detailed_future <- 
   left_join(projection_all_variables, plastic_packaging_composition_breakdown, "material") %>%
   clean_names() %>%
   mutate(value = value * proportion) %>%
-  select(-c(year_2, proportion))
+  select(-c(year_y, proportion)) %>%
+  rename(year = year_x) %>%
+  group_by(variable, year, forecast_type, level, type, method, exogenous_factor, material, application, material_sub_type) %>%
+  summarise(value = sum(value)) %>%
+  filter(forecast_type == "linear model, time-series components",
+       exogenous_factor == "Population") %>%
+  filter(variable != "Production emissions (T CO2e)")
 
-#### Write to database
+projection_detailed_outturn <- 
+  left_join(projection_all_variables, plastic_packaging_composition_breakdown, "material") %>%
+  clean_names() %>%
+  mutate(value = value * proportion) %>%
+  select(-c(year_y, proportion)) %>%
+  rename(year = year_x) %>%
+  group_by(variable, year, forecast_type, level, type, method, exogenous_factor, material, application, material_sub_type) %>%
+  summarise(value = sum(value)) %>%
+  filter(type == "Outturn") %>%
+  filter(variable != "Production emissions (T CO2e)")
+         
+projection_detailed_total <- projection_detailed_future %>%
+  bind_rows(projection_detailed_outturn)
+
+projection_detailed_litter <- projection_detailed_total %>%
+  filter(variable == "Waste generated") %>%
+  mutate(value = value*0.05) %>%
+  mutate(variable = "Littering") 
+
+projection_detailed_mechanical_recycling <- projection_detailed_total %>%
+  filter(variable == "Waste generated")%>%
+  mutate(collection = value*0.95,
+         formal_treatment = collection*0.4,
+         sent_for_recycling = formal_treatment*0.4,
+         value = sent_for_recycling*0.99) %>%
+  # mutate(collection = value*0.95,
+  #        formal_treatment = collection*0.5,
+  #        sent_for_recycling = formal_treatment*0.56,
+  #        value = sent_for_recycling*0.99) %>%
+  mutate(variable = "Mechanical recycling") %>%
+  select(-c(collection, formal_treatment, sent_for_recycling))
+
+projection_detailed_total_all <- projection_detailed_total %>%
+  bind_rows(projection_detailed_litter) %>%
+  bind_rows(projection_detailed_mechanical_recycling)
+
+# projection_detailed <- 
+#   left_join(projection_all_variables, plastic_packaging_composition_breakdown, "material") %>%
+#   clean_names() %>%
+#   mutate(value = value * proportion) %>%
+#   select(-c(year_2, proportion))
 
 # Write table
-# DBI::dbWriteTable(con,
-#                   "plastic_projection_detailed",
-#                   projection_detailed,
-#                   overwrite = TRUE)
+DBI::dbWriteTable(con,
+                  "plastic_projection_detailed",
+                  projection_detailed_total_all,
+                  overwrite = TRUE)
 
-write_xlsx(projection_detailed,
-           "./cleaned_data/plastic_projection_detailed.xlsx")
+# model_output <- read_csv( 
+#   "./cleaned_data/model_output.csv")
+# 
+# test_combined <- left_join(# Join the correspondence codes and the trade data
+#   projection_detailed,
+#   model_output,
+#   by = c("variable", 
+#          "year", 
+#          "material",
+#          "application",
+#          "material_sub_type")) %>%
+#   mutate(value_new = coalesce(value.y, value.x))
+# 
+# write_xlsx(test_combined,
+#            "./cleaned_data/test_combined.xlsx")
+
+## Vensim input
+
+projection_vensim <- projection_detailed %>%
+  filter(variable == "Placed on market",
+         forecast_type == "linear model, time-series components",
+         exogenous_factor == "Population",
+         application == "Bottle",
+         material_sub_type == "PET") %>%
+  group_by(year_x) %>%
+  summarise(value = sum(value))
+
+projection_vensim_out <- projection_detailed %>%
+  filter(variable == "Placed on market",
+         type == "Outturn",
+         application == "Bottle",
+         material_sub_type == "PET") %>%
+  group_by(year_x) %>%
+  summarise(value = sum(value))
+
+total <- projection_vensim_out %>%
+  bind_rows(projection_vensim)

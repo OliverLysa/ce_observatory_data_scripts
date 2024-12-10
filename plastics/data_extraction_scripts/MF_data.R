@@ -10,9 +10,9 @@ MF_data_20 <-
   read_excel("./raw_data/material_facilities/MF_Data_January_to_December_2020.xlsx",
              sheet = "Output") %>%
   clean_names() %>%
-  filter(grade_if_som %in% c("PET Bottles - Coloured", 
-                         "PET Bottles - Clear",
-                         "PET Bottles - Mixed")) %>%
+  # filter(grade_if_som %in% c("PET Bottles - Coloured", 
+  #                        "PET Bottles - Clear",
+  #                        "PET Bottles - Mixed")) %>%
   select(1:13) %>%
   group_by(year, ea_area, grade_if_som) %>%
   summarise(tonnes = sum(tonnes))
@@ -48,11 +48,14 @@ DBI::dbWriteTable(con,
                   MF_data,
                   overwrite = TRUE)
 
-# Join Input and Output
+# Contamination
 
 MF_data_in <-   # Read in file
   read_excel("./raw_data/material_facilities/MF_Data_January_to_December_2021.xlsx",
-             sheet = "Input")
+             sheet = "Output") %>%
+  clean_names() %>%
+  group_by(material_type_if_som) %>%
+  summarise(mean_target_all = mean(total_target_materials_percent, na.rm = TRUE),
+            mean_non = mean(total_non_recyclable_materials_percent, na.rm = TRUE))
 
-MF_data_out <-  
   

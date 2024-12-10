@@ -84,7 +84,9 @@ plastic_waste_exports_all <-
   pivot_longer(-c(Description, Year, FlowType, Country),
                names_to = "Variable",
                values_to = "Value") %>%
-  filter(Variable != "SuppUnit")
+  filter(Variable != "SuppUnit") %>%
+  group_by(Year, Variable, Description, FlowType) %>%
+  summarise(sum = sum(Value))
 
 DBI::dbWriteTable(con, "plastic_waste_exports_all",
                   plastic_waste_exports_all,

@@ -57,6 +57,12 @@ POM_2 <- POM_packaging_composition %>%
          material,
          value)
 
+POM_inflow <- POM_1 %>%
+  bind_rows(POM_2)
+
+write_xlsx(POM_inflow, 
+           "./cleaned_data/POM_inflow.xlsx") 
+
 # Scale to England and Wales based on population/final demand
   
 ############## WASTE GENERATED

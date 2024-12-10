@@ -125,3 +125,39 @@ DBI::dbWriteTable(con,
                   stats_all,
                   overwrite = TRUE)
 
+
+## Infrastructure
+
+# England generation
+infrastructure <- read_ods("./raw_data/UK_Stats_Waste.ods",
+                              sheet= "Infrastructure") %>%
+  row_to_names(6) 
+
+names(infrastructure) <- 
+  paste(names(infrastructure), infrastructure[1, ], sep = "_")
+
+infrastructure <- infrastructure %>%
+  slice(-1) %>%
+  na.omit() %>%
+  clean_names() %>%
+  rename(year = 1,
+         measure = 2) %>%
+  pivot_longer(-c(year, measure),
+               names_to = "category",
+               values_to = "value") %>%
+  separate(category, into = c("type", "region"), sep="_(?=[^_]+$)") %>%
+  mutate(value = gsub("[^0-9.-]", "", value)) %>%
+  mutate(measure = gsub("*", "", measure)) %>%
+  # recode empty strings "" by NAs
+  mutate(across(c(value), na_if, "")) %>%
+  # remove NAs
+  na.omit() %>%
+  mutate_at(c('value'), as.numeric) %>%
+  mutate(across(c('value'), round, 2))
+
+%>%
+  na.omit() %>%
+  mutate(category = gsub("_", " ", category)) %>%
+  mutate(category = str_to_sentence(category)) %>%
+  mutate(region = "England",
+         variable = "generation")
