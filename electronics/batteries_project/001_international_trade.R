@@ -50,8 +50,6 @@ options(scipen = 999)
 # *******************************************************************************
 # Comtrade
 
-# set_primary_comtrade_key(key = "1984a29ad2da49f28eab4c7d1c8d5b3d")
-
 # Import HS codes from UNITAR
 hs_codes <-
   read_xlsx("./electronics/batteries_project/hs_correspondence_through_24.xlsx") %>%

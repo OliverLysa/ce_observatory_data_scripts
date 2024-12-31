@@ -15,7 +15,8 @@ packages <- c(
   "readODS",
   "data.table",
   "scales",
-  "zoo"
+  "zoo",
+  "fable"
 )
 
 # Install packages not yet installed
@@ -175,7 +176,7 @@ inflow_wide_outlier_replaced_NA <-
                  values_from = value)
 
 # Replace outliers (now NAs) by column/UNU across whole dataframe using straight-line interpolation
-inflow_wide_outlier_replaced_interpolated <-
+inflow_outlier_replaced_interpolated <-
   na.approx(inflow_wide_outlier_replaced_NA,
             rule = 2,
             maxgap = Inf,
@@ -185,12 +186,20 @@ inflow_wide_outlier_replaced_interpolated <-
                names_to = "unu_key",
                values_to = "value")
 
-write_csv(inflow_wide_outlier_replaced_interpolated,
+write_csv(inflow_outlier_replaced_interpolated,
           "./electronics/batteries_project/cleaned_data/inflow_indicators_interpolated.csv")
 
 # *******************************************************************************
 # Backcasts
 # *******************************************************************************
+
+# https://stats.stackexchange.com/questions/567144/hierarchical-time-series-forecasting-optimal-reconciliation-using-fable-in-r
+# https://fable.tidyverts.org/
+# https://otexts.com/fpp3/hts.html
+
+backcast_ts_tibble <- inflow_outlier_replaced_interpolated %>%
+  as_tsibble(key = c(unu_key),
+             index = year)
 
 #### Backcasting - filter to variable of interest
 backcast <- inflow_unu_mass_units %>%
