@@ -176,3 +176,22 @@ plastic_packaging_sankey_flows <- rbindlist(
 
 write_csv(sankey_all, "sankey_all.csv")
 
+###### KPIs
+
+# POM
+POM_WG_KPI <- POM_packaging_composition_geo_breakdown %>%
+  filter(country %in% c("England", "Wales")) %>%
+  group_by(year, material) %>%
+  summarise(POM = sum(tonnes)) %>%
+  mutate(across(c('POM'), round, 2)) %>%
+  mutate(product = "Packaging") %>%
+  filter(! year < 2014) %>%
+  mutate(material = gsub("OTHER", "Other", material))
+
+# Quantity recycled
+recycling <- 
+
+DBI::dbWriteTable(con,
+                  "packaging_KPIs",
+                  POM_WG_KPI,
+                  overwrite = TRUE)
