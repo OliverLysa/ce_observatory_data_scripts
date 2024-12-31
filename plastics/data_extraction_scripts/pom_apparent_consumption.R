@@ -1,5 +1,3 @@
-# Calculate POM of plastic packaging
-
 # *******************************************************************************
 # Require packages
 # *******************************************************************************
@@ -29,90 +27,6 @@ if (any(installed_packages == FALSE)) {
 # Packages loading
 invisible(lapply(packages, library, character.only = TRUE))
 
-# Stop scientific notation of numeric values
-options(scipen = 999)
-
-## DEFRA OFFICIAL PACKAGING
-
-# Defra packaging statistics
-Defra_packaging_all <- read_ods( 
-  "./raw_data/UK_Statistics_on_Waste_dataset_September_2024_accessible (1).ods",
-  sheet = "Packaging") %>%
-  row_to_names(6) %>%
-  clean_names() %>%
-  filter(material != "Total recycling and recovery", 
-         material != "Total recycling") %>%
-  filter(! str_detect(material, 'Metal')) %>%
-  mutate(material = gsub("of which: ", "", material)) %>%
-  mutate(material = gsub("of which:", "", material)) %>%
-  pivot_longer(-c(year,material,achieved_recovery_recycling_rate),
-               names_to = "variable",
-               values_to = "value") %>%
-  mutate_at(c('achieved_recovery_recycling_rate','value'), as.numeric) %>%
-  na.omit() %>%
-  dplyr::rename(rate = 3) %>%
-  mutate(value = value * 1000) %>%
-  mutate(rate = rate * 100) %>%
-  mutate(variable = case_when(str_detect(variable, "packaging_waste_arising") ~ "Arisings",
-                              str_detect(variable, "total_recovered_recycled") ~ "Recovered/recycled")) %>%
-  # filter(variable == "Arisings") %>%
-  # group_by(year) %>%
-  # summarise(total = sum(value)) %>%
-  # filter(year %in% c("2012", "2023"),
-  #        variable == "Arisings") %>%
-  # group_by(material) %>% 
-  # arrange(year, .by_group = TRUE) %>%
-  # mutate(pct_change = (total/lag(total) - 1)*100) 
-  mutate_at(vars('rate','value'), funs(round(., 2))) %>%
-  write_xlsx("./cleaned_data/defra_packaging_all.xlsx")
-
-# Report Packaging Data System
-
-
-# NPWD Raw Data 
-pom_files <- 
-  list.files("./raw_data/NPWD_downloads",
-             pattern='Consolidated.+xls')
-
-# Import those files and bind to a single df
-pom_data <- 
-  lapply(paste("./raw_data/NPWD_downloads/",
-               pom_files,sep = ""), read_excel) %>%
-  dplyr::bind_rows() %>%
-  select(where(not_all_na)) %>%
-  clean_names() %>%
-  mutate(year=ifelse(
-    grepl("Year", consolidated_table_for_all_activities) |
-      grepl("Year", consolidated_tables_for_all_activities_all_weights_in_whole_tonnes), 
-    as.character(x3), NA),
-    .before = consolidated_table_for_all_activities) %>%
-  fill(year, .direction = "downup") %>%
-  mutate(consolidated_table_for_all_activities = coalesce(consolidated_table_for_all_activities, 
-                                                          consolidated_tables_for_all_activities_all_weights_in_whole_tonnes)) %>%
-  select(1:10) %>%
-  row_to_names(12) %>%
-  clean_names() %>%
-  rename(variable = 2) %>%
-  drop_na(variable) %>%
-  filter(! str_detect(variable, 'Producer|Obligation|Registration|Paper|Glass|Aluminium|Steel|Plastic|Wood|Organisation|NPWD|Organisation|HANDLED|SUMMARY|%|Activity|Total*')) %>%
-  mutate(table=ifelse(grepl("Table",variable), paper, NA), .before = variable) %>%
-  fill(table, .direction = "down") %>%
-  filter(! str_detect(variable, 'Table')) %>%
-  mutate(table=replace_na(table, "Packaging Supplied")) %>%
-  select(where(not_all_na)) %>%
-  filter(! str_detect(variable, 'Packaging/Packaging Materials Imported|Imported Transit Packaging|Packaging/Packaging Materials Exported')) %>%
-  rename(year = 1) %>%
-  pivot_longer(-c(year, table, variable),
-               names_to = "material",
-               values_to = "value") %>%
-  mutate(identifier = 4)
-  # filter(material == "plastic",
-  #        year == "2023") %>%
-  # select(-c(material, identifier)) %>%
-  # pivot_wider(names_from = table, 
-  #             values_from = value) 
-
-############ APPARENT CONSUMPTION
 
 ####### Trade
 # ***********************
@@ -121,7 +35,7 @@ pom_data <-
 # Where are these codes sourced from 
 
 trade_codes <- (c(200911,200912,200919,200921,200929,200931,200939,200941,200949,200950,200961,200969,200971,200979,200981,200989,200990,
-                220110,220190,220210,220299,392310,392321,392329,392330,392350,392390)) %>%
+                  220110,220190,220210,220299,392310,392321,392329,392330,392350,392390)) %>%
   as.data.frame() %>%
   mutate(year = 2022) %>%
   rename(hs = 1)
@@ -258,5 +172,4 @@ apparent_consumption_plastic_packaging <-
   left_join(trade_indicators, domestic_production_indicators, by=c("year")) %>%
   mutate(apparent_consumption = domestic_production + net_imports) %>%
   select(year, eu_exports, eu_imports, non_eu_exports, non_eu_imports, net_imports, domestic_production, apparent_consumption)
-
 

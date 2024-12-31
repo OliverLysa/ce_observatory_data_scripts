@@ -69,8 +69,8 @@ DBI::dbWriteTable(con,
 uncoded <- geo_data %>%
   filter(if_any(c(LAT,LONG), is.na))
 
-# write_xlsx(geo_data,
-#            "./cleaned_data/register_geo_data.xlsx")
+write_xlsx(csv_data,
+           "./cleaned_data/register_geo_data_exl_lat_long.xlsx")
 # 
 # leaflet(geo_data) %>% addTiles() %>%
 #   addCircles(lng = ~LONG, lat = ~LAT, 

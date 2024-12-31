@@ -1,4 +1,5 @@
 # R Stan
+# https://cran.r-project.org/web/packages/rstan/vignettes/rstan.html#write-a-stan-program
 
 # *******************************************************************************
 # Require packages

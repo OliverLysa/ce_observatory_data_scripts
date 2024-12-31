@@ -47,6 +47,9 @@ composition <- read_excel("./raw_data/waste_composition/UK NATIONAL COMPOSITION 
                           str_detect(collection_route, "household_residual_total") ~ "residual")) %>%
   select(-value)
 
+write_csv(composition,
+         "./cleaned_data/waste_collection_composition_all.csv") 
+
 # Import and clean tonnages data 
 
 download.file(
@@ -90,7 +93,9 @@ collection_flows_LA <- read_ods("./raw_data/LA_collection.ods",
   select(-rejects) %>%
   pivot_longer(-c(financial_year,region),
                names_to = "collection_route",
-               values_to = "tonnages")
+               values_to = "tonnages") %>%
+  group_by(financial_year) %>%
+  summarise(value = sum(tonnages))
 
 #  Join data
 combined_collection <-
@@ -109,6 +114,7 @@ DBI::dbWriteTable(con,
 ## Wales
 # Composition data
 # Collection data
+# https://statswales.gov.wales/Catalogue/Environment-and-Countryside/Waste-Management/Local-Authority-Municipal-Waste/annualwastereusedrecycledcomposted-by-localauthority-source-year
 
 ## Q100 - treatment routes
 

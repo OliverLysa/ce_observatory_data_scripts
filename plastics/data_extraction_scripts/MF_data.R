@@ -52,10 +52,19 @@ DBI::dbWriteTable(con,
 
 MF_data_in <-   # Read in file
   read_excel("./raw_data/material_facilities/MF_Data_January_to_December_2021.xlsx",
+             sheet = "Input") %>%
+  clean_names() %>%
+  select(19) %>%
+  summarise(average = mean(total_target_materials_percent, na.rm = TRUE))
+
+MF_data_out <-   # Read in file
+  read_excel("./raw_data/material_facilities/MF_Data_January_to_December_2021.xlsx",
              sheet = "Output") %>%
   clean_names() %>%
   group_by(material_type_if_som) %>%
   summarise(mean_target_all = mean(total_target_materials_percent, na.rm = TRUE),
             mean_non = mean(total_non_recyclable_materials_percent, na.rm = TRUE))
+
+
 
   

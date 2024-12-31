@@ -264,5 +264,8 @@ DBI::dbWriteTable(con,
                   Exp_Combined,
                   overwrite = TRUE)
 
+write_csv(Exp_Combined,
+          "./cleaned_data/RDF_exports.csv")
+
 
 

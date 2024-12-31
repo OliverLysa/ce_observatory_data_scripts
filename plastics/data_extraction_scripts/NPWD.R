@@ -362,13 +362,6 @@ write_xlsx(pom_data,
 write_xlsx(pom_data_indicators, 
            "./cleaned_data/packaging_pom_indicators.xlsx")
 
-wrap_composition_data <- 
-  read_excel("./raw_data/wrap_plastic_market_situation report.xlsx") %>%
-  filter(Category != "Total")
-  
-prop_table <- prop.table(wrap_composition_data)
-
-
 
 
 

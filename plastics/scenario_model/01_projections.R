@@ -2,8 +2,6 @@
 # Author: Oliver Lysaght
 # Purpose: POM Projection
 
-# https://www.vensim.com/documentation/usr17.html
-
 # *******************************************************************************
 # Packages
 # *******************************************************************************
@@ -56,18 +54,6 @@ pom_data_indicators <- read_ods(
   mutate(variable = "Placed on market",
          type = "Outturn")
 
-# NPWD direct data - Import the POM data
-# pom_data_indicators <- read_xlsx( 
-#   "./cleaned_data/packaging_pom_indicators.xlsx") %>%
-#   filter(material == "plastic",
-#          variable == "Selling",
-#          year != "2024") %>%
-#   select(1,7) %>%
-#   mutate(variable = "Placed on market",
-#          type = "Outturn") %>%
-#   dplyr::rename(value = 2) %>%
-#   mutate_at(c('year','value'), as.numeric)
-
 # *******************************************************************************
 # Population as exogenous variable
 
@@ -107,6 +93,7 @@ ratio_ts <-
 
 # Create a linear forecast model
 ratio_ts_mod <- 
+  tslm(ratio_ts ~ trend)
 
 # Produce 28 predictions
 linforecast <- 
@@ -459,7 +446,7 @@ projection_detailed_total <- projection_detailed_future %>%
 
 projection_detailed_litter <- projection_detailed_total %>%
   filter(variable == "Waste generated") %>%
-  mutate(value = value*0.05) %>%
+  mutate(value = value*0.004) %>%
   mutate(variable = "Littering") 
 
 projection_detailed_mechanical_recycling <- projection_detailed_total %>%
