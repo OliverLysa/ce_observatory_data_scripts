@@ -1,6 +1,6 @@
 ##### **********************
 # Author: Oliver Lysaght
-# Purpose: Produce a continuous plastic packaging sankey (2012-23)
+# Purpose: Produce a continuous plastic packaging sankey for England & Wales (2012-23)
 
 # *******************************************************************************
 # Packages
@@ -139,19 +139,30 @@ export_recycling <- read_xlsx("./cleaned_data/NPWD_recycling_recovery_detail.xls
   group_by(year, material_1, variable) %>%
   summarise(value = sum(value))
 
+# Share from each collection source
+# WDF assumption
+
+# DOMESTIC RECYCLING
+
 # The whole difference between gross and net then goes to domestic residual?
 ## RDF
 
 # DOMESTIC RESIDUAL
 ## TOTAL RESIDUAL CAN BE CALCULATED AS POM - TOTAL RECYCLING (DOMESTIC & OVERSEAS) EXCLUDING REJECTS 
+# Calculate collection routes using transfer coefficients
+treatment_formal_domestic <-
+  left_join(formal_domestic_treatment, tc_formal_domestic_treatment) %>%
+  rename(target = route) %>%
+  mutate(value = value * share) %>%
+  select(-share)
 
 ## DOMESTIC INCINERATION
+
 
 ## DOMESTIC LANDFILL
 
 # DUMPING
 ## FLY-TIPPING DATA
-
 
 plastic_packaging_sankey_flows <- rbindlist(
   list(
