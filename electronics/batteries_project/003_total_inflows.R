@@ -1,9 +1,6 @@
 # Author: Oliver Lysaght
 # Purpose: Produce apparent consumption estimates from trade and domestic production data
 
-# How to handle different length time-series
-# How to handle negative apparent consumption
-
 # *******************************************************************************
 # Packages
 # *******************************************************************************
@@ -37,8 +34,28 @@ invisible(lapply(packages, library, character.only = TRUE))
 # Stop scientific notation of numeric values
 options(scipen = 999)
 
+# Function to reverse time when making ts forecasts
+reverse_ts <- function(y)
+{
+  ts(rev(y), start=tsp(y)[1L], frequency=frequency(y))
+}
+
+# Function to reverse a forecast
+reverse_forecast <- function(object)
+{
+  h <- length(object[["mean"]])
+  f <- frequency(object[["mean"]])
+  object[["x"]] <- reverse_ts(object[["x"]])
+  object[["mean"]] <- ts(rev(object[["mean"]]),
+                         end=tsp(object[["x"]])[1L]-1/f, frequency=f)
+  object[["lower"]] <- object[["lower"]][h:1L,]
+  object[["upper"]] <- object[["upper"]][h:1L,]
+  return(object)
+}
+
+
 # *******************************************************************************
-# EA WEEE POM data - EPR Register Data
+# EA WEEE POM data - EPR Register Data - use to sense-check the results
 # *******************************************************************************
 #
 
@@ -87,8 +104,7 @@ POM_data <- purrr::map_df(POM_sheet_names,
   mutate_at(c('value'), as.numeric)
 
 ggplot(POM_data, aes(fill=product, y=value, x=year)) + 
-  geom_bar(position="stack", stat="identity") +
-  facet_wrap(vars(end_use), nrow = 2)
+  geom_bar(position="stack", stat="identity")
 
 # *******************************************************************************
 # Apparent consumption calculation
@@ -138,53 +154,97 @@ complete_inflows_long <- complete_inflows_wide %>%
   na.omit()
 
 # *******************************************************************************
-# Automatic outlier detection and replacement
+# Outlier detection and replacement
 # *******************************************************************************
 #
 
 # Import data, converts to wide format (Redo this, but at the level of individual components of apparent consumption)
 inflow_wide_outlier_replaced_NA <-
-  read_xlsx("./cleaned_data/inflow_indicators.xlsx") %>%
+  complete_inflows_long %>%
   filter(indicator == "apparent_consumption") %>%
   select(-c(indicator)) %>%
-  pivot_wider(names_from = unu,
-              values_from = value) %>%
-  clean_names() %>%
-  mutate_at(c('year'), as.numeric) %>%
-  arrange(year) %>%
-  select(-year) %>%
-  mutate_at(
-    .vars = vars(contains("x")),
-    .funs = ~ ifelse(abs(.) > median(.) + 5 * mad(., constant = 1), NA, .),
-    ~ ifelse(abs(.) > median(.) - 5 * mad(., constant = 1), NA, .))
+  ungroup() %>%
+  group_by(unu_key) %>%
+  # Flag median absolute deviation and Hampel Filter algorithm (median +_ 2 median absolute deviations)
+  mutate(median = median(value, na.rm = TRUE),
+         mad = mad(value, na.rm = TRUE),
+         value = ifelse(value > median + 2 * mad | 
+                                value < median - 2 * mad, NA, value)) %>%
+  select(-c(median, mad)) %>%  
+  pivot_wider(names_from = unu_key, 
+                 values_from = value)
 
 # Replace outliers (now NAs) by column/UNU across whole dataframe using straight-line interpolation
 inflow_wide_outlier_replaced_interpolated <-
   na.approx(inflow_wide_outlier_replaced_NA,
-            rule = 1,
-            maxgap = 10) %>%
+            rule = 2,
+            maxgap = Inf,
+            na.rm = FALSE) %>%
   as.data.frame() %>%
-  mutate(year = c(2001:2022), .before = x0001) %>%
-  pivot_longer(-year,
+  pivot_longer(-c(year),
                names_to = "unu_key",
-               values_to = "value") %>%
-  mutate(`unu_key` = gsub("x", "", `unu_key`))
-
-# Interpolate using cubic spline method instead
-inflow_wide_outlier_replaced_spline <-
-  na.spline(inflow_wide_outlier_replaced_NA) +
-  0 * na.approx(inflow_wide_outlier_replaced_NA,
-                na.rm = FALSE,
-                rule = 2) %>%
-  as.data.frame()
+               values_to = "value")
 
 write_csv(inflow_wide_outlier_replaced_interpolated,
           "./electronics/batteries_project/cleaned_data/inflow_indicators_interpolated.csv")
 
 # *******************************************************************************
-# Backcasts - each component of apparent consumption individually
+# Backcasts
 # *******************************************************************************
 
+#### Backcasting - filter to variable of interest
+backcast <- inflow_unu_mass_units %>%
+  group_by(year) %>%
+  summarise(value = sum(value, na.rm = TRUE)) %>%
+  select(2) 
+
+# Make a TS object
+backcast <- 
+  ts(backcast,frequency=1,start=c(2000,1))
+
+# Backcast the values using auto arima
+backcast %>%
+  reverse_ts() %>%
+  auto.arima() %>%
+  forecast(h = 20) %>%
+  reverse_forecast() -> bc_arim
+
+autoplot(bc_arim) +
+  ggtitle(paste("Backcasts from",bc_arim[["method"]]))
+
+# Backcast the values using moving average
+backcast %>%
+  reverse_ts() %>%
+  ma(order=1) %>%
+  forecast(h = 20) %>%
+  reverse_forecast() -> bc_ma
+
+autoplot(bc_ma) +
+  ggtitle(paste("Backcasts from",bc_ma[["method"]]))
+
+# Backcast the values using neural network
+backcast %>%
+  reverse_ts() %>%
+  nnetar() %>%
+  forecast(h = 20) %>%
+  reverse_forecast() -> bc_neural
+
+autoplot(bc_neural) +
+  ggtitle(paste("Backcasts from",bc_neural[["method"]]))
+
+# Backcast the values using holt
+backcast %>%
+  reverse_ts() %>%
+  holt(h = 30, damped = TRUE, phi = 0.97) %>%
+  forecast(h = 30) %>%
+  reverse_forecast() -> bc_holt
+
+autoplot(bc_holt) +
+  ggtitle(paste("Backcasts from",bc_holt[["method"]]))
+
+backcast_holt <- 
+  print(bc_holt) %>%
+  as.data.frame()
 
 # *******************************************************************************
 # Forecasts
@@ -193,23 +253,14 @@ write_csv(inflow_wide_outlier_replaced_interpolated,
 
 # We produce a time-series forecast of apparent consumption using a hierarchical time-series approach is used in forecast construction, with bottom up aggregation across UNU-keys
 
-## Convert ratio into ts object
-ratio_ts <- 
-  ts(population_ratio,frequency=1,start=c(2014,1))
+backcast %>%
+  holt() %>%
+  forecast(h = 30) -> fc_ma
 
-# Create a linear forecast model
-ratio_ts_mod <- 
-  tslm(ratio_ts ~ trend)
-  
-# Produce 28 predictions
-  linforecast <- 
-  forecast(ratio_ts_mod, h=28)
-
-# # Check residuals of model
-# checkresiduals(linforecast)
+autoplot(fc_ma) +
+  ggtitle(paste("Backcasts from",fc_ma[["method"]]))
 
 # Print the predictions
 output_lin <- 
-  print(linforecast) %>%
-  mutate(year = seq(2023, 2050, length = 28)) %>%
-  mutate(forecast_type = "linear model, time-series components")
+  print(fc_ma)
+

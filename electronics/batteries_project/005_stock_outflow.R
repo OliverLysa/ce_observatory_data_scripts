@@ -1,5 +1,5 @@
 # Author: Oliver Lysaght
-# Purpose:
+# Purpose:Calculate outflows - EEE moving on from use, storage and hoarding and EEE stocks
 
 # *******************************************************************************
 # Packages
@@ -40,8 +40,7 @@ invisible(lapply(packages, library, character.only = TRUE))
 options(scipen = 999)
 
 # *******************************************************************************
-# Calculate outflows - EEE moving on from use, storage and hoarding
-# *******************************************************************************
+# Import lifespan data
 
 # Extract lifespan data from the following source https://circabc.europa.eu/ui/group/636f928d-2669-41d3-83db-093e90ca93a2/library/8e36f907-0973-4bb3-8949-f2bf3efeb125/details
 # Apply different lifespans depending on the makeup of apparent consumption - new vs. second hand. https://unstats.un.org/unsd/environment/FDES/EGES6/Session%202_8Tanzania_E-waste%20statistics.pdf
@@ -100,11 +99,15 @@ lifespan_data <-
   select(1:3) %>%
   mutate_at(c('shape', 'scale'), as.numeric)
 
+# *******************************************************************************
+# Import inflow data
+
 # Import inflow data to match to lifespan
 inflow_unu_mass_units <-
-  read_csv("./electronics/batteries_project/cleaned_data/inflow_unu_mass.csv") 
+  read_csv("./electronics/batteries_project/cleaned_data/inflow_unu_mass.csv") %>%
+  rename(unu_key = unu)
 
-# Merge inflow and lifespan data by unu_key
+# Merge preferred inflow measure and lifespan data by unu_key
 inflow_weibull <-
   merge(inflow_unu_mass_units,
         lifespan_data,
@@ -161,26 +164,10 @@ inflow_weibull_long <- inflow_weibull_outflow %>% select(-c(shape,
   na.omit()
 
 # Make long format aggregating by year outflow (i.e. suppressing year POM)
-inflow_weibull_long_outflow_summary <- inflow_weibull_outflow %>%
-  select(-c(shape,
-            scale,
-            value,
-            WEEE_POM_dif)) %>%
-  rename(year_pom = year) %>%
-  mutate(variable = gsub("inflow",
-                         "outflow",
-                         variable)) %>%
-  pivot_longer(-c(unu_key,
-                  year_pom,
-                  unit,
-                  variable),
-               names_to = "year",
-               values_to = "value") %>%
-  na.omit() %>%
-  group_by(unu_key,
+inflow_weibull_long_outflow_summary <- inflow_weibull_long %>%
+  group_by(unu_key, year,
            unit,
-           variable,
-           year) %>%
+           variable) %>%
   summarise(value =
               sum(value))
 
@@ -247,12 +234,12 @@ unu_inflow_stock_outflow <-
                   unit),
                names_to = "variable",
                values_to = "value") %>%
-  filter(variable != "stock") # %>%
-  # group_by(year, variable) %>%
-  # summarise(value = sum(value))
+  filter(variable != "stock") %>%
+  group_by(year, variable) %>%
+  summarise(value = sum(value, na.rm = TRUE))
 
 ggplot(unu_inflow_stock_outflow, aes(x = year, y = value, group = variable)) +
-  facet_wrap(vars(unu_key), nrow = 6, scales = "free") +
+  # facet_wrap(vars(unu_key), nrow = 6, scales = "free") +
   theme_light() +
   geom_line(aes(color=variable), size= 1) +
   theme(legend.position="bottom")

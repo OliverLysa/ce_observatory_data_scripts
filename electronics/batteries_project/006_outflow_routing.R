@@ -1,10 +1,5 @@
-##### **********************
 # Author: Oliver Lysaght
 # Purpose: Script calculates the outflow routing from the use and collection nodes across the following pathways to estimate a 'circularity rate'
-# Required updates:
-# The URL to download from (check end June)
-# https://www.gov.uk/government/statistical-data-sets/waste-electrical-and-electronic-equipment-weee-in-the-uk
-# Defra's 'waste tracking' system should provide improved numbers for outflow destinations within the regulated waste system when in place
 
 # *******************************************************************************
 # Packages
@@ -32,10 +27,6 @@ invisible(lapply(packages, library, character.only = TRUE))
 # *******************************************************************************
 # Functions and options
 # *******************************************************************************
-
-# Import functions
-source("./scripts/functions.R", 
-       local = knitr::knit_global())
 
 # Turn off scientific notation of numeric values
 options(scipen = 999)
@@ -351,15 +342,6 @@ received_AATF_reuse_54 <- received_AATF_reuse_wide_54 %>%
 write_xlsx(received_AATF_reuse_54, 
            "./cleaned_data/electronics_sankey/reuse_received_AATF_54.xlsx")
 
-# Domestic reuse (B2C/B2G/C2C): 82Kt - https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/1077642/second-hand-sales-of-electrical-products.pdf
-
-# Amazon, Ebay, Backmarket, Music Magpie, Apple Refurbished, Facebook marketplace
-# https://github.com/passivebot/facebook-marketplace-scraper
-# CEX
-
-# Commercial reuse (B2B): 90Kt
-# ITAM/D e.g large global operators like RDC-Computacenter, TES and SIMS: 90Kt - covers remanufacturing too
-
 # *******************************************************************************
 # Recycling
 # *******************************************************************************
@@ -665,119 +647,3 @@ write_xlsx(received_export_data_54,
 
 # https://onlinelibrary.wiley.com/doi/full/10.1111/jiec.13406
 # https://step-initiative.org/files/_documents/other_publications/UNU-Transboundary-Movement-of-Used-EEE.pdf
-
-# *******************************************************************************
-# Disposal
-# *******************************************************************************
-# Covering material releases into environmental mediums incl. land and water
-
-# Waste codes specific to electronics
-WDI_filter <- c("09 01 10", 
-                "09 01 11*", 
-                "09 01 12", 
-                "16 02 11*", 
-                "16 02 13*",
-                "16 02 14",
-                "20 01 23*",
-                "20 01 35*",
-                "20 01 36",
-                "20 03 01",
-                "200301")
-
-# Landfill - Waste Data Interrogator (waste received)
-
-# Import summarised WDI data and filter to waste codes
-landfill_WDI <- read_xlsx("./raw_data/Landfill_Incineration/Landfill/Output/Landfill_Grouped_All_Waste.xlsx",
-                                         sheet = 1) #%>%
-  #filter(Waste_Code %in% WDI_filter) %>%
-  # filter(`Waste_Code` == "20 03 01")
-
-# Incineration monitoring reports
-incineration <- read_xlsx("./cleaned_data/incineration_EWC.xlsx",
-                 sheet = 1) %>%
-  filter(EWC %in% WDI_filter)
-
-# Extract percentage of mixed municipal waste based on household waste composition study
-# UK HOUSEHOLD RESIDUAL plus RECYCLING TOTAL - 516,000 tonnes 320,560 going into the recycling stream. 195544 going into residual stream
-
-# Fly-tipping
-# https://www.gov.uk/government/statistical-data-sets/env24-fly-tipping-incidents-and-actions-taken-in-england
-
-flytipping_filter <- c("white_goods", "other_electrical")
-
-flytipping <- read_ods(
-  path = "./raw_data/Flytipping_incidents_and_actions_taken_nat_level_data_2007-08_to_2021-22_accessible (1).ods",
-  sheet = "National_Level_Incidents",
-  range = "A24:Q36"
-) %>%
-  clean_names() %>%
-  rename(year = 1) %>%
-  pivot_longer(-year,
-               names_to = "type",
-               values_to = "value") %>%
-  filter(type %in% flytipping_filter) %>%
-  mutate(flow = "flytipping")
-
-# Illegal waste sites
-# https://www.gov.uk/government/publications/environment-agency-2021-data-on-regulated-businesses-in-england
-
-illegal_sites <- read_ods(
-  path = "./raw_data/RPEG_2021_waste_crime_summary_data.ods",
-  range = "A100:N109"
-) %>%
-  select(-c(2:5)) %>%
-  pivot_longer(-1,
-               names_to = "year",
-               values_to = "value") %>%
-  rename(type = 1) %>%
-  filter(type == "WEEE") %>%
-  mutate(flow = "illegal sites")
-
-# Illegal dumping
-
-illegal_dumping <- read_ods(
-  path = "./raw_data/RPEG_2021_waste_crime_summary_data.ods",
-  range = "A112:N124"
-) %>%
-  select(-c(2:3)) %>%
-  pivot_longer(-1,
-               names_to = "year",
-               values_to = "value") %>%
-  rename(type = 1) %>%
-  filter(type == "Electrical equipment") %>%
-  mutate(flow = "illegal dumping")
-
-# Household residual: 155Kt
-# C&I residual: 145Kt
-# Theft: 114Kt
-
-# *******************************************************************************
-# Sayers et al 
-# *******************************************************************************
-
-# Import data outflow fate (CE-score), pivot longer, filter, drop NA and rename column 'route' to create dummy date
-
-outflow_routing <- read_excel(
-  "./cleaned_data/electronics_outflow.xlsx") %>%
-  clean_names() %>%
-  pivot_longer(-c(
-    `unu_key`,
-    `unu_description`,
-    `variable`
-  ),
-  names_to = "route", 
-  values_to = "value") %>%
-  filter(variable == "Percentage",
-         route != "total",
-         value != 	
-           0.000000000) %>%
-  drop_na(value) %>%
-  mutate(year = 2017) %>%
-  select(-c(variable, unu_description)) %>%
-  mutate(route = gsub("General bin", "disposal", route),
-         route = gsub("Recycling", "recycling", route),
-         route = gsub("Sold", "resale", route),
-         route = gsub("Donation or re-use", "resale", route),
-         route = gsub("Other", "refurbish", route),
-         route = gsub("Take back scheme", "remanufacture", route),
-         route = gsub("Unknown", "maintenance", route))

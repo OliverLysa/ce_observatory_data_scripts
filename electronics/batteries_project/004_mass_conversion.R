@@ -30,21 +30,14 @@ invisible(lapply(packages, library, character.only = TRUE))
 # Functions and options
 # *******************************************************************************
 
-# Import functions
-source("functions.R", 
-       local = knitr::knit_global())
-
 # Stop scientific notation of numeric values
 options(scipen = 999)
 
 # *******************************************************************************
-# Import mass data from https://github.com/Statistics-Netherlands/ewaste/blob/master/data/htbl_Key_Weight.csv
-# to convert inflows in unit terms to mass terms 
-# *******************************************************************************
 
 # Import average mass data by UNU from WOT project
 UNU_mass <- read_csv(
-  "./cleaned_data/htbl_Key_Weight.csv") %>%
+  "./electronics/batteries_project/raw_data_inputs/htbl_Key_Weight.csv") %>%
   clean_names() %>%
   group_by(unu_key, year) %>%
   summarise(value = mean(average_weight)) %>%
@@ -52,24 +45,19 @@ UNU_mass <- read_csv(
 
 # Read in interpolated inflow data and filter to consumption of units
 inflow_indicators <-
-  read_xlsx("./cleaned_data/inflow_indicators_interpolated.xlsx") %>%
+  read_csv("./electronics/batteries_project/cleaned_data/inflow_indicators_interpolated.csv") %>%
   mutate_at(c('year'), as.numeric) %>%
   # filter(indicator == "apparent_consumption") %>%
   na.omit() %>%
   mutate(variable = "inflow") %>%
   rename(unu = unu_key)
 
-# Join by unu key and closest year
-# For each value in inflow_indicators year column, find the closest value in UNU_mass that is less than or equal to that x value
-by <- join_by(unu, closest(year >= year))
-# Join
-inflow_mass <- left_join(inflow_indicators, UNU_mass, by) %>%
+# Join by unu key and year
+inflow_mass <- left_join(inflow_indicators, UNU_mass, by = c("year", "unu")) %>%
   mutate_at(c("value.y"), as.numeric) %>%
-  # calculate mass inflow in tonnes (as mass given in kg/unit in source)
-  # https://i.unu.edu/media/ias.unu.edu-en/project/2238/E-waste-Guidelines_Partnership_2015.pdf
   mutate(mass_inflow = (value.x*value.y)/1000) %>%
   select(c(`unu`,
-           `year.x`,
+           `year`,
            mass_inflow)) %>%
   rename(year = 2,
          value = 3) %>%
@@ -77,8 +65,8 @@ inflow_mass <- left_join(inflow_indicators, UNU_mass, by) %>%
   mutate(unit = "mass")
 
 # Write xlsx to the cleaned data folder
-write_xlsx(inflow_mass, 
-           "./cleaned_data/inflow_unu_mass.xlsx")
+write_csv(inflow_mass, 
+           "./electronics/batteries_project/cleaned_data/inflow_unu_mass.csv")
 
 # *******************************************************************************
 # Extract BoM data from Babbitt 2019 - to get material formulation and component stages
@@ -362,4 +350,8 @@ ggplot(na.omit(BoM_percentage_UNU), aes(fill=material, y=freq, x=unu_key)) +
   geom_bar(position="fill", stat="identity") +
   coord_flip() +
   scale_fill_viridis_d(direction = -1) +
-  guides(fill = guide_legend(reverse = TRUE))  
+  guides(fill = guide_legend(reverse = TRUE)) 
+
+# https://www.researchgate.net/publication/344153717_Characterizing_the_Urban_Mine-Simulation-Based_Optimization_of_Sampling_Approaches_for_Built-in_Batteries_in_WEEE
+# https://ewastemonitor.info/wp-content/uploads/2021/11/First_Dutch_Waste_Battery_Monitor_online_version.pdf
+# https://rpra.ca/wp-content/uploads/Final-UNITAR-report-Batteries-weight-conversion-factors.pdf

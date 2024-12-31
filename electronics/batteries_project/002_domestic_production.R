@@ -1,6 +1,7 @@
 # Author: Oliver Lysaght
 # Purpose: As part of apparent consumption calculation of EEE POM, download relevant production data for EEE final goods
-# Notes: 1) Simplest option would be to take the prodcom data at face value and not estimate the suppressed values
+# Notes: 1) Simplest option would be to take the prodcom data at face value and not estimate the suppressed values, however if we want to account for these
+# We must take extra steps to estimate these
 
 # *******************************************************************************
 # Packages
@@ -199,7 +200,7 @@ Trade_prodcom_correlation <- left_join(
   PRODCOM_HS,
   by = c("year" = "Year", "cmd_code" = "HS"))
 
-# Match trade data with prodcom data based on the previous lookup
+# Match trade data with prodcom data based on the previous lookup created
 Trade_prodcom <- left_join(prodcom_all_suppressed,
                            Trade_prodcom_correlation,
                        join_by("PRCCODE" == "PCC",
@@ -213,7 +214,7 @@ Trade_prodcom <- left_join(prodcom_all_suppressed,
 
 # Every time a domestic production value is suppressed, we estimate it based on the available trade data for the same year and the ratio between trade and production for the PCC for all other years
 
-# Calculate sum of units for all years in which data is available
+# Calculate sum of units for all years in which data is available by PRCCODE
 # Trade
 Grouped_trade <- Trade_prodcom %>%
   group_by(PRCCODE) %>%
@@ -238,7 +239,7 @@ Simplified <- Trade_prodcom %>%
   group_by(PRCCODE, Year, Domestic, Domestic_numeric) %>%
   summarise(Trade = sum(Trade, na.rm = TRUE))
 
-# Attach this ratio to dataframe with all exports - check instances of duplicates
+# Attach this ratio to dataframe with all exports
 Grouped_all <- left_join(Simplified,
                          Grouped_ratio,
                          by=c("PRCCODE")) %>%
@@ -248,7 +249,7 @@ Grouped_all <- left_join(Simplified,
   rename(Value = estimated) %>%
   na.omit()
 
-# 
+# Join to UNU-KEY to PRCCODE correlation and summarise domestic production by UNU KEY and year
 Prodcom_data_UNU <- left_join(Grouped_all,
                               UNU_PCC,
                               by = c("PRCCODE" = "Code", "Year")) %>%
@@ -256,7 +257,7 @@ Prodcom_data_UNU <- left_join(Grouped_all,
   summarise(Value = sum(Value, na.rm = TRUE)) %>%
   clean_names()
 
-# We could do straight line interpolation of the domestic production data where trade is 0
+# We could do straight line interpolation of the domestic production data where trade is 0 and we can't make estimates
 
 # Write summary file
 write_csv(Prodcom_data_UNU, 
