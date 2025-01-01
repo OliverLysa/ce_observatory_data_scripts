@@ -16,7 +16,10 @@ packages <- c(
   "data.table",
   "scales",
   "zoo",
-  "fable"
+  "fable",
+  "tsibble",
+  "hts",
+  "forecast"
 )
 
 # Install packages not yet installed
@@ -197,9 +200,19 @@ write_csv(inflow_outlier_replaced_interpolated,
 # https://fable.tidyverts.org/
 # https://otexts.com/fpp3/hts.html
 
-backcast_ts_tibble <- inflow_outlier_replaced_interpolated %>%
-  as_tsibble(key = c(unu_key),
-             index = year)
+# Construct hierarchical structure
+
+# Create a hierarchical ts tibble object
+ts_tibble <- inflow_outlier_replaced_interpolated %>%
+  mutate(product_group = "electronics") %>%
+  as_tsibble(, key = unu_key, index = year) %>%
+  aggregate_key(unu_key, value = sum(value))
+
+# Forecast the tibble
+backcast_unu <- ts_tibble %>%
+  filter(!is_aggregated(unu_key)) %>%
+  model(ets = ETS(value)) %>%
+  forecast(h = 30)
 
 #### Backcasting - filter to variable of interest
 backcast <- inflow_unu_mass_units %>%
@@ -207,39 +220,39 @@ backcast <- inflow_unu_mass_units %>%
   summarise(value = sum(value, na.rm = TRUE)) %>%
   select(2) 
 
-# Make a TS object
-backcast <- 
-  ts(backcast,frequency=1,start=c(2000,1))
-
-# Backcast the values using auto arima
-backcast %>%
-  reverse_ts() %>%
-  auto.arima() %>%
-  forecast(h = 20) %>%
-  reverse_forecast() -> bc_arim
-
-autoplot(bc_arim) +
-  ggtitle(paste("Backcasts from",bc_arim[["method"]]))
-
-# Backcast the values using moving average
-backcast %>%
-  reverse_ts() %>%
-  ma(order=1) %>%
-  forecast(h = 20) %>%
-  reverse_forecast() -> bc_ma
-
-autoplot(bc_ma) +
-  ggtitle(paste("Backcasts from",bc_ma[["method"]]))
-
-# Backcast the values using neural network
-backcast %>%
-  reverse_ts() %>%
-  nnetar() %>%
-  forecast(h = 20) %>%
-  reverse_forecast() -> bc_neural
-
-autoplot(bc_neural) +
-  ggtitle(paste("Backcasts from",bc_neural[["method"]]))
+# # Make a TS object
+# backcast <- 
+#   ts(backcast,frequency=1,start=c(2000,1))
+# 
+# # Backcast the values using auto arima
+# backcast %>%
+#   reverse_ts() %>%
+#   auto.arima() %>%
+#   forecast(h = 20) %>%
+#   reverse_forecast() -> bc_arim
+# 
+# autoplot(bc_arim) +
+#   ggtitle(paste("Backcasts from",bc_arim[["method"]]))
+# 
+# # Backcast the values using moving average
+# backcast %>%
+#   reverse_ts() %>%
+#   ma(order=1) %>%
+#   forecast(h = 20) %>%
+#   reverse_forecast() -> bc_ma
+# 
+# autoplot(bc_ma) +
+#   ggtitle(paste("Backcasts from",bc_ma[["method"]]))
+# 
+# # Backcast the values using neural network
+# backcast %>%
+#   reverse_ts() %>%
+#   nnetar() %>%
+#   forecast(h = 20) %>%
+#   reverse_forecast() -> bc_neural
+# 
+# autoplot(bc_neural) +
+#   ggtitle(paste("Backcasts from",bc_neural[["method"]]))
 
 # Backcast the values using holt
 backcast %>%
