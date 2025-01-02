@@ -1,5 +1,6 @@
 # Author: Oliver Lysaght
 # Purpose: Produce apparent consumption estimates from trade and domestic production data
+# Outputs: Apparent consumption by UNU KEY
 
 # *******************************************************************************
 # Packages
@@ -124,7 +125,7 @@ summary_prodcom_UNU <-
 
 # Import trade UNU data if not in global environment
 summary_trade_UNU <-
-  read_csv("./electronics/batteries_project/cleaned_data/comtrade_matched.csv")  %>%
+  read_csv("./electronics/batteries_project/cleaned_data/comtrade_matched_unu.csv")  %>%
   as.data.frame() %>%
   clean_names() %>%
   rename(year = ref_year,
@@ -200,59 +201,46 @@ write_csv(inflow_outlier_replaced_interpolated,
 # https://fable.tidyverts.org/
 # https://otexts.com/fpp3/hts.html
 
-# Construct hierarchical structure
+#### Backcasting - only for totals or individually
 
-# Create a hierarchical ts tibble object
-ts_tibble <- inflow_outlier_replaced_interpolated %>%
-  mutate(product_group = "electronics") %>%
-  as_tsibble(, key = unu_key, index = year) %>%
-  aggregate_key(unu_key, value = sum(value))
-
-# Forecast the tibble
-backcast_unu <- ts_tibble %>%
-  filter(!is_aggregated(unu_key)) %>%
-  model(ets = ETS(value)) %>%
-  forecast(h = 30)
-
-#### Backcasting - filter to variable of interest
 backcast <- inflow_unu_mass_units %>%
   group_by(year) %>%
   summarise(value = sum(value, na.rm = TRUE)) %>%
   select(2) 
 
-# # Make a TS object
-# backcast <- 
-#   ts(backcast,frequency=1,start=c(2000,1))
-# 
-# # Backcast the values using auto arima
-# backcast %>%
-#   reverse_ts() %>%
-#   auto.arima() %>%
-#   forecast(h = 20) %>%
-#   reverse_forecast() -> bc_arim
-# 
-# autoplot(bc_arim) +
-#   ggtitle(paste("Backcasts from",bc_arim[["method"]]))
-# 
-# # Backcast the values using moving average
-# backcast %>%
-#   reverse_ts() %>%
-#   ma(order=1) %>%
-#   forecast(h = 20) %>%
-#   reverse_forecast() -> bc_ma
-# 
-# autoplot(bc_ma) +
-#   ggtitle(paste("Backcasts from",bc_ma[["method"]]))
-# 
-# # Backcast the values using neural network
-# backcast %>%
-#   reverse_ts() %>%
-#   nnetar() %>%
-#   forecast(h = 20) %>%
-#   reverse_forecast() -> bc_neural
-# 
-# autoplot(bc_neural) +
-#   ggtitle(paste("Backcasts from",bc_neural[["method"]]))
+# Make a TS object
+backcast <- 
+  ts(backcast,frequency=1,start=c(2000,1))
+
+# Backcast the values using auto arima
+backcast %>%
+  reverse_ts() %>%
+  auto.arima() %>%
+  forecast(h = 20) %>%
+  reverse_forecast() -> bc_arim
+
+autoplot(bc_arim) +
+  ggtitle(paste("Backcasts from",bc_arim[["method"]]))
+
+# Backcast the values using moving average
+backcast %>%
+  reverse_ts() %>%
+  ma(order=1) %>%
+  forecast(h = 20) %>%
+  reverse_forecast() -> bc_ma
+
+autoplot(bc_ma) +
+  ggtitle(paste("Backcasts from",bc_ma[["method"]]))
+
+# Backcast the values using neural network
+backcast %>%
+  reverse_ts() %>%
+  nnetar() %>%
+  forecast(h = 20) %>%
+  reverse_forecast() -> bc_neural
+
+autoplot(bc_neural) +
+  ggtitle(paste("Backcasts from",bc_neural[["method"]]))
 
 # Backcast the values using holt
 backcast %>%
@@ -273,16 +261,17 @@ backcast_holt <-
 # *******************************************************************************
 #
 
-# We produce a time-series forecast of apparent consumption using a hierarchical time-series approach is used in forecast construction, with bottom up aggregation across UNU-keys
+# Hierarchical forecasting 
 
-backcast %>%
-  holt() %>%
-  forecast(h = 30) -> fc_ma
+# Create a hierarchical ts tibble object
+ts_tibble <- inflow_outlier_replaced_interpolated %>%
+  mutate(product_group = "electronics") %>%
+  as_tsibble(, key = unu_key, index = year) %>%
+  aggregate_key(unu_key, value = sum(value))
 
-autoplot(fc_ma) +
-  ggtitle(paste("Backcasts from",fc_ma[["method"]]))
-
-# Print the predictions
-output_lin <- 
-  print(fc_ma)
-
+# Forecast the tibble
+forecast_unu <- ts_tibble %>%
+  filter(!is_aggregated(unu_key)) %>%
+  model(ets = ETS(value)) %>%
+  reconcile(bu = bottom_up(ets)) %>%
+  forecast(h = 30)

@@ -123,8 +123,23 @@ UNU_HS_correlation <- read_xlsx(
   rename(cmd_code = hs) %>%
   filter(year <= 2023)
 
-# Summarise trade data by UNU
+# Summarise trade data by hs
 trade_combined_UNU_hs <- left_join(# Join the correspondence codes and the trade data
+  UNU_HS_correlation,
+  comtrade_all,
+  by = c("year", "cmd_code")) %>%
+  filter(qty != 0 & qty_unit_code != 8) %>%
+  # grouping variables to then summarise against
+  group_by(ref_year, unu_key, flow_desc, cmd_code) %>%
+  # Sum the values across HSs for each UNU and year to produce a regional total
+  summarise(qty = sum(qty))
+
+# Write the summarised data
+write_csv(trade_combined_UNU_hs,
+           "./electronics/batteries_project/cleaned_data/comtrade_matched.csv")
+
+# Summarise trade data by UNU
+trade_combined_UNU <- left_join(# Join the correspondence codes and the trade data
   UNU_HS_correlation,
   comtrade_all,
   by = c("year", "cmd_code")) %>%
@@ -135,8 +150,8 @@ trade_combined_UNU_hs <- left_join(# Join the correspondence codes and the trade
   summarise(qty = sum(qty))
 
 # Write the summarised data
-write_csv(trade_combined_UNU_hs,
-           "./electronics/batteries_project/cleaned_data/comtrade_matched.csv")
+write_csv(trade_combined_UNU,
+          "./electronics/batteries_project/cleaned_data/comtrade_matched_unu.csv")
 
 # *******************************************************************************
 # UKTradeInfo

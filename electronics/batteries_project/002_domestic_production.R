@@ -1,7 +1,6 @@
 # Author: Oliver Lysaght
 # Purpose: As part of apparent consumption calculation of EEE POM, download relevant production data for EEE final goods
-# Notes: 1) Simplest option would be to take the prodcom data at face value and not estimate the suppressed values, however if we want to account for these
-# We must take extra steps to estimate these
+# Outputs: UK Production data (Imports and exports) from ONS, summarised by UNU-KEY
 
 # *******************************************************************************
 # Packages

@@ -1,5 +1,10 @@
 # Author: Oliver Lysaght
 # Purpose:Calculate outflows - EEE moving on from use, storage and hoarding and EEE stocks
+# Output: Summarised table of EEE POM, EEE WG, EEE Stocks
+
+# https://www.researchgate.net/publication/344153717_Characterizing_the_Urban_Mine-Simulation-Based_Optimization_of_Sampling_Approaches_for_Built-in_Batteries_in_WEEE
+# https://ewastemonitor.info/wp-content/uploads/2021/11/First_Dutch_Waste_Battery_Monitor_online_version.pdf
+# https://rpra.ca/wp-content/uploads/Final-UNITAR-report-Batteries-weight-conversion-factors.pdf
 
 # *******************************************************************************
 # Packages
@@ -89,12 +94,12 @@ unitar_lifespan <- rbindlist(list(unitar_lifespan_IT,
                              use.names = TRUE)
 
 # Write summary file
-write_xlsx(unitar_lifespan,
-           "./electronics/batteries_project/cleaned_data/weibull_parameters.xlsx")
+write_csv(unitar_lifespan,
+           "./electronics/batteries_project/cleaned_data/weibull_parameters.csv")
 
 # Import lifespan data and filter to source and region of interest
 lifespan_data <-
-  read_excel("./electronics/batteries_project/cleaned_data/weibull_parameters.xlsx") %>%
+  read_csv("./electronics/batteries_project/cleaned_data/weibull_parameters.csv") %>%
   filter(country == "NLFB") %>%
   select(1:3) %>%
   mutate_at(c('shape', 'scale'), as.numeric)
@@ -106,6 +111,17 @@ lifespan_data <-
 inflow_unu_mass_units <-
   read_csv("./electronics/batteries_project/cleaned_data/inflow_unu_mass.csv") %>%
   rename(unu_key = unu)
+
+# Manually backcasted values
+inflow_unu_mass_units <-
+  read_csv("./electronics/batteries_project/cleaned_data/inflow_unu_mass_wide_manual.csv") %>%
+  pivot_longer(-c(year,
+                unit,
+                variable),
+               names_to = "unu_key",
+               values_to = "value")
+
+inflow_unu_mass_units$unu_key <- str_pad(inflow_unu_mass_units$unu_key, 4, pad = "0")
 
 # Merge preferred inflow measure and lifespan data by unu_key
 inflow_weibull <-
@@ -119,7 +135,7 @@ inflow_weibull <-
 
 # Set up dataframe for outflow calculation based on Balde et al 2016. Create empty columns for all years in range of interest
 year_first <- min(as.integer(inflow_weibull$year))
-year_last <- max(as.integer(inflow_weibull$year)) + 30
+year_last <- max(as.integer(inflow_weibull$year))
 years <- c(year_first:year_last)
 empty <-
   as.data.frame(matrix(NA, ncol = length(years), nrow = nrow(inflow_weibull)))
@@ -222,7 +238,7 @@ unu_stock <- tbl_stock %>%
            "stock"))
 
 # Merge inflow, stock and outflow, pivot longer
-unu_inflow_stock_outflow <-
+unu_inflow_stock_outflow_total <-
   merge(
     inflow_outflow_merge,
     unu_stock,
@@ -238,12 +254,38 @@ unu_inflow_stock_outflow <-
   group_by(year, variable) %>%
   summarise(value = sum(value, na.rm = TRUE))
 
-ggplot(unu_inflow_stock_outflow, aes(x = year, y = value, group = variable)) +
+ggplot(unu_inflow_stock_outflow_total, aes(x = year, y = value, group = variable)) +
   # facet_wrap(vars(unu_key), nrow = 6, scales = "free") +
+  xlim(2000, 2040) + 
   theme_light() +
   geom_line(aes(color=variable), size= 1) +
   theme(legend.position="bottom")
 
 # Write summary file
-write_csv(unu_inflow_stock_outflow,
-           "./electronics/batteries_project/cleaned_data/unu_inflow_stock_outflow.csv")
+write_csv(unu_inflow_stock_outflow_total,
+           "./electronics/batteries_project/cleaned_data/unu_inflow_stock_outflow_total.csv")
+
+# Merge inflow, stock and outflow, pivot longer
+unu_inflow_stock_outflow_unu <-
+  merge(
+    inflow_outflow_merge,
+    unu_stock,
+    by = c("unu_key", "year", "unit"),
+    all.x = TRUE
+  ) %>%
+  pivot_longer(-c(unu_key,
+                  year,
+                  unit),
+               names_to = "variable",
+               values_to = "value")
+
+ggplot(unu_inflow_stock_outflow_unu, aes(x = year, y = value, group = variable)) +
+  facet_wrap(vars(unu_key), nrow = 6, scales = "free") +
+  xlim(2000, 2040) + 
+  theme_light() +
+  geom_line(aes(color=variable), size= 1) +
+  theme(legend.position="bottom")
+
+# Write summary file
+write_csv(unu_inflow_stock_outflow_unu,
+          "./electronics/batteries_project/cleaned_data/unu_inflow_stock_outflow_unu.csv")
