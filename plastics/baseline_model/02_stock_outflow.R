@@ -121,18 +121,30 @@ outflow <- inflow_outflow %>%
                values_to = "value_outflow") %>%
   na.omit()
 
-## Import the excel WG data and split by polymer and region
+## Import the modelled WG data and split by polymer and region
+WG <- 
+  read_excel("./plastics/baseline_model/stock_outflow_excel_model.xlsx") %>%
+  select(-c(1:6)) %>%
+  row_to_names(4) %>%
+  slice(-c(32:33)) %>%
+  mutate(variable = "WG") %>%
+  mutate_at(c('2012'), as.numeric) %>%
+  pivot_longer(-variable, 
+               names_to = "year",
+               values_to = "value") %>%
+  group_by(variable, year) %>%
+  summarise(value = sum(value, na.rm = TRUE)) %>%
+  mutate_at(c('year'), as.numeric)
 
 # Import total tonnages and join
 EOL_packaging_composition <-
-  left_join(outflow, BOM, by = "year") %>%
+  left_join(WG, BOM, by = "year") %>%
   mutate(tonnes = value * percentage) %>%
-  select(year, category, type, material.y, tonnes) %>%
-  rename(material = 4, value = 5)
+  select(year, category, type, material, tonnes) 
 
 # Import total tonnages and join
 EOL_packaging_composition_geo_breakdown <-
   left_join(EOL_packaging_composition, population_outturn, by = "year") %>%
-  mutate(tonnes = value * percentage) %>%
+  mutate(tonnes = tonnes * percentage) %>%
   mutate(material = str_to_upper(material)) %>%
   select(year, category, type, material, country, tonnes)

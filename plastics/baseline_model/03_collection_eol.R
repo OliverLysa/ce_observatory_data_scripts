@@ -58,6 +58,7 @@ waste_generated <- read_csv("stock_outflow.csv") %>%
 0
 
 # Littering rate - 0.004 i.e. 0.4% applied to each polymer equally
+# Redo
 litter <- collection %>%
   group_by(year) %>%
   summarise(total = sum(collected)) %>%
@@ -87,28 +88,6 @@ litter <- collection %>%
 0
 
 # Exported - sent for overseas treatment (recycling)
-overseas_recycling <- read_xlsx("./cleaned_data/NPWD_recycling_recovery_detail.xlsx") %>%
-  filter(variable == "net_exported",
-         material_1 == "Plastic",
-         year != "2024") %>%
-  group_by(year, material_1, variable) %>%
-  summarise(value = sum(value))
-
-# What percentage of this flow is made up from specific polymers and applications? Convert into polymers and applications
-# For the years after 2020, we can make better estimates of the different shares of polymers going to different EOL routes
-
-## Import the overseas data detailed
-overseas_recycling_polymers <- read_xlsx("./cleaned_data/NPWD_recycling_recovery_detail.xlsx") %>%
-  filter(variable == "net_exported",
-         material_1 == "Plastic",
-         year != "2024") %>%
-  mutate(material_2 = gsub("\\(Agreed with local agency office or based on sampling\\)", "", material_2)) %>%
-  mutate(material_2 = gsub("\\(Agreed with local agency office\\)", "", material_2))
-
-defra_eol_valpak_conversion_table <- BOM %>%
-  group_by(type, material, year) %>%
-  summarise(percentage = sum(percentage))
-
 ## Imported the defra-valpak polymer and application conversion
 # HDPE bottle - 1 to 1 match
 # PET bottles - 1 to 1 match
@@ -116,15 +95,59 @@ defra_eol_valpak_conversion_table <- BOM %>%
 # PTT - takes polymer breakdown from equivalent years' PTT polymer BOM
 # Packaging film - takes polymer breakdown from equivalent years' film BOM
 # Other - takes polymer breakdown from equivalent years'
+# 100% packaging - percentage for all categories but other
+# Other - Split of other
+
+defra_eol_valpak_conversion_table <-
+  read_excel("./plastics/baseline_model/conversion-tables/defra_recycling_valpak_conversion.xlsx") %>%
+  select(-ROW_CHECK) %>%
+  clean_names() %>%
+  rename(material_2 = defra_category)
+
+## Import the overseas data detailed
+overseas_recycling_polymers <- read_xlsx("./cleaned_data/NPWD_recycling_recovery_detail.xlsx") %>%
+  filter(variable == "net_exported",
+         material_1 == "Plastic",
+         year != "2024")%>%
+  mutate(material_2 = gsub("\\(Agreed with local agency office or based on sampling\\)", "", material_2)) %>%
+  mutate(material_2 = gsub("\\(Agreed with local agency office\\)", "", material_2)) %>%
+  mutate(material_2 = gsub("Other  - ", "", material_2)) %>%
+  mutate_at(c('year'), as.numeric) %>%
+  mutate_at(c('material_2'), trimws) %>%
+  left_join(defra_eol_valpak_conversion_table) %>%
+  select(-c(material_1, variable)) %>%
+  pivot_longer(-c(year,material_2,value),
+               names_to = "category",
+               values_to = "share") %>%
+  mutate(tonnes = value * share) %>%
+  group_by(year,category) %>%
+  summarise(tonnes = sum(tonnes, na.rm = TRUE)) %>%
+  separate(category, c("application", "material"), "_") %>%
+  group_by(year,material) %>%
+  summarise(tonnes = sum(tonnes, na.rm = TRUE))
 
 # Sent for domestic treatment
 ## Sorting and recycling facilities
-domestic_recycling <- read_xlsx("./cleaned_data/NPWD_recycling_recovery_detail.xlsx") %>%
+domestic_recycling_polymers <- read_xlsx("./cleaned_data/NPWD_recycling_recovery_detail.xlsx") %>%
   filter(variable == "net_received",
          material_1 == "Plastic",
          year != "2024") %>%
-  group_by(year, material_1, variable) %>%
-  summarise(value = sum(value))
+  mutate(material_2 = gsub("\\(Agreed with local agency office or based on sampling\\)", "", material_2)) %>%
+  mutate(material_2 = gsub("\\(Agreed with local agency office\\)", "", material_2)) %>%
+  mutate(material_2 = gsub("Other  - ", "", material_2)) %>%
+  mutate_at(c('year'), as.numeric) %>%
+  mutate_at(c('material_2'), trimws) %>%
+  left_join(defra_eol_valpak_conversion_table) %>%
+  select(-c(material_1, variable)) %>%
+  pivot_longer(-c(year,material_2,value),
+               names_to = "category",
+               values_to = "share") %>%
+  mutate(tonnes = value * share) %>%
+  group_by(year,category) %>%
+  summarise(tonnes = sum(tonnes, na.rm = TRUE)) %>%
+  separate(category, c("application", "material"), "_") %>%
+  group_by(year,material) %>%
+  summarise(tonnes = sum(tonnes, na.rm = TRUE))
 
 ## Residual
 ## Landfill

@@ -79,7 +79,7 @@ POM_2_alt <- POM_packaging_composition %>%
          material,
          value)
 
-############## WASTE GENERATED - redo with corrected lifespan data
+############## WASTE GENERATED
 
 # Import the official arisings data and join
 WG <- read_excel("./cleaned_data/defra_packaging_all.xlsx") %>%
@@ -120,6 +120,14 @@ WG <- read_excel("./cleaned_data/defra_packaging_all.xlsx") %>%
 
 ############## POST-COLLECTION TREATMENT
 
+# EXPORTS
+## FOR RECYCLING
+export_recycling <- read_xlsx("./cleaned_data/NPWD_recycling_recovery_detail.xlsx") %>%
+  filter(material_1 == "Plastic") %>%
+  filter(grepl("export",variable)) %>%
+  group_by(year, material_1, variable) %>%
+  summarise(value = sum(value))
+
 # DOMESTIC RECYCLING
 domestic_recycling <- read_xlsx("./cleaned_data/NPWD_recycling_recovery_detail.xlsx") %>%
   filter(material_1 == "Plastic") %>%
@@ -129,23 +137,6 @@ domestic_recycling <- read_xlsx("./cleaned_data/NPWD_recycling_recovery_detail.x
 
 # REJECTS
 # NPWD - difference between gross and net
-
-
-# EXPORTS
-## FOR RECYCLING
-export_recycling <- read_xlsx("./cleaned_data/NPWD_recycling_recovery_detail.xlsx") %>%
-  filter(material_1 == "Plastic") %>%
-  filter(grepl("export",variable)) %>%
-  group_by(year, material_1, variable) %>%
-  summarise(value = sum(value))
-
-# Share from each collection source
-# WDF assumption
-
-# DOMESTIC RECYCLING
-
-# The whole difference between gross and net then goes to domestic residual?
-## RDF
 
 # DOMESTIC RESIDUAL
 ## TOTAL RESIDUAL CAN BE CALCULATED AS POM - TOTAL RECYCLING (DOMESTIC & OVERSEAS) EXCLUDING REJECTS 
@@ -175,23 +166,3 @@ plastic_packaging_sankey_flows <- rbindlist(
   mutate(product = "Packaging")
 
 write_csv(sankey_all, "sankey_all.csv")
-
-###### KPIs
-
-# POM
-POM_WG_KPI <- POM_packaging_composition_geo_breakdown %>%
-  filter(country %in% c("England", "Wales")) %>%
-  group_by(year, material) %>%
-  summarise(POM = sum(tonnes)) %>%
-  mutate(across(c('POM'), round, 2)) %>%
-  mutate(product = "Packaging") %>%
-  filter(! year < 2014) %>%
-  mutate(material = gsub("OTHER", "Other", material))
-
-# Quantity recycled
-recycling <- 
-
-DBI::dbWriteTable(con,
-                  "packaging_KPIs",
-                  POM_WG_KPI,
-                  overwrite = TRUE)
