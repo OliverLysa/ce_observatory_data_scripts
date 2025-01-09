@@ -1,6 +1,6 @@
 ##### **********************
 # Author: Oliver Lysaght
-# Purpose: Produce a continuous plastic packaging sankey for England & Wales (2012-23)
+# Purpose: KPIs for the data observatory
 
 # *******************************************************************************
 # Packages
@@ -31,34 +31,38 @@ invisible(lapply(packages, library, character.only = TRUE))
 ###### KPIs
 
 # POM
-POM_WG_KPI <- POM_packaging_composition_geo_breakdown %>%
-  filter(country %in% c("England", "Wales")) %>%
+POM_WG_KPI <- POM_packaging_composition %>%
   group_by(year, material) %>%
-  summarise(POM = sum(tonnes)) %>%
-  mutate(across(c('POM'), round, 2)) %>%
+  summarise(POM = sum(value)) %>%
+  mutate(across(c('POM'), round, 3)) %>%
   mutate(product = "Packaging") %>%
   filter(! year < 2014) %>%
+  mutate(material = str_to_upper(material)) %>%
   mutate(material = gsub("OTHER", "Other", material))
 
 # Quantity recycled
 domestic_recycling <- 
-  left_join(domestic_recycling_polymers, population_outturn, by = "year") %>%
-  mutate(tonnes = tonnes * percentage) %>%
-  filter(country %in% c("England", "Wales")) %>%
-  group_by(year, material) %>%
-  summarise(domestic_recycling = sum(tonnes)) %>%
+  domestic_recycling_polymers %>%
+  # left_join(domestic_recycling_polymers, population_outturn, by = "year") %>%
+  # mutate(tonnes = tonnes * percentage) %>%
+  # # filter(country %in% c("England", "Wales")) %>%
+  # group_by(year, material) %>%
+  # summarise(domestic_recycling = sum(tonnes)) %>%
   mutate(material = str_to_upper(material)) %>%
-  mutate(material = gsub("OTHER", "Other", material))
+  mutate(material = gsub("OTHER", "Other", material)) %>%
+  rename(domestic_recycling = tonnes)
 
 # Quantity recycled
 overseas_recycling <- 
-  left_join(overseas_recycling_polymers, population_outturn, by = "year") %>%
-  mutate(tonnes = tonnes * percentage) %>%
-  filter(country %in% c("England", "Wales")) %>%
-  group_by(year, material) %>%
-  summarise(overseas_recycling = sum(tonnes)) %>%
+  overseas_recycling_polymers %>%
+  # left_join(overseas_recycling_polymers, population_outturn, by = "year") %>%
+  # mutate(tonnes = tonnes * percentage) %>%
+  # filter(country %in% c("England", "Wales")) %>%
+  # group_by(year, material) %>%
+  # summarise(overseas_recycling = sum(tonnes)) %>%
   mutate(material = str_to_upper(material)) %>%
-  mutate(material = gsub("OTHER", "Other", material))
+  mutate(material = gsub("OTHER", "Other", material)) %>%
+  rename(overseas_recycling = tonnes)
 
 # Combine the KPIs
 KPI_all <-

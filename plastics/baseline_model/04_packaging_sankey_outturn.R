@@ -1,6 +1,6 @@
 ##### **********************
 # Author: Oliver Lysaght
-# Purpose: Produce a continuous plastic packaging sankey for England & Wales (2012-23)
+# Purpose: Produce a plastic packaging sankey for England & Wales 2014-23
 
 # *******************************************************************************
 # Packages
@@ -109,14 +109,19 @@ WG <- read_excel("./cleaned_data/defra_packaging_all.xlsx") %>%
 
 ############## COLLECTION AND LITTERING
 
-# England collection
-# https://statswales.gov.wales/Catalogue/Environment-and-Countryside/Waste-Management/Local-Authority-Municipal-Waste/annualwastereusedrecycledcomposted-by-localauthority-source-year
-
-# Wales collection
-# https://statswales.gov.wales/Catalogue/Environment-and-Countryside/Waste-Management/Local-Authority-Municipal-Waste/annualwastereusedrecycledcomposted-by-localauthority-source-year
-
+## LACW
 
 # LITTERING
+
+litter <- EOL_packaging_composition %>%
+  group_by(year) %>%
+  summarise(total = sum(collected)) %>%
+  ungroup() %>%
+  left_join(waste_generated) %>%
+  mutate(litter = value - total) %>%
+  select(-c(source, target, value, total)) %>%
+  mutate(target = "litter") %>%
+  rename(value = litter)
 
 ############## POST-COLLECTION TREATMENT
 
@@ -149,12 +154,15 @@ treatment_formal_domestic <-
 
 ## DOMESTIC INCINERATION
 
-
 ## DOMESTIC LANDFILL
 
 # DUMPING
 ## FLY-TIPPING DATA
 
+# *******************************************************************************
+# Construct the sankey stages
+
+### Bind the sankey stages together
 plastic_packaging_sankey_flows <- rbindlist(
   list(
     pol_pom,

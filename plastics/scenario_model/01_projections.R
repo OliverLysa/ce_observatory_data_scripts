@@ -404,8 +404,7 @@ projection_kpi_all <- projection_kpi %>%
   filter(! year > 2042) %>%
   filter(! (year == 2023 & type == "Outturn"))
 
-# Detailed chart
-
+# Detailed chart - import composition data
 plastic_packaging_composition_breakdown <- read_xlsx( 
   "./cleaned_data/plastic_packaging_composition.xlsx",
   sheet = 1) %>%
@@ -418,6 +417,7 @@ plastic_packaging_composition_breakdown <- read_xlsx(
   dplyr::rename("application" = type) %>%
   filter(year == 2021)
 
+# Convert projection into composition breakdown
 projection_detailed_future <- 
   left_join(projection_all_variables, plastic_packaging_composition_breakdown, "material") %>%
   clean_names() %>%
@@ -430,6 +430,7 @@ projection_detailed_future <-
        exogenous_factor == "Population") %>%
   filter(variable != "Production emissions (T CO2e)")
 
+# Convert outturn into composition breakdown
 projection_detailed_outturn <- 
   left_join(projection_all_variables, plastic_packaging_composition_breakdown, "material") %>%
   clean_names() %>%
@@ -440,37 +441,69 @@ projection_detailed_outturn <-
   summarise(value = sum(value)) %>%
   filter(type == "Outturn") %>%
   filter(variable != "Production emissions (T CO2e)")
-         
+
+# Bind the two tables together         
 projection_detailed_total <- projection_detailed_future %>%
   bind_rows(projection_detailed_outturn)
 
+# Calculate litter
 projection_detailed_litter <- projection_detailed_total %>%
   filter(variable == "Waste generated") %>%
   mutate(value = value*0.004) %>%
   mutate(variable = "Littering") 
 
+# Calculate domestic mechanical recycling
+# Import the rates
+vensim_rates <-
+  read_excel("./plastics/scenario_model/vensim_model_input_updated.xlsx", sheet = "rate") %>%
+  mutate(material = "plastic")
+
+# Create table to extrapolate 
+years <- c(2024:2042)  
+empty <-
+  as.data.frame(matrix(NA, ncol = length(years), nrow = 14))
+colnames(empty) <- years
+vensim_future <- empty %>%
+  mutate(material = "plastic") 
+
+# Construct table
+vensim_all <- 
+  left_join(vensim_rates, vensim_future) %>%
+  unique() %>%
+  select(-material) %>%
+  pivot_longer(-variable,
+               names_to = "year",
+               values_to = "rate") %>%
+  group_by(variable) %>%
+  mutate(rate = na.approx(
+                 rate,
+                 na.rm = FALSE,
+                 maxgap = Inf,
+                 rule = 2
+               )) %>%
+  pivot_wider(names_from = variable, 
+              values_from = rate) %>%
+  mutate_at(c('year'), as.numeric) %>%
+  clean_names()
+
 projection_detailed_mechanical_recycling <- projection_detailed_total %>%
   filter(variable == "Waste generated")%>%
-  mutate(collection = value*0.95,
-         formal_treatment = collection*0.4,
-         sent_for_recycling = formal_treatment*0.4,
-         value = sent_for_recycling*0.99) %>%
-  # mutate(collection = value*0.95,
-  #        formal_treatment = collection*0.5,
-  #        sent_for_recycling = formal_treatment*0.56,
-  #        value = sent_for_recycling*0.99) %>%
-  mutate(variable = "Mechanical recycling") %>%
-  select(-c(collection, formal_treatment, sent_for_recycling))
+  mutate(collection = value*0.996) %>%
+  left_join(vensim_all) %>%
+  mutate(formal_domestic_treatment = collection * rate_domestic,
+         sent_for_recycling = formal_domestic_treatment * rate_of_recycling,
+         mechanical_recycling = sent_for_recycling * rate_of_mechanical_recycling) %>%
+  # select(1:10, mechanical_recycling) %>%
+  # rename(value = mechanical_recycling) %>%
+  mutate(variable = "Mechanical recycling")
 
+write_xlsx(projection_detailed_mechanical_recycling,
+           "./cleaned_data/projection_detailed_mechanical_recycling.xlsx")
+
+# Bind the tables together
 projection_detailed_total_all <- projection_detailed_total %>%
   bind_rows(projection_detailed_litter) %>%
   bind_rows(projection_detailed_mechanical_recycling)
-
-# projection_detailed <- 
-#   left_join(projection_all_variables, plastic_packaging_composition_breakdown, "material") %>%
-#   clean_names() %>%
-#   mutate(value = value * proportion) %>%
-#   select(-c(year_2, proportion))
 
 # Write table
 DBI::dbWriteTable(con,
@@ -495,7 +528,6 @@ DBI::dbWriteTable(con,
 #            "./cleaned_data/test_combined.xlsx")
 
 ## Vensim input
-
 projection_vensim <- projection_detailed %>%
   filter(variable == "Placed on market",
          forecast_type == "linear model, time-series components",

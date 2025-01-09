@@ -85,14 +85,15 @@ BOM <-
   mutate_at(c('year'), as.numeric) %>%
   select(-value)
 
-# Import total tonnages and join
+# Join total tonnages and bill of materials
 POM_packaging_composition <-
   left_join(official_defra_packaging_pom, BOM, by = "year") %>%
   mutate(tonnes = value * percentage) %>%
   select(year, category, type, material.y, tonnes) %>%
   rename(material = 4, value = 5)
 
-# Scale to England and Wales based on population - final demand, GDP, GDHI or weighted population would add further here
+# Scale to England and Wales based on population
+# Final demand, GDP, GDHI or weighted population would add further here
 
 # Download population data
 # download.file(
@@ -101,21 +102,21 @@ POM_packaging_composition <-
 # )
 
 # Import population data
-population_outturn <-
-  read_csv("./raw_data/population_UK_wide.csv") %>%
-  slice(-c(1:6)) %>%
-  select(1, 2, 4, 7, 8) %>%
-  rename(year = 1) %>%
-  pivot_longer(-c(year), names_to = "country", values_to = "value") %>%
-  mutate(country = gsub(" population mid-year estimate", "", country)) %>%
-  mutate_at(c('value', 'year'), as.numeric) %>%
-  group_by(year) %>%
-  mutate(percentage = (value / sum(value))) %>%
-  select(-value)
+# population_outturn <-
+#   read_csv("./raw_data/population_UK_wide.csv") %>%
+#   slice(-c(1:6)) %>%
+#   select(1, 2, 4, 7, 8) %>%
+#   rename(year = 1) %>%
+#   pivot_longer(-c(year), names_to = "country", values_to = "value") %>%
+#   mutate(country = gsub(" population mid-year estimate", "", country)) %>%
+#   mutate_at(c('value', 'year'), as.numeric) %>%
+#   group_by(year) %>%
+#   mutate(percentage = (value / sum(value))) %>%
+#   select(-value)
 
-# Import total tonnages and join
-POM_packaging_composition_geo_breakdown <-
-  left_join(POM_packaging_composition, population_outturn, by = "year") %>%
-  mutate(tonnes = value * percentage) %>%
-  mutate(material = str_to_upper(material)) %>%
-  select(year, category, type, material, country, tonnes)
+# Left join on population data
+# POM_packaging_composition_geo_breakdown <-
+#   left_join(POM_packaging_composition, population_outturn, by = "year") %>%
+#   mutate(tonnes = value * percentage) %>%
+#   mutate(material = str_to_upper(material)) %>%
+#   select(year, category, type, material, country, tonnes)
