@@ -130,6 +130,7 @@ WG_packaging_composition_excl_lit_dump <- WG_packaging_composition %>%
   mutate(WG_ex = WG - Illegal_collection - litter) %>%
   select(year, material, WG_ex)
 
+# Calculate LA collection
 LA_collection <- WG_packaging_composition_excl_lit_dump %>%
   left_join(waste_split, by = "year") %>%
   filter(year >= 2014) %>%
@@ -141,6 +142,7 @@ LA_collection <- WG_packaging_composition_excl_lit_dump %>%
   mutate(WG_ex_LA = WG_ex * LA_share) %>%
   select(year, material, WG_ex_LA)
 
+# Calculate non-LA collection
 Non_LA_collection <- WG_packaging_composition_excl_lit_dump %>%
   left_join(waste_split, by = "year") %>%
   filter(year >= 2014) %>%
@@ -223,14 +225,20 @@ domestic_recycling_polymers <- read_xlsx("./cleaned_data/NPWD_recycling_recovery
 # Total residual
 # WG - recycling - dumping
 total_residual <- 
-  WG_packaging_composition_excl_lit_dump
-
+  WG_packaging_composition_excl_lit_dump %>%
+  left_join(overseas_recycling_polymers, by = c("year", "material")) %>%
+  filter(year >=2014) %>%
+  rename(overseas = tonnes) %>%
+  left_join(domestic_recycling_polymers, by = c("year", "material")) %>%
+  rename(domestic = tonnes) %>%
+  mutate(total_residual = WG_ex - overseas - domestic) %>%
+  select(year, material, total_residual)
 
 #######################
 ## Treatment (2nd stage)
 
-## Landfill
-waste_treatment_england <- read_ods("./raw_data/UK_Stats_Waste.ods", sheet = "Waste_Tre_Eng_2010-22") %>%
+## Get split of residual treatment into incineration or landfill - England used as data available through 2022
+residual_treatment <- read_ods("./raw_data/UK_Stats_Waste.ods", sheet = "Waste_Tre_Eng_2010-22") %>%
   row_to_names(7) %>%
   clean_names() %>%
   select(-11) %>%
@@ -239,19 +247,50 @@ waste_treatment_england <- read_ods("./raw_data/UK_Stats_Waste.ods", sheet = "Wa
   pivot_longer(-c(year, ewc_stat, type),
                names_to = "category",
                values_to = "value") %>%
-  mutate_at(c('value'), as.numeric) %>%
+  mutate_at(c('value','year'), as.numeric) %>%
   na.omit() %>%
   mutate(category = gsub("_", " ", category)) %>%
   mutate(category = str_to_sentence(category)) %>%
   filter(# ewc_stat == "07.4 - Plastic wastes",
     type == "Total",
-    # Remove recycling
-    category != "Recovery other than energy recovery except backfilling") %>%
+    # types of treatment of interest
+    category %in% c("Energy recovery",
+                    "Incineration",
+                    "Deposit onto or into land")) %>%
+  mutate(category = gsub("Energy recovery", "Incineration", category),
+         category = gsub("Deposit onto or into land", "Landfill", category)) %>%
   ungroup() %>%
   group_by(category, year) %>%
-  summarise(value = sum(value))
+  summarise(value = sum(value)) %>%
+  ungroup() %>%
+  group_by(year) %>%
+  mutate(percentage = (value / sum(value))) %>%
+  select(-value) %>%
+  pivot_wider(names_from = category, values_from = percentage) %>%
+  ungroup() %>%
+  add_row(year = 2011) %>%
+  add_row(year = 2013) %>%
+  add_row(year = 2015) %>%
+  add_row(year = 2017) %>%
+  add_row(year = 2019) %>%
+  add_row(year = 2021) %>%
+  add_row(year = 2023) %>%
+  arrange(year) %>%
+  mutate(Incineration = na.approx(Incineration,
+                                  na.rm = FALSE,
+                                  maxgap = Inf,
+                                  rule = 2)) %>%
+  mutate(Landfill = na.approx(Landfill,
+                                  na.rm = FALSE,
+                                  maxgap = Inf,
+                                  rule = 2))
 
-## Incineration
+# Use the proportions to then split total residual into incineration and landfill
+residual_split <- total_residual %>%
+  left_join(residual_treatment, by = c("year")) %>%
+  mutate(incineration = total_residual * Incineration,
+         landfill = total_residual * Landfill) %>%
+  select(year, material, incineration,landfill)
 
 ## RDF exports (out of residual)
 residual_exp_combined <-
@@ -273,13 +312,11 @@ rejects <-
   group_by(year, material_1, variable) %>%
   summarise(value = sum(value)) %>%
   pivot_wider(names_from = variable, values_from = value)
-
 # Plus Local Authority Collected Waste Estimated Rejects
-
 ## or MF Data approach
 
 ## Recycling end uses
 
-Valpak_end_uses <- 
+
   
 
