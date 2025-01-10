@@ -1,7 +1,6 @@
 ##### **********************
 # Author: Oliver Lysaght
-# Purpose:Calculate collection and post-collection treatment routes for plastic packaging.
-# An assessment of absolute tonnes made first for the baseline model, followed by conversion of these into transfer coefficients for the vensim model. 
+# Purpose:Calculate collection and treatment routes for plastic packaging.
 
 # *******************************************************************************
 # Packages
@@ -32,10 +31,6 @@ invisible(lapply(packages, library, character.only = TRUE))
 # Functions and options
 # *******************************************************************************
 
-# # Import functions
-# source("functions.R",
-#        local = knitr::knit_global())
-
 # Stop scientific notation of numeric values
 options(scipen = 999)
 
@@ -47,39 +42,122 @@ not_all_na <- function(x)
 #######################
 ## Collection stage
 
-# LA collected
-# Total LA collected - calculated based on total LACW/waste generation (excl.) construction. 
-# LA collected residual vs. recycling collection based on LACW statistics
-# England collection - https://statswales.gov.wales/Catalogue/Environment-and-Countryside/Waste-Management/Local-Authority-Municipal-Waste/annualwastereusedrecycledcomposted-by-localauthority-source-year
-# Wales collection - https://statswales.gov.wales/Catalogue/Environment-and-Countryside/Waste-Management/Local-Authority-Municipal-Waste/annualwastereusedrecycledcomposted-by-localauthority-source-year
-# Multiply WG by this share
-# Map from the Wrap categories 
-
-# Non-LA WMC collected - share
-
 # Collected for dumping
+# Flytipping of plastic packaging
+# Estimate the weight of the relevant categories
+flytipping_totals <- flytipping %>%
+  clean_names() %>%
+  group_by(year, type) %>%
+  summarise(value = sum(value)) %>%
+  dplyr::filter(grepl('Black Bags', type)) %>%
+  # Assuming 200 bags at 10 kg each - adjusted based on Brunel study
+  mutate(weight_per_incident_kg = case_when(str_detect(type, "Commercial") ~ 2000,
+                                            # Assuming 30 bags at 10 kg each              
+                                            str_detect(type, "Household") ~ 300)) %>%
+  mutate(weight_tonnes = (value * weight_per_incident_kg)/1000) %>%
+  group_by(year) %>%
+  summarise(weight_tonnes = sum(weight_tonnes)) %>%
+  mutate(collection_route = "residual")
+
+# Get composition of residual waste (taken as a proxy for composition of black bags fly-tipped)
+composition <- 
+  read_csv("./cleaned_data/waste_collection_composition_all.csv") %>%
+  filter(collection_route == "residual") %>%
+  filter(waste_type %in% c("PET bottles",
+                           "HDPE bottles",
+                           "Other plastic bottles",
+                           "Pots, tubs & trays",
+                           "Other dense plastic packaging",
+                           "Polystyrene",
+                           "Carrier bags",
+                           "Other packaging plastic film")) %>%
+  # group_by(waste_type) %>%
+  summarise(freq = sum(freq)) %>%
+  mutate(collection_route = "residual")
+
+# Fly-tipping plastic packaging
+fly_tipping <- left_join(flytipping_totals, composition) %>%
+  mutate(value = weight_tonnes * freq)
+
 # Dumping rate - 0.006
 # # Polymer breakdown for littering equals WG composition in a given year - 0.4% applied to each polymer equally
-dumping <- EOL_packaging_composition %>%
-  group_by(year,material) %>%
-  summarise(value = sum(tonnes)) %>%
-  ungroup() %>%
-  filter(year <= 2023) %>%
+illegal_collection <- WG_packaging_composition %>%
   mutate(value = value*0.006) %>%
-  mutate(variable = "Littering") 
+  mutate(variable = "Illegal collection") 
 
 # Littering rate - 0.004
 # # Polymer breakdown for littering equals WG composition in a given year - 0.4% applied to each polymer equally
-litter <- EOL_packaging_composition %>%
-  group_by(year,material) %>%
-  summarise(value = sum(tonnes)) %>%
-  ungroup() %>%
-  filter(year <= 2023) %>%
+litter <- WG_packaging_composition %>%
   mutate(value = value*0.004) %>%
   mutate(variable = "Littering") 
 
+# LA collected - split is based on England and scaled to the UK
+# Calculated based on LACW over total waste generation (excl.) construction
+
+# Import total LA collected
+LA_collected <- collection_flows_LA %>%
+  mutate(year = substr(financial_year, 1, 4)) %>%
+  select(-financial_year) %>%
+  rename(LA = value)
+
+# Import total waste collected
+total_waste_collected <- 
+  waste_gen_england %>%
+  filter(type == "Total",
+         # Filter out construction
+         category != "Construction") %>%
+  filter(!grepl("Total",ewc_stat)) %>%
+  group_by(year) %>%
+  summarise(value = sum(value))
+
+# Calculate split across the two collection routes
+waste_split <- 
+  left_join(LA_collected, total_waste_collected, by = "year") %>%
+  mutate(total = na.approx(value,
+            na.rm = FALSE)) %>%
+  mutate(LA_share = LA/total,
+         Non_LA_share = 1 - LA_share) %>%
+  mutate_at(c('year'), as.numeric) %>%
+  select(year, LA_share, Non_LA_share)
+
+# First subtract illegal collection and littering from waste generated then multiply this value by the shares
+WG_packaging_composition_excl_lit_dump <- WG_packaging_composition %>%
+  left_join(illegal_collection, by = c("year", "material")) %>%
+  rename("WG" = value.x,
+         "Illegal_collection" = value.y) %>%
+  left_join(litter, by = c("year", "material")) %>%
+  rename("litter" = value) %>%
+  mutate(WG_ex = WG - Illegal_collection - litter) %>%
+  select(year, material, WG_ex)
+
+LA_collection <- WG_packaging_composition_excl_lit_dump %>%
+  left_join(waste_split, by = "year") %>%
+  filter(year >= 2014) %>%
+  ungroup() %>%
+  mutate(LA_share = na.approx(LA_share,
+                           na.rm = FALSE,
+                           maxgap = Inf,
+                           rule = 2)) %>%
+  mutate(WG_ex_LA = WG_ex * LA_share) %>%
+  select(year, material, WG_ex_LA)
+
+Non_LA_collection <- WG_packaging_composition_excl_lit_dump %>%
+  left_join(waste_split, by = "year") %>%
+  filter(year >= 2014) %>%
+  ungroup() %>%
+  mutate(Non_LA_share = na.approx(Non_LA_share,
+                              na.rm = FALSE,
+                              maxgap = Inf,
+                              rule = 2)) %>%
+  mutate(WG_ex_Non_LA = WG_ex * Non_LA_share) %>%
+  select(year, material, WG_ex_Non_LA)
+
 #######################
 ## Treatment (1st stage)
+
+## Dumping
+dumping <- illegal_collection %>%
+  mutate(variable = "Dumping") 
 
 # Exported - sent for overseas treatment (recycling)
 ## Import the defra-valpak polymer and application conversion
@@ -144,6 +222,9 @@ domestic_recycling_polymers <- read_xlsx("./cleaned_data/NPWD_recycling_recovery
 
 # Total residual
 # WG - recycling - dumping
+total_residual <- 
+  WG_packaging_composition_excl_lit_dump
+
 
 #######################
 ## Treatment (2nd stage)
@@ -184,6 +265,7 @@ residual_exp_combined <-
   mutate(plastic_packaging = plastic * 0.6)
 
 # Recycling rejects (Recycling waste)
+## NPWD
 rejects <-
   read_xlsx("./cleaned_data/NPWD_recycling_recovery_detail.xlsx") %>%
   filter(material_1 == "Plastic") %>%
@@ -192,5 +274,12 @@ rejects <-
   summarise(value = sum(value)) %>%
   pivot_wider(names_from = variable, values_from = value)
 
+# Plus Local Authority Collected Waste Estimated Rejects
+
+## or MF Data approach
+
 ## Recycling end uses
+
+Valpak_end_uses <- 
+  
 

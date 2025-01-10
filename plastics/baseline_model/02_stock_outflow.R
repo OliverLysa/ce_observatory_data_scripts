@@ -43,8 +43,8 @@ not_all_na <-
 # Import data
 
 # Import the outturn POM data
-POM_outturn <- read_xlsx("./cleaned_data/plastic_projection_detailed.xlsx") %>%
-  filter(variable == "Placed on market", type == "Outturn")
+# POM_outturn <- read_xlsx("./cleaned_data/plastic_projection_detailed.xlsx") %>%
+#   filter(variable == "Placed on market", type == "Outturn")
 
 # # Import lifespan data - mean
 # lifespan_mean <-
@@ -135,11 +135,14 @@ WG <-
   summarise(value = sum(value, na.rm = TRUE)) %>%
   mutate_at(c('year'), as.numeric)
 
-# Left join total tonnages and composition
-EOL_packaging_composition <-
+# Left join total tonnages and composition (assumed to be the same as POM)
+WG_packaging_composition <-
   left_join(WG, BOM, by = "year") %>%
   mutate(tonnes = value * percentage) %>%
-  select(year, category, type, material, tonnes) 
+  select(year, category, type, material, tonnes) %>%
+  group_by(year,material) %>%
+  summarise(value = sum(tonnes)) %>%
+  filter(year <= 2023)
 
 # Left join on population data
 # EOL_packaging_composition_geo_breakdown <-

@@ -44,7 +44,7 @@ official_defra_packaging_pom <-
   select(-rate) %>%
   filter(variable == "Arisings", material == "Plastic")
 
-############ COMPOSITION
+############ APPLICATION AND POLYMER COMPOSITION
 # Import data
 BOM <-
   # Read in the absolute data
@@ -85,7 +85,7 @@ BOM <-
   mutate_at(c('year'), as.numeric) %>%
   select(-value)
 
-# Join total tonnages and bill of materials
+# Join total tonnages and bill of materials and multiply
 POM_packaging_composition <-
   left_join(official_defra_packaging_pom, BOM, by = "year") %>%
   mutate(tonnes = value * percentage) %>%

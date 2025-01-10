@@ -1,6 +1,6 @@
 ##### **********************
 # Author: Oliver Lysaght
-# Purpose: KPIs for the data observatory
+# Purpose: Calculate KPIs for the data observatory plastic packaging page
 
 # *******************************************************************************
 # Packages

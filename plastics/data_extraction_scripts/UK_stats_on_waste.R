@@ -153,9 +153,7 @@ infrastructure <- infrastructure %>%
   # remove NAs
   na.omit() %>%
   mutate_at(c('value'), as.numeric) %>%
-  mutate(across(c('value'), round, 2))
-
-%>%
+  mutate(across(c('value'), round, 2)) %>%
   na.omit() %>%
   mutate(category = gsub("_", " ", category)) %>%
   mutate(category = str_to_sentence(category)) %>%

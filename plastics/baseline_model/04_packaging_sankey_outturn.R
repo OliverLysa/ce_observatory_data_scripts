@@ -1,6 +1,6 @@
 ##### **********************
 # Author: Oliver Lysaght
-# Purpose: Produce a plastic packaging sankey for England & Wales 2014-23
+# Purpose: Bind tables together to produce the flows in a plastic packaging sankey for the UK 2014-23
 
 # *******************************************************************************
 # Packages
@@ -31,7 +31,7 @@ invisible(lapply(packages, library, character.only = TRUE))
 ############## PLACED ON MARKET - EOL
 
 # Polymer to POM
-pol_pom <- POM_packaging_composition %>%
+pol_pom_sankey <- POM_packaging_composition %>%
   group_by(year, material) %>%
   summarise(value = sum(value)) %>%
   mutate(source = material,
@@ -43,7 +43,7 @@ pol_pom <- POM_packaging_composition %>%
          value)
 
 # POM > End use
-POM_1 <- POM_packaging_composition %>%
+POM_1_sankey <- POM_packaging_composition %>%
   group_by(year, category, material) %>%
   summarise(value = sum(value)) %>%
   mutate(source = "POM") %>%
@@ -55,7 +55,7 @@ POM_1 <- POM_packaging_composition %>%
          value)
 
 # End use > application
-POM_2 <- POM_packaging_composition %>%
+POM_2_sankey <- POM_packaging_composition %>%
   group_by(year, category, type, material) %>%
   summarise(value = sum(value)) %>%
   rename(source = category,
@@ -67,7 +67,7 @@ POM_2 <- POM_packaging_composition %>%
          value)
 
 #Alt - preserves the category
-POM_2_alt <- POM_packaging_composition %>%
+POM_2_alt_sankey <- POM_packaging_composition %>%
   group_by(year, category, type, material) %>%
   summarise(value = sum(value)) %>%
   rename(source = category,
@@ -82,48 +82,42 @@ POM_2_alt <- POM_packaging_composition %>%
 ############## WASTE GENERATED
 
 # Import the official arisings data and join
-WG <- read_excel("./cleaned_data/defra_packaging_all.xlsx") %>%
-  mutate_at(c('year'), as.numeric) %>%
-  select(-rate) %>%
-  filter(variable == "Arisings",
-         material == "Plastic") %>%
-  select(-c(variable,material)) %>%
-  left_join(BOM, by) %>%
-  mutate(tonnes = value.x * value.y) %>%
-  select(year.x,
-         type,
-         material,
-         tonnes) %>%
-  group_by(year.x,
-           type,
-           material) %>%
-  summarise(value = sum(tonnes)) %>%
-  rename(year = 1,
-         source = 2) %>%
-  mutate(target = "WG") %>%
-  select(year,
-         source,
-         target,
-         material,
-         value)
-
+WG_sankey <- POM_2_alt %>% 
+  ungroup() %>%
+  dplyr::select(-c(source)) %>%
+  rename(source = target) %>%
+  mutate(target = "WG", .before = material)
+  
 ############## COLLECTION AND LITTERING
 
 ## LACW
+LA_collection_sankey <- LA_collection %>%
+  mutate(source = "WG",
+         target = "LA collection") %>%
+  rename(value = WG_ex_LA)
+
+## NON-LA WMC Collection
+Non_LA_collection_sankey <- Non_LA_collection %>%
+  mutate(source = "WG",
+         target = "Non LA collection") %>%
+  rename(value = WG_ex_Non_LA)
 
 # LITTERING
+litter_sankey <- litter %>%
+  mutate(source = "WG", .before = variable) %>%
+  rename(target = variable)
 
-litter <- EOL_packaging_composition %>%
-  group_by(year) %>%
-  summarise(total = sum(collected)) %>%
-  ungroup() %>%
-  left_join(waste_generated) %>%
-  mutate(litter = value - total) %>%
-  select(-c(source, target, value, total)) %>%
-  mutate(target = "litter") %>%
-  rename(value = litter)
+## ILLEGAL COLLECTION FOR DUMPING
+illegal_collection_sankey <- illegal_collection %>%
+  mutate(source = "WG", .before = variable) %>%
+  rename(target = variable)
 
 ############## POST-COLLECTION TREATMENT
+
+# DUMPING
+dumping_sankey <- illegal_collection_sankey %>%
+  mutate(source = "Illegal collection",
+         target = "Dumping")
 
 # EXPORTS
 ## FOR RECYCLING
@@ -156,8 +150,6 @@ treatment_formal_domestic <-
 
 ## DOMESTIC LANDFILL
 
-# DUMPING
-## FLY-TIPPING DATA
 
 # *******************************************************************************
 # Construct the sankey stages
@@ -167,10 +159,14 @@ plastic_packaging_sankey_flows <- rbindlist(
   list(
     pol_pom,
     POM_1,
-    POM_2,
-    WG),
+    POM_2_alt,
+    WG_sankey,
+    LA_collection_sankey,
+    Non_LA_collection_sankey,
+    litter_sankey,
+    illegal_collection_sankey,
+    dumping_sankey),
   use.names = TRUE) %>%
-  # filter(year != 2023) %>%
   mutate(product = "Packaging")
 
 write_csv(sankey_all, "sankey_all.csv")
