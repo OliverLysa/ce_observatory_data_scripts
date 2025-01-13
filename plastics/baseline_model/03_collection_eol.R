@@ -352,7 +352,7 @@ residual_split_LA <- total_residual %>%
          landfill = total_residual * Landfill) %>%
   select(year, material, incineration,landfill)
 
-## RDF exports (out of sorting) 
+## RDF exports (out of sorting)  
 residual_exp_combined <-
   read_csv("./cleaned_data/RDF_exports.csv") %>%
   clean_names() %>%

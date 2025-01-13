@@ -306,6 +306,9 @@ plastic_packaging_sankey_flows_detail <- rbindlist(
   mutate(material = str_to_upper(material)) %>%
   mutate(material = gsub("OTHER", "Other", material))
 
+write_csv(plastic_packaging_sankey_flows_detail, 
+          "sankey_detail.csv")
+
 DBI::dbWriteTable(con,
                   "plastic_packaging_sankey_flows_detail",
                   plastic_packaging_sankey_flows_detail,
