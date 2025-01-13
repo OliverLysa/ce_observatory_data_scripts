@@ -14,8 +14,7 @@ packages <- c(
   "tidyverse",
   "readODS",
   "data.table",
-  "janitor",
-  "methods"
+  "janitor"
 )
 
 # Install packages not yet installed
@@ -40,10 +39,11 @@ not_all_na <- function(x)
 
 # *******************************************************************************
 #######################
-## Collection stage
+# Collection stage
 
-# Collected for dumping
-# Flytipping of plastic packaging
+## Illegal collection for dumping
+
+### Flytipping of plastic packaging
 # Estimate the weight of the relevant categories
 flytipping_totals <- flytipping %>%
   clean_names() %>%
@@ -79,28 +79,28 @@ composition <-
 fly_tipping <- left_join(flytipping_totals, composition) %>%
   mutate(value = weight_tonnes * freq)
 
-# Dumping rate - 0.006
+## Dumping rate - 0.006
 # # Polymer breakdown for littering equals WG composition in a given year - 0.4% applied to each polymer equally
 illegal_collection <- WG_packaging_composition %>%
   mutate(value = value*0.006) %>%
   mutate(variable = "Illegal collection") 
 
-# Littering rate - 0.004
-# # Polymer breakdown for littering equals WG composition in a given year - 0.4% applied to each polymer equally
+# Littering rate
+# Polymer breakdown for littering equals WG composition in a given year - 4% applied to each polymer equally
+# https://www.wwf.org.uk/sites/default/files/2018-03/WWF_Plastics_Consumption_Report_Final.pdf
 litter <- WG_packaging_composition %>%
-  mutate(value = value*0.004) %>%
+  mutate(value = value*0.04) %>%
   mutate(variable = "Littering") 
 
 # LA collected - split is based on England and scaled to the UK
 # Calculated based on LACW over total waste generation (excl.) construction
-
-# Import total LA collected
+# Import total LA collected from Defra statistics
 LA_collected <- collection_flows_LA %>%
   mutate(year = substr(financial_year, 1, 4)) %>%
   select(-financial_year) %>%
   rename(LA = value)
 
-# Import total waste collected
+# Import total waste collected data from Defra
 total_waste_collected <- 
   waste_gen_england %>%
   filter(type == "Total",
@@ -120,7 +120,7 @@ waste_split <-
   mutate_at(c('year'), as.numeric) %>%
   select(year, LA_share, Non_LA_share)
 
-# First subtract illegal collection and littering from waste generated then multiply this value by the shares
+# First subtract illegal collection and littering from waste generated to produce a value that can be multiplied by these shares
 WG_packaging_composition_excl_lit_dump <- WG_packaging_composition %>%
   left_join(illegal_collection, by = c("year", "material")) %>%
   rename("WG" = value.x,
@@ -168,11 +168,11 @@ dumping <- illegal_collection %>%
 # Mixed - bottles - takes polymer breakdown for equivalent years' bottles excl. HDPE and PET
 # PTT - takes polymer breakdown from equivalent years' PTT polymer BOM
 # Packaging film - takes polymer breakdown from equivalent years' film BOM
-# Other - takes polymer breakdown from equivalent years' other
+# Other - takes polymer breakdown from equivalent years' 'other' BOM
 # 100% packaging - percentage for all categories but other
 # Other - Split of other
 defra_eol_valpak_conversion_table <-
-  read_excel("./plastics/baseline_model/conversion-tables/defra_recycling_valpak_conversion.xlsx") %>%
+  read_excel("./plastics/baseline_model/conversion-tables/defra_recycling_valpak_conversion2.xlsx") %>%
   select(-ROW_CHECK) %>%
   clean_names() %>%
   rename(material_2 = defra_category)
@@ -199,8 +199,7 @@ overseas_recycling_polymers <- read_xlsx("./cleaned_data/NPWD_recycling_recovery
   group_by(year,material) %>%
   summarise(tonnes = sum(tonnes, na.rm = TRUE))
 
-# Sent for domestic treatment
-## Sorting and recycling facilities
+# Sent for domestic recycling
 domestic_recycling_polymers <- read_xlsx("./cleaned_data/NPWD_recycling_recovery_detail.xlsx") %>%
   filter(variable == "net_received",
          material_1 == "Plastic",
@@ -222,16 +221,55 @@ domestic_recycling_polymers <- read_xlsx("./cleaned_data/NPWD_recycling_recovery
   group_by(year,material) %>%
   summarise(tonnes = sum(tonnes, na.rm = TRUE))
 
+# Rejects
+## Local Authority Collected Waste Estimated Rejects
+rejects_WDF <- rejects_share %>%
+  mutate(year = substr(financial_year, 1, 4)) %>%
+  select(year, share)
+
+## NPWD rejects (the difference between gross and net)
+rejects_NPWD <-
+  read_xlsx("./cleaned_data/NPWD_recycling_recovery_detail.xlsx") %>%
+  filter(material_1 == "Plastic") %>%
+  filter(grepl("total", variable)) %>%
+  group_by(year, material_1, variable) %>%
+  summarise(value = sum(value)) %>%
+  pivot_wider(names_from = variable, values_from = value) %>%
+  mutate(difference = gross_total - net_total,
+         reject_percentage = difference/gross_total)
+
+## Combine the NPWD rejects and WDF rejects
+rejects_WDF_NPWD_combined <- rejects_WDF %>%
+  left_join(rejects_NPWD) %>%
+  mutate(total_losses = share + reject_percentage) %>%
+  select(year, total_losses)
+
+## Material facility rejects (import from MF script)
+material_facility_rejects <- 
+  averaged_mf %>%
+  mutate(mean = mean/100,
+         mean = 1 - mean) %>%
+  mutate(application = "Packaging")
+  
+## Sorting - sum of recycling and rejects
+sorting <- overseas_recycling_polymers %>%
+  left_join(domestic_recycling_polymers, by = c("year", "material")) %>%
+  rename(overseas = tonnes.x,
+         domestic = tonnes.y) %>%
+  mutate(total = overseas + domestic) %>%
+  mutate(application = "Packaging") %>%
+  left_join(material_facility_rejects) %>%
+  mutate(rejects = total * mean,
+         sorting = rejects + total) %>%
+  select(year, material, sorting, rejects)
+
 # Total residual
 # WG - recycling - dumping
 total_residual <- 
   WG_packaging_composition_excl_lit_dump %>%
-  left_join(overseas_recycling_polymers, by = c("year", "material")) %>%
-  filter(year >=2014) %>%
-  rename(overseas = tonnes) %>%
-  left_join(domestic_recycling_polymers, by = c("year", "material")) %>%
-  rename(domestic = tonnes) %>%
-  mutate(total_residual = WG_ex - overseas - domestic) %>%
+  left_join(sorting, by = c("year", "material")) %>%
+  filter(year >= 2014) %>%
+  mutate(total_residual = WG_ex - sorting) %>%
   select(year, material, total_residual)
 
 #######################
@@ -285,6 +323,21 @@ residual_treatment <- read_ods("./raw_data/UK_Stats_Waste.ods", sheet = "Waste_T
                                   maxgap = Inf,
                                   rule = 2))
 
+## Import LACW treatment data to use instead
+residual_treatment_LA <- 
+  treatment_shares_LA %>%
+  pivot_wider(names_from = route, values_from = percentage) %>%
+  ungroup() %>%
+  add_row(year = 2023) %>%
+  mutate(Incineration = na.approx(Incineration,
+                                  na.rm = FALSE,
+                                  maxgap = Inf,
+                                  rule = 2)) %>%
+  mutate(Landfill = na.approx(Landfill,
+                                  na.rm = FALSE,
+                                  maxgap = Inf,
+                                  rule = 2))
+
 # Use the proportions to then split total residual into incineration and landfill
 residual_split <- total_residual %>%
   left_join(residual_treatment, by = c("year")) %>%
@@ -292,7 +345,14 @@ residual_split <- total_residual %>%
          landfill = total_residual * Landfill) %>%
   select(year, material, incineration,landfill)
 
-## RDF exports (out of residual)
+# Use the proportions to then split total residual into incineration, landfill
+residual_split_LA <- total_residual %>%
+  left_join(residual_treatment_LA, by = c("year")) %>%
+  mutate(incineration = total_residual * Incineration,
+         landfill = total_residual * Landfill) %>%
+  select(year, material, incineration,landfill)
+
+## RDF exports (out of sorting) 
 residual_exp_combined <-
   read_csv("./cleaned_data/RDF_exports.csv") %>%
   clean_names() %>%
@@ -303,20 +363,40 @@ residual_exp_combined <-
   # 60% of plastic is packaging
   mutate(plastic_packaging = plastic * 0.6)
 
-# Recycling rejects (Recycling waste)
-## NPWD
-rejects <-
-  read_xlsx("./cleaned_data/NPWD_recycling_recovery_detail.xlsx") %>%
-  filter(material_1 == "Plastic") %>%
-  filter(grepl("received", variable)) %>%
-  group_by(year, material_1, variable) %>%
+# Countries overseas recycling then goes to
+plastic_waste_export_split <- plastic_waste_trade_all %>%
+  clean_names() %>%
+  filter(variable == "NetMass") %>%
+  filter(grepl('Exports', flow_type)) %>%
+  group_by(year, country) %>%
+  summarise(value = sum(sum)) 
+
+# Get the top 9
+exports_top <- plastic_waste_export_split %>%
+  ungroup() %>%
+  group_by(year) %>%
+  top_n(9)
+
+# Construct an 'other' category made up of the values not captured in the top 9 
+exports_other <- exports_top %>%
+  group_by(year) %>%
+  summarise(value = sum(value)) 
+
+# Summarise the total to subtract the other from
+exports_all_summarised <-
+  plastic_waste_export_split %>%
+  group_by(year) %>%
   summarise(value = sum(value)) %>%
-  pivot_wider(names_from = variable, values_from = value)
-# Plus Local Authority Collected Waste Estimated Rejects
-## or MF Data approach
+  left_join(exports_other, by = "year") %>%
+  mutate(value = value.x - value.y) %>%
+  select(year, value) %>%
+  mutate(country = "Other")
 
-## Recycling end uses
-
-
+# Finally bind the other row to the exports top table and get percentages
+exports_all_split <- exports_top %>%
+  bind_rows(exports_all_summarised) %>%
+  group_by(year) %>%
+  mutate(percentage = (value / sum(value))) %>%
+  select(-value)
   
 

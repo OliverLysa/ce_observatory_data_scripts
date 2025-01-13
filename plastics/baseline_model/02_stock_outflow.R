@@ -10,12 +10,10 @@ packages <- c(
   "magrittr",
   "writexl",
   "readxl",
-  "dplyr",
-  "tidyverse",
   "readODS",
+  "tidyverse",
   "data.table",
   "janitor",
-  "methods"
 )
 
 # Install packages not yet installed
@@ -41,6 +39,30 @@ not_all_na <-
 
 # *******************************************************************************
 # Import data
+
+## Import the WG data modelled in excel and split by polymer and region
+WG <- 
+  read_excel("./plastics/baseline_model/stock_outflow_excel_model.xlsx") %>%
+  select(-c(1:6)) %>%
+  row_to_names(4) %>%
+  slice(-c(32:33)) %>%
+  mutate(variable = "WG") %>%
+  mutate_at(c('2012'), as.numeric) %>%
+  pivot_longer(-variable, 
+               names_to = "year",
+               values_to = "value") %>%
+  group_by(variable, year) %>%
+  summarise(value = sum(value, na.rm = TRUE)) %>%
+  mutate_at(c('year'), as.numeric)
+
+# Left join total tonnages and composition (assumed to be the same as POM)
+WG_packaging_composition <-
+  left_join(WG, BOM, by = "year") %>%
+  mutate(tonnes = value * percentage) %>%
+  select(year, category, type, material, tonnes) %>%
+  group_by(year,material) %>%
+  summarise(value = sum(tonnes)) %>%
+  filter(year <= 2023)
 
 # Import the outturn POM data
 # POM_outturn <- read_xlsx("./cleaned_data/plastic_projection_detailed.xlsx") %>%
@@ -119,30 +141,6 @@ not_all_na <-
 #                names_to = "year_outflow",
 #                values_to = "value_outflow") %>%
 #   na.omit()
-
-## Import the WG data modelled in excel and split by polymer and region
-WG <- 
-  read_excel("./plastics/baseline_model/stock_outflow_excel_model.xlsx") %>%
-  select(-c(1:6)) %>%
-  row_to_names(4) %>%
-  slice(-c(32:33)) %>%
-  mutate(variable = "WG") %>%
-  mutate_at(c('2012'), as.numeric) %>%
-  pivot_longer(-variable, 
-               names_to = "year",
-               values_to = "value") %>%
-  group_by(variable, year) %>%
-  summarise(value = sum(value, na.rm = TRUE)) %>%
-  mutate_at(c('year'), as.numeric)
-
-# Left join total tonnages and composition (assumed to be the same as POM)
-WG_packaging_composition <-
-  left_join(WG, BOM, by = "year") %>%
-  mutate(tonnes = value * percentage) %>%
-  select(year, category, type, material, tonnes) %>%
-  group_by(year,material) %>%
-  summarise(value = sum(tonnes)) %>%
-  filter(year <= 2023)
 
 # Left join on population data
 # EOL_packaging_composition_geo_breakdown <-

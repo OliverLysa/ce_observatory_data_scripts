@@ -74,7 +74,7 @@ trade_codes <- (c(391510,
                   391530,
                   391590))
 
-plastic_waste_exports_all <-
+plastic_waste_trade_all <-
   # Import data
   read_csv("./raw_data/Yearly - UK-Trade-Data - 200001 to 202409 - 391510 to 391590.csv") %>%
   unite(Description, Cn8, Description, sep = " - ") %>%
@@ -85,7 +85,7 @@ plastic_waste_exports_all <-
                names_to = "Variable",
                values_to = "Value") %>%
   filter(Variable != "SuppUnit") %>%
-  group_by(Year, Variable, Description, FlowType) %>%
+  group_by(Year, Variable, Description, FlowType, Country) %>%
   summarise(sum = sum(Value))
 
 DBI::dbWriteTable(con, "plastic_waste_exports_all",

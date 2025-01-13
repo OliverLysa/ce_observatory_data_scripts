@@ -8,18 +8,13 @@
 
 # Package names
 packages <- c(
-  "magrittr",
   "writexl",
   "readxl",
-  "dplyr",
-  "tidyverse",
   "readODS",
+  "tidyverse",
   "data.table",
   "janitor",
-  "xlsx",
-  "tabulizer",
-  "docxtractr",
-  "campfin"
+  "xlsx"
 )
 
 # Install packages not yet installed
@@ -54,7 +49,7 @@ BOM <-
   pivot_longer(-c(year, category, type),
                names_to = "material",
                values_to = "value") %>%
-  # Then wider to be able to add additional years for the extrapoltion and interpolation
+  # Then wider to be able to add additional years for the extrapolation and interpolation
   pivot_wider(names_from = year, values_from = value) %>%
   mutate(
     '2012' = NA,
@@ -85,15 +80,16 @@ BOM <-
   mutate_at(c('year'), as.numeric) %>%
   select(-value)
 
-# Join total tonnages and bill of materials and multiply
+# Join total POM tonnages and bill of materials and multiply to get the POM by end use, polymer and application
 POM_packaging_composition <-
   left_join(official_defra_packaging_pom, BOM, by = "year") %>%
   mutate(tonnes = value * percentage) %>%
   select(year, category, type, material.y, tonnes) %>%
-  rename(material = 4, value = 5)
+  rename(material = 4, value = 5) # %>%
+  # mutate(material = str_to_upper(material)) %>%
+  # mutate(material = gsub("OTHER", "Other", material))
 
-# Scale to England and Wales based on population
-# Final demand, GDP, GDHI or weighted population would add further here
+# Scale to England and Wales based on population - Final demand, GDP, GDHI or weighted population could be alternative ways
 
 # Download population data
 # download.file(

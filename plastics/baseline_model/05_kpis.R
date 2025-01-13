@@ -34,7 +34,7 @@ invisible(lapply(packages, library, character.only = TRUE))
 POM_WG_KPI <- POM_packaging_composition %>%
   group_by(year, material) %>%
   summarise(POM = sum(value)) %>%
-  mutate(across(c('POM'), round, 3)) %>%
+  mutate(across(c('POM'), round, 4)) %>%
   mutate(product = "Packaging") %>%
   filter(! year < 2014) %>%
   mutate(material = str_to_upper(material)) %>%

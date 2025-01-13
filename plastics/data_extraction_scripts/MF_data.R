@@ -38,6 +38,7 @@ MF_data_21 <-
   group_by(year, ea_area, grade_if_som) %>%
   summarise(tonnes = sum(tonnes))
 
+
 MF_data <- MF_data_20 %>%
   bind_rows(MF_data_21) %>%
   rename(region = 2,
@@ -57,7 +58,7 @@ MF_data_in <-   # Read in file
   select(19) %>%
   summarise(average = mean(total_target_materials_percent, na.rm = TRUE))
 
-MF_data_out <-   # Read in file
+MF_data_out_21 <-   # Read in file
   read_excel("./raw_data/material_facilities/MF_Data_January_to_December_2021.xlsx",
              sheet = "Output") %>%
   clean_names() %>%
@@ -65,6 +66,18 @@ MF_data_out <-   # Read in file
   summarise(mean_target_all = mean(total_target_materials_percent, na.rm = TRUE),
             mean_non = mean(total_non_recyclable_materials_percent, na.rm = TRUE))
 
+MF_data_out_20 <-   # Read in file
+  read_excel("./raw_data/material_facilities/MF_Data_January_to_December_2020.xlsx",
+             sheet = "Output") %>%
+  clean_names() %>%
+  group_by(material_type_if_som) %>%
+  summarise(mean_target_all = mean(total_target_materials_percent, na.rm = TRUE),
+            mean_non = mean(total_non_recyclable_materials_percent, na.rm = TRUE))
+
+averaged_mf <- MF_data_out_20 %>%
+  bind_rows(MF_data_out_21) %>%
+  filter(material_type_if_som == "Plastic") %>%
+  summarise(mean = mean(mean_target_all))
 
 
   
