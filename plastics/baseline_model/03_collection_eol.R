@@ -259,6 +259,9 @@ sorting <- overseas_recycling_polymers %>%
   mutate(total = overseas + domestic) %>%
   mutate(application = "Packaging") %>%
   left_join(material_facility_rejects) %>%
+  # Redo the sorting calculation - We know the net figure - To get the original figure knowing the rejects rate, we need to do the following:
+  # step 1. Subtract percentage losses in decimal format from 1 e.g. 1 - 0.15
+  # step 2. divide the resulting value by that e.g. 150/0.85
   mutate(rejects = total * mean,
          sorting = rejects + total) %>%
   select(year, material, sorting, rejects)
