@@ -50,68 +50,68 @@ options(scipen = 999)
 # *******************************************************************************
 # Comtrade
 
-# Import HS codes from UNITAR
-hs_codes <-
-  read_xlsx("./electronics/batteries_project/hs_correspondence_through_24.xlsx") %>%
-  mutate_at(c('year'), as.numeric) %>%
-  select(1) %>%
-  unique() %>%
-  # Unlist
-  unlist()
-
-# Function to use the comtrade R package to extract trade data from the Comtrade API
-comtrade_extractor <- function(x) {
-  trade_results <-
-    ct_get_data(
-      reporter =  c('GBR'),
-      frequency = "A",
-      flow_direction = c("export","import"),
-      partner = "World",
-      start_date = 1977,
-      end_date = 1988,
-      commodity_code = c(x)
-    )
-  trade_results <- trade_results %>%
-    mutate(search_code = x)
-  
-  return(trade_results)
-}
-
-# Create a for loop that goes through the trade codes, extracts the data using the extractor function and prints the results to a list of dataframes
-res <- list()
-for (i in seq_along(hs_codes)) {
-  res[[i]] <- comtrade_extractor(hs_codes[i])
-  
-  print(i)
-  
-}
-
+# # Import HS codes from UNITAR
+# hs_codes <-
+#   read_xlsx("./electronics/batteries_project/hs_correspondence_through_24.xlsx") %>%
+#   mutate_at(c('year'), as.numeric) %>%
+#   select(1) %>%
+#   unique() %>%
+#   # Unlist
+#   unlist()
 # 
-# # # Bind the list of returned dataframes to a single dataframe - do for each API run as limited to 12 years
-GBR_13_24 <-
-  dplyr::bind_rows(res)
-
-GBR_01_12 <-
-  dplyr::bind_rows(res)
-
-GBR_89_00 <-
-  dplyr::bind_rows(res)
-
-# Bind datasets 
-comtrade_all <-
-  rbindlist(
-    list(
-      GBR_13_24,
-      GBR_01_12,
-      GBR_89_00
-    ),
-    use.names = TRUE
-  ) %>%
-  rename(year = ref_year)
-
-# # Write
-# write_xlsx(comtrade_all,
-#            "./electronics/batteries_project/raw_data_inputs/comtrade_all.xlsx")
+# # Function to use the comtrade R package to extract trade data from the Comtrade API
+# comtrade_extractor <- function(x) {
+#   trade_results <-
+#     ct_get_data(
+#       reporter =  c('GBR'),
+#       frequency = "A",
+#       flow_direction = c("export","import"),
+#       partner = "World",
+#       start_date = 1977,
+#       end_date = 1988,
+#       commodity_code = c(x)
+#     )
+#   trade_results <- trade_results %>%
+#     mutate(search_code = x)
+#   
+#   return(trade_results)
+# }
+# 
+# # Create a for loop that goes through the trade codes, extracts the data using the extractor function and prints the results to a list of dataframes
+# res <- list()
+# for (i in seq_along(hs_codes)) {
+#   res[[i]] <- comtrade_extractor(hs_codes[i])
+#   
+#   print(i)
+#   
+# }
+# 
+# # 
+# # # # Bind the list of returned dataframes to a single dataframe - do for each API run as limited to 12 years
+# GBR_13_24 <-
+#   dplyr::bind_rows(res)
+# 
+# GBR_01_12 <-
+#   dplyr::bind_rows(res)
+# 
+# GBR_89_00 <-
+#   dplyr::bind_rows(res)
+# 
+# # Bind datasets 
+# comtrade_all <-
+#   rbindlist(
+#     list(
+#       GBR_13_24,
+#       GBR_01_12,
+#       GBR_89_00
+#     ),
+#     use.names = TRUE
+#   ) %>%
+#   rename(year = ref_year)
+# 
+# # # Write
+# # write_xlsx(comtrade_all,
+# #            "./electronics/batteries_project/raw_data_inputs/comtrade_all.xlsx")
 
 comtrade_all <- read_xlsx(
   "./electronics/batteries_project/raw_data_inputs/comtrade_all.xlsx") %>%

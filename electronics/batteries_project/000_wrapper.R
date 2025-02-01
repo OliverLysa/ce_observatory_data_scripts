@@ -1,6 +1,6 @@
 # Files are organised below to be ran sequentially
 # These can be ran from the command line using the following
-# Rscript wrapper.R
+# 000_Rscript wrapper.R
 
 source(
   "/Users/oliverlysaght/Desktop/ce_observatory_data_scripts/electronics/batteries_project/001_international_trade.R"
@@ -16,8 +16,5 @@ source(
 )
 source(
   "/Users/oliverlysaght/Desktop/ce_observatory_data_scripts/electronics/batteries_project/005_stock_outflow.R"
-)
-source(
-  "/Users/oliverlysaght/Desktop/ce_observatory_data_scripts/electronics/batteries_project/006_outflow_routing.R"
 )
 

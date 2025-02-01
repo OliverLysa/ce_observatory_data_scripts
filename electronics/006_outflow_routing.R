@@ -133,127 +133,101 @@ write_xlsx(Openrepair_UNU_mass,
 
 # WEEE collected - shows the amount of household and non-household Waste Electrical and Electronic Equipment (WEEE) collected by Producer Compliance Schemes and their members.
 
-download.file("https://assets.publishing.service.gov.uk/media/65e1a52e3f69450011036057/WEEE_Collected_in_the_UK.xlsx",
-              "./raw_data/WEEE_collected.xlsx")
+download.file("https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/1160179/WEEE_Collected_in_the_UK.ods",
+              "./raw_data/WEEE_collected.ods")
 
-# Extract all sheets into a list of dataframes
-collected_sheet_names <- read_excel_allsheets(
-  "./raw_data/WEEE_collected.xlsx")
+# Extract and list all sheet names 
+collected_sheet_names <- list_ods_sheets(
+  "./raw_data/WEEE_collected.ods")
 
-# Extract all collected data
-collected <-
-  dplyr::bind_rows(collected_sheet_names) %>%
-  clean_names() %>%
-  rename(Var.1 = 1) %>% 
+# Map sheet names to imported file by adding a column "sheetname" with its name
+collected_data <- purrr::map_df(collected_sheet_names, 
+                                ~dplyr::mutate(read_ods(
+                                  "./raw_data/WEEE_collected.ods", 
+                                  sheet = .x), 
+                                  sheetname = .x)) %>%
   mutate(quarters = case_when(str_detect(Var.1, "Period Covered") ~ Var.1), .before = Var.1) %>%
   tidyr::fill(1) %>%
   filter(grepl('January to December', quarters) |
            grepl('January - December', quarters)) %>%
-  mutate(source = case_when(str_detect(Var.1, "Non-Household") ~ "Non-household"), .before = Var.1) %>%
-  mutate(source2 = case_when(str_detect(x3, "Household") ~ "Household"), .before = Var.1) %>%
-  unite(sources, c("source", "source2"), na.rm = TRUE) %>%
-  mutate(year = str_sub(quarters, -4)) %>%
-  mutate_at(c('Var.1', 'year'), as.numeric)
-
-# Convert blanks to NAs
-collected$sources[collected$sources==""] <- NA
-
-# Get collected household 
-collected_household_post_2013 <- collected %>%
-  # Fill column
+  mutate(source = case_when(str_detect(Var.1, "Collected in the UK") ~ Var.1), .before = Var.1) %>%
   tidyr::fill(2) %>%
-  filter(sources == "Household",
-         year > 2013) %>%
   # make numeric and filter out anything but 1-14 in column 1
   mutate_at(c('Var.1'), as.numeric) %>%
   filter(between(Var.1, 1, 14)) %>%
-  select(2:8, 11) %>% 
-  rename(source = 1,
-         UK_14 = 2,
+  select(-c(
+    `Var.1`,
+    sheetname,
+    Var.6,
+    Var.7)) %>% 
+  rename(year = 1,
+         source = 2,
          product = 3,
          dcf = 4,
-         reg_43 = 5,
-         reg_50 = 6,
-         total_sep_collected = 7,
-         year = 8) %>%
+         reg_432 = 5,
+         reg_503 = 6)
+
+# Substring year column to last 4 characters
+collected_data$year = str_sub(collected_data$year,-4)
+
+# Replace na with household
+collected_data["source"][is.na(collected_data["source"])] <- "Household"
+
+# Make long-format and filter to household only
+collected_household <- collected_data %>%
+  # Remove everything in the code column following a hyphen
+  mutate(source = gsub("\\ .*", "", source)) %>%
+  filter(source == "Household") %>%
+  # Pivot long to input to charts
   pivot_longer(-c(
     year,
     source,
-    UK_14,
     product),
     names_to = "route", 
     values_to = "value")
 
-# Get collected household 
-collected_household_2011_2013 <- collected %>%
-  # Fill column
+# Map sheet names to imported file by adding a column "sheetname" with its name to extract non-household data
+collected_data_non_household <- purrr::map_df(collected_sheet_names, 
+                                              ~dplyr::mutate(read_ods(
+                                                "./raw_data/WEEE_collected.ods", 
+                                                sheet = .x), 
+                                                sheetname = .x)) %>%
+  mutate(quarters = case_when(str_detect(Var.1, "Period Covered") ~ Var.1), .before = Var.1) %>%
+  tidyr::fill(1) %>%
+  filter(grepl('January to December', quarters) |
+           grepl('January - December', quarters)) %>%
+  mutate(source = case_when(str_detect(Var.1, "Collected in the UK") ~ Var.1), .before = Var.1) %>%
   tidyr::fill(2) %>%
-  filter(sources == "Household",
-         year >= 2011,
-         year <= 2013) %>%
   # make numeric and filter out anything but 1-14 in column 1
   mutate_at(c('Var.1'), as.numeric) %>%
   filter(between(Var.1, 1, 14)) %>%
-  select(2:8, 11) %>% 
-  rename(source = 1,
-         UK_14 = 2,
+  select(-c(
+    `Var.1`,
+    sheetname,
+    Var.3,
+    Var.4,
+    Var.5,
+    Var.6)) %>% 
+  rename(year = 1,
+         source = 2,
          product = 3,
-         dcf = 4,
-         reg_32 = 5,
-         reg_39 = 6,
-         total_sep_collected = 7,
-         year = 8) %>%
-  pivot_longer(-c(
-    year,
-    source,
-    UK_14,
-    product),
-    names_to = "route", 
-    values_to = "value")
+         total = 4)
 
-# Get collected household 
-collected_household_pre_2011 <- collected %>%
-  # Fill column
-  tidyr::fill(2) %>%
-  filter(sources == "Household",
-         year < 2011) %>%
-  # make numeric and filter out anything but 1-14 in column 1
-  mutate_at(c('Var.1'), as.numeric) %>%
-  filter(between(Var.1, 1, 14)) %>%
-  select(2:7, 11) %>% 
-  rename(source = 1,
-         UK_14 = 2,
-         product = 3,
-         dcf = 4,
-         reg_32 = 5,
-         total_sep_collected = 6,
-         year = 7) %>%
-  pivot_longer(-c(
-    year,
-    source,
-    UK_14,
-    product),
-    names_to = "route", 
-    values_to = "value")
+# Substring year column to last 4 characters
+collected_data_non_household$year = str_sub(collected_data_non_household$year,-4)
 
-# Get non-household data
-collected_non_household <- collected %>%
-  # Fill column
-  tidyr::fill(2) %>%
-  filter(sources == "Non-household") %>%
-  # make numeric and filter out anything but 1-14 in column 1
-  mutate_at(c('Var.1'), as.numeric) %>%
-  filter(between(Var.1, 1, 14)) %>%
-  select(2:4,9, 11) %>% 
-  rename(source = 1,
-         UK_14 = 2,
-         product = 3,
-         total = 4,
-         year = 5) %>%
+# Replace na with household
+collected_data_non_household["source"][is.na(collected_data["source"])] <- "Household"
+
+# Make long-format and filter to non-household only
+collected_data_non_household <- collected_data_non_household %>%
+  # Remove everything in the code column following a hyphen
+  mutate(source = gsub("\\ .*", "", source)) %>%
+  filter(source == "Non-Household") %>%
+  # Pivot long to input to charts
   pivot_longer(-c(
     year,
     source,
-    UK_14,
     product),
     names_to = "route", 
     values_to = "value")
@@ -262,49 +236,43 @@ collected_non_household <- collected %>%
 collected_all <-
   rbindlist(
     list(
-      collected_household_post_2013,
-      collected_household_2011_2013,
-      collected_household_pre_2011,
-      collected_non_household
+      collected_household,
+      collected_data_non_household
     ),
-    use.names = FALSE) %>%
-  mutate_at(c('value'), as.numeric) %>%
-  mutate(at(c('value'), round, 2))
-  
+    use.names = FALSE)
+
 # Write output to xlsx form
-write_xlsx(collected_all,
-          "./cleaned_data/electronics_collected_all.xlsx")
+# write_xlsx(collected_all, 
+#           "./cleaned_data/electronics_collected_all.xlsx")
 
 # Prepare for converting from UKU 14 to UNU-54
 collected_all_summarised <- collected_all %>%
   mutate_at(c('value'), as.numeric) %>%
-  filter(route %in% c("total_sep_collected",
-                    "total")) %>%
   group_by(product, year) %>%
   summarise(value = sum(value))
 
 # Convert to wide format
 collected_all_wide <- collected_all_summarised %>%
   pivot_wider(names_from = "year", 
-            values_from = "value")
+              values_from = "value")
 
 # Reorder rows to match the UK14 to UNU mapping tool 
 collected_all_wide$product <- factor(collected_all_wide$product, levels=c(
-              "Large Household Appliances",
-              "Small Household Appliances",
-              "IT and Telcomms Equipment",
-              "Consumer Equipment",
-              "Lighting Equipment",
-              "Electrical and Electronic Tools",
-              "Toys Leisure and Sports",
-              "Medical Devices",
-              "Monitoring and Control Instruments",
-              "Automatic Dispensers",
-              "Display Equipment",
-              "Cooling Appliances Containing Refrigerants",
-              "Gas Discharge Lamps",
-              "Gas Discharge Lamps and LED Light Sources",
-              "Photovoltaic Panels"))
+  "Large Household Appliances",
+  "Small Household Appliances",
+  "IT and Telcomms Equipment",
+  "Consumer Equipment",
+  "Lighting Equipment",
+  "Electrical and Electronic Tools",
+  "Toys Leisure and Sports",
+  "Medical Devices",
+  "Monitoring and Control Instruments",
+  "Automatic Dispensers",
+  "Display Equipment",
+  "Cooling Appliances Containing Refrigerants",
+  "Gas Discharge Lamps",
+  "Gas Discharge Lamps and LED Light Sources",
+  "Photovoltaic Panels"))
 
 collected_all_wide <- collected_all_wide[order(collected_all_wide$product), ]
 

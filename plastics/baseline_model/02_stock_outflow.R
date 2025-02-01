@@ -1,6 +1,6 @@
 ##### **********************
 # Author: Oliver Lysaght
-# Purpose:Calculate waste generated and stock from inflow and lifespan data
+# Purpose:Calculate waste generated and stocks from inflow and lifespan data
 
 # *******************************************************************************
 # Packages
@@ -32,15 +32,10 @@ invisible(lapply(packages, library, character.only = TRUE))
 # Stop scientific notation of numeric values
 options(scipen = 999)
 
-# Delete columns where all are NAs
-not_all_na <-
-  function(x)
-    any(!is.na(x))
-
 # *******************************************************************************
 # Import data
 
-## Import the WG data modelled in excel and split by polymer and region
+## Import the WG data modelled in excel using a sales-lifetime approach and split by polymer and region
 WG <- 
   read_excel("./plastics/baseline_model/stock_outflow_excel_model.xlsx") %>%
   select(-c(1:6)) %>%

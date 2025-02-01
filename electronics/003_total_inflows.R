@@ -1,5 +1,8 @@
-##### **********************
 # Author: Oliver Lysaght
+# Purpose: Produce apparent consumption estimates from trade and domestic production data
+
+# How to handle different length time-series
+# How to handle negative apparent consumption
 
 # *******************************************************************************
 # Packages
@@ -13,7 +16,9 @@ packages <- c(
   "dplyr",
   "tidyverse",
   "readODS",
-  "data.table"
+  "data.table",
+  "scales",
+  "zoo"
 )
 
 # Install packages not yet installed
@@ -28,9 +33,6 @@ invisible(lapply(packages, library, character.only = TRUE))
 # *******************************************************************************
 # Functions and options
 # *******************************************************************************
-# Import functions
-source("Functions.R", 
-       local = knitr::knit_global())
 
 # Stop scientific notation of numeric values
 options(scipen = 999)
@@ -40,10 +42,10 @@ options(scipen = 999)
 # *******************************************************************************
 #
 
-# download.file(
-#   "https://assets.publishing.service.gov.uk/media/660bc0c1e8c4421717220332/Electrical_and_electronic_equipment_placed_on_the_UK_market.ods",
-#   "./raw_data/EEE_on_the_market.ods"
-# )
+download.file(
+  "https://assets.publishing.service.gov.uk/media/660bc0c1e8c4421717220332/Electrical_and_electronic_equipment_placed_on_the_UK_market.ods",
+  "./raw_data/EEE_on_the_market.ods"
+)
 
 # Extract and list all sheet names
 POM_sheet_names <- list_ods_sheets(
@@ -56,8 +58,10 @@ POM_data <- purrr::map_df(POM_sheet_names,
                                      sheet = .x),
                             sheetname = .x
                           )) %>%
+  rename(Var.1 = 1,
+         Var.5 = 5) %>%
   # filter out NAs in column 1
-  filter(Var.1 != "NA") %>%
+  filter(1 != "NA") %>%
   # Add column called quarters
   mutate(quarters = case_when(str_detect(Var.1, "Period covered") ~ Var.1), .before = Var.1) %>%
   # Fill column
@@ -67,8 +71,8 @@ POM_data <- purrr::map_df(POM_sheet_names,
   mutate_at(c('Var.1'), as.numeric) %>%
   filter(between(Var.1, 1, 14)) %>%
   select(-c(`Var.1`,
-            Var.5,
-            quarters)) %>%
+            quarters,
+            ...5)) %>%
   rename(
     product = 1,
     household = 2,
@@ -80,109 +84,11 @@ POM_data <- purrr::map_df(POM_sheet_names,
                   year),
                names_to = "end_use",
                values_to = "value") %>%
-  mutate_at(c('value'), as.numeric) %>%
-  group_by(year) %>%
-  summarise(value = sum(value))
+  mutate_at(c('value'), as.numeric)
 
-ggplot(POM_data, aes(x=year, y=value, group = 1)) +
-  geom_line(linewidth = 2) +
-  theme_light() +
-  scale_y_continuous(labels = unit_format(unit = "M", scale = 1e-6), limits = c(0, 2000000, 200000))
-
-# Code for publications in xlsx format (EA subsequently changed, again)
-
-# Download EEE data file from URL at government website
-# download.file(
-#   "https://assets.publishing.service.gov.uk/media/65e1a5802f2b3b00117cd7f5/Electrical_and_electronic_equipment_placed_on_the_UK_market.xlsx",
-#   "./raw_data/EEE_on_the_market.xlsx"
-# )
-
-# # Extract all sheets into a list of dataframes
-# POM_sheets <- read_excel_allsheets(
-#   "./raw_data/EEE_on_the_market.xlsx")
-# 
-# # Bind rows to create one single dataframe, filter, rename, pivot and filter again
-# POM_data <-
-#   dplyr::bind_rows(POM_sheets) %>%
-#   rename(number = 1,
-#          number2 = 5,
-#          number3 = 7) %>%
-#   # Add column called quarters
-#   mutate(quarters = case_when(str_detect(number, "Period covered") ~ number), .before = number) %>%
-#   mutate(quarters2 = case_when(str_detect(number2, "Period covered") ~ number2), .before = number) %>%
-#   mutate(quarters3 = case_when(str_detect(number3, "Period covered") ~ number3), .before = number) %>%
-#   unite(period, c("quarters", "quarters2","quarters3"), na.rm = TRUE) 
-# 
-# # Convert blanks to NAs
-# POM_data$period[POM_data$period==""] <- NA
-# 
-# # Tidy dataset
-# POM_data <- POM_data %>%
-#   # Fill column
-#   tidyr::fill(1) %>%
-#   filter(grepl('January - December', period)) %>%
-#   select(1,3,4,5) %>%
-#   na.omit() %>%
-#   rename(
-#     year = 1,
-#     product = 2,
-#     household = 3,
-#     non_household = 4
-#   ) %>%
-#   mutate(year = substr(year, nchar(year)-4+1, nchar(year))) %>%
-#   filter(! grepl('Category', product)) %>%
-#   pivot_longer(-c(product,
-#                   year),
-#                names_to = "end_use",
-#                values_to = "value") %>%
-#   mutate_at(c('value'), as.numeric) %>%
-#   group_by(year, product, end_use) %>%
-#   summarise(value = sum(value))
-# 
-# # Write output to xlsx form
-# write_xlsx(POM_data,
-#            "./cleaned_data/electronics_placed_on_market.xlsx")
-
-# Previous code for extracting data from earlier publications in ods format
-
-# # Extract and list all sheet names
-# POM_sheet_names <- list_ods_sheets(
-#   "./raw_data/EEE_on_the_market.ods")
-# 
-# # Map sheet names to imported file by adding a column "sheetname" with its name
-# POM_data <- purrr::map_df(POM_sheet_names,
-#                           ~ dplyr::mutate(
-#                             read_ods("./raw_data/EEE_on_the_market.ods",
-#                                      sheet = .x),
-#                             sheetname = .x
-#                           )) %>%
-#   # filter out NAs in column 1
-#   filter(Var.1 != "NA") %>%
-#   # Add column called quarters
-#   mutate(quarters = case_when(str_detect(Var.1, "Period covered") ~ Var.1), .before = Var.1) %>%
-#   # Fill column
-#   tidyr::fill(1) %>%
-#   filter(grepl('January - December', quarters)) %>%
-#   # make numeric and filter out anything but 1-14 in column 1
-#   mutate_at(c('Var.1'), as.numeric) %>%
-#   filter(between(Var.1, 1, 14)) %>%
-#   select(-c(`Var.1`,
-#             Var.5,
-#             quarters)) %>%
-#   rename(
-#     product = 1,
-#     household = 2,
-#     non_household = 3,
-#     year = 4
-#   ) %>%
-#   mutate(year = gsub("\\_.*", "", year)) %>%
-#   pivot_longer(-c(product,
-#                   year),
-#                names_to = "end_use",
-#                values_to = "value") %>%
-#   mutate_at(c('value'), as.numeric) %>%
-#   group_by(year, product, end_use) %>%
-#   summarise(value = sum(value))
+ggplot(POM_data, aes(fill=product, y=value, x=year)) + 
+  geom_bar(position="stack", stat="identity") +
+  facet_wrap(vars(end_use), nrow = 2)
 
 # *******************************************************************************
 # Apparent consumption calculation
@@ -190,31 +96,29 @@ ggplot(POM_data, aes(x=year, y=value, group = 1)) +
 #
 
 # Import prodcom UNU data if not in global environment
-Prodcom_data_UNU <-
-  read_excel("./cleaned_data/Prodcom_data_UNU.xlsx")  %>%
+summary_prodcom_UNU <-
+  read_csv("./electronics/batteries_project/cleaned_data/Prodcom_data_UNU.csv") %>%
   as.data.frame() %>%
-  rename(unu = 1) %>%
-  mutate(FlowTypeDescription = "domestic production") %>%
+  mutate(flow_desc = "domestic production") %>%
   clean_names()
 
 # Import trade UNU data if not in global environment
-Summary_trade_UNU <-
-  read_excel("./cleaned_data/Summary_trade_UNU.xlsx")  %>%
+summary_trade_UNU <-
+  read_csv("./electronics/batteries_project/cleaned_data/comtrade_matched.csv")  %>%
   as.data.frame() %>%
   clean_names() %>%
-  filter(variable == "Units") %>%
-  select(-c(variable)) %>%
-  rename(unu = 1)
+  rename(year = ref_year,
+         value = qty)
 
 # Bind/append prodcom and trade datasets to create a total inflow dataset
-complete_inflows <- rbindlist(list(Summary_trade_UNU,
-                                   Prodcom_data_UNU),
+complete_inflows <- rbindlist(list(summary_trade_UNU,
+                                   summary_prodcom_UNU),
                               use.names = TRUE)
 
 # Pivot wide to create aggregate indicators
 # based on https://www.resourcepanel.org/global-material-flows-database
 complete_inflows_wide <- pivot_wider(complete_inflows,
-                                     names_from = flow_type_description,
+                                     names_from = flow_desc,
                                      values_from = value) %>%
   clean_names()
 
@@ -225,19 +129,13 @@ complete_inflows_wide["domestic_production"][is.na(complete_inflows_wide["domest
 # Calculate key aggregates in wide format and then pivot longer
 complete_inflows_long <- complete_inflows_wide %>%
   mutate(
-    total_imports = eu_imports + non_eu_imports,
-    total_exports = eu_exports + non_eu_exports,
     # equivalent of domestic material consumption at national level
-    apparent_consumption = domestic_production + total_imports - total_exports,
-    import_dependency = total_imports / apparent_consumption) %>%
-  pivot_longer(-c(unu,
+    apparent_consumption = domestic_production + import - export) %>%
+  pivot_longer(-c(unu_key,
                   year),
                names_to = "indicator",
                values_to = 'value') %>%
   na.omit()
-
-write_xlsx(complete_inflows_long,
-           "./cleaned_data/inflow_indicators.xlsx")
 
 # *******************************************************************************
 # Automatic outlier detection and replacement
@@ -254,11 +152,11 @@ inflow_wide_outlier_replaced_NA <-
   clean_names() %>%
   mutate_at(c('year'), as.numeric) %>%
   arrange(year) %>%
-  select(-year) # %>%
-  # mutate_at(
-  #   .vars = vars(contains("x")),
-  #   .funs = ~ ifelse(abs(.) > median(.) + 5 * mad(., constant = 1), NA, .),
-  #   ~ ifelse(abs(.) > median(.) - 5 * mad(., constant = 1), NA, .))
+  select(-year) %>%
+  mutate_at(
+    .vars = vars(contains("x")),
+    .funs = ~ ifelse(abs(.) > median(.) + 5 * mad(., constant = 1), NA, .),
+    ~ ifelse(abs(.) > median(.) - 5 * mad(., constant = 1), NA, .))
 
 # Replace outliers (now NAs) by column/UNU across whole dataframe using straight-line interpolation
 inflow_wide_outlier_replaced_interpolated <-
@@ -272,9 +170,6 @@ inflow_wide_outlier_replaced_interpolated <-
                values_to = "value") %>%
   mutate(`unu_key` = gsub("x", "", `unu_key`))
 
-write_xlsx(inflow_wide_outlier_replaced_interpolated,
-           "./cleaned_data/inflow_indicators_interpolated.xlsx")
-
 # Interpolate using cubic spline method instead
 inflow_wide_outlier_replaced_spline <-
   na.spline(inflow_wide_outlier_replaced_NA) +
@@ -282,6 +177,9 @@ inflow_wide_outlier_replaced_spline <-
                 na.rm = FALSE,
                 rule = 2) %>%
   as.data.frame()
+
+write_csv(inflow_wide_outlier_replaced_interpolated,
+           "./electronics/batteries_project/cleaned_data/inflow_indicators_interpolated.csv")
 
 # *******************************************************************************
 # Forecasts (including lightly interpolated data from prior step)

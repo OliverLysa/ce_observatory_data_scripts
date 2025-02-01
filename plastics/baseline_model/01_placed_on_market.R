@@ -7,15 +7,13 @@
 # *******************************************************************************
 
 # Package names
-packages <- c(
-  "writexl",
-  "readxl",
-  "readODS",
-  "tidyverse",
-  "data.table",
-  "janitor",
-  "xlsx"
-)
+packages <- c("writexl",
+              "readxl",
+              "readODS",
+              "tidyverse",
+              "data.table",
+              "janitor",
+              "xlsx")
 
 # Install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
@@ -86,8 +84,11 @@ POM_packaging_composition <-
   mutate(tonnes = value * percentage) %>%
   select(year, category, type, material.y, tonnes) %>%
   rename(material = 4, value = 5) # %>%
-  # mutate(material = str_to_upper(material)) %>%
-  # mutate(material = gsub("OTHER", "Other", material))
+  # filter(material == "pet") %>%
+  # group_by(year) %>%
+  # summarise(value = sum(value)) # %>%
+# mutate(material = str_to_upper(material)) %>%
+# mutate(material = gsub("OTHER", "Other", material))
 
 # Scale to England and Wales based on population - Final demand, GDP, GDHI or weighted population could be alternative ways
 

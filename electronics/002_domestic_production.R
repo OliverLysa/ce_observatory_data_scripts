@@ -36,9 +36,9 @@ options(scipen = 999)
 # Connect to supabase
 con <- dbConnect(RPostgres::Postgres(),
                  dbname = 'postgres', 
-                 host = 'postgres.qowfjhidbxhtdgvknybu',
-                 port = 5432,
-                 user = 'postgres',
+                 host = 'aws-0-eu-west-2.pooler.supabase.com',
+                 port = 6543,
+                 user = 'postgres.qcgyyjjmwydekbxsjjbx',
                  password = rstudioapi::askForPassword("Database password"))
 
 # *******************************************************************************
@@ -55,6 +55,12 @@ download.file(
 download.file(
   "https://www.ons.gov.uk/file?uri=/businessindustryandtrade/manufacturingandproductionindustry/datasets/ukmanufacturerssalesbyproductprodcom/current/prodcom2022final1.xlsx",
   "raw_data/prodcom_2021_on.xlsx")
+
+# Download dataset 2021-on
+download.file(
+  "https://www.ons.gov.uk/file?uri=/businessindustryandtrade/manufacturingandproductionindustry/datasets/ukmanufacturerssalesbyproductprodcom/current/prodcom2022final1.xlsx",
+  "raw_data/prodcom_2022_on.xlsx")
+
 
 # *******************************************************************************
 # Data cleaning
@@ -128,7 +134,7 @@ prodcom_08_20 <-
 
 # Read all prodcom sheets into a list of sheets (2012-2022)
 prodcom_all_21_on <- read_excel_allsheets_ABS(
-  "./raw_data/prodcom_2021_on.xlsx")
+  "./raw_data/prodcom_2022_on.xlsx")
 
 # Remove sheets containing division totals (these create problems with bind)
 prodcom_all_21_on = prodcom_all_21_on[-c(1:7)]
@@ -204,6 +210,10 @@ prodcom_all <-
 
 write_xlsx(prodcom_all,
            "./cleaned_data/prodcom_all.xlsx")
+
+DBI::dbWriteTable(con, "prodcom",
+                  prodcom_all,
+                  overwrite = TRUE)
 
 # Estimation of suppressed values
 # *******************************************************************************
@@ -351,5 +361,13 @@ write_xlsx(Prodcom_data_UNU,
 
 # Write file to database
 DBI::dbWriteTable(con, "electronics_prodcom_UNU", Prodcom_data_UNU)
+
+# connecting to database
+con <- dbConnect(RPostgres::Postgres(),
+                 dbname = 'postgres',
+                 host = 'aws-0-eu-west-2.pooler.supabase.com',
+                 port = 5432,
+                 user = 'postgres.qowfjhidbxhtdgvknybu',
+                 password = rstudioapi::askForPassword("Database password"))
 
 

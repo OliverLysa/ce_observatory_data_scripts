@@ -511,39 +511,55 @@ DBI::dbWriteTable(con,
                   projection_detailed_total_all,
                   overwrite = TRUE)
 
-# model_output <- read_csv( 
-#   "./cleaned_data/model_output.csv")
-# 
-# test_combined <- left_join(# Join the correspondence codes and the trade data
-#   projection_detailed,
-#   model_output,
-#   by = c("variable", 
-#          "year", 
-#          "material",
-#          "application",
-#          "material_sub_type")) %>%
-#   mutate(value_new = coalesce(value.y, value.x))
+model_output <- read_csv(
+  "./cleaned_data/model_output.csv")
+
+test_combined <- left_join(# Join the correspondence codes and the trade data
+  projection_detailed,
+  model_output,
+  by = c("variable",
+         "year",
+         "material",
+         "application",
+         "material_sub_type")) %>%
+  mutate(value_new = coalesce(value.y, value.x))
 # 
 # write_xlsx(test_combined,
 #            "./cleaned_data/test_combined.xlsx")
 
-## Vensim input
-projection_vensim <- projection_detailed %>%
+## Vensim input for each application
+projection_vensim <- projection_detailed_total %>%
   filter(variable == "Placed on market",
          forecast_type == "linear model, time-series components",
          exogenous_factor == "Population",
          application == "Bottle",
-         material_sub_type == "PET") %>%
-  group_by(year_x) %>%
-  summarise(value = sum(value))
+         material_sub_type == "PET")
 
-projection_vensim_out <- projection_detailed %>%
+projection_vensim_out <- projection_detailed_total %>%
   filter(variable == "Placed on market",
          type == "Outturn",
          application == "Bottle",
-         material_sub_type == "PET") %>%
-  group_by(year_x) %>%
-  summarise(value = sum(value))
+         material_sub_type == "PET")
 
-total <- projection_vensim_out %>%
+total_bottle <- projection_vensim_out %>%
   bind_rows(projection_vensim)
+
+projection_vensim_PTT <- projection_detailed_total %>%
+  filter(variable == "Placed on market",
+         forecast_type == "linear model, time-series components",
+         exogenous_factor == "Population",
+         application == "PTT",
+         material_sub_type == "PET",
+         level == "Mid")
+
+projection_vensim_out_PTT <- projection_detailed_total %>%
+  filter(variable == "Placed on market",
+         type == "Outturn",
+         application == "PTT",
+         material_sub_type == "PET")
+
+total_ptt <- projection_vensim_PTT %>%
+  bind_rows(projection_vensim_out_PTT)
+
+write_xlsx(total_ptt,
+           "./cleaned_data/total_ptt.xlsx")

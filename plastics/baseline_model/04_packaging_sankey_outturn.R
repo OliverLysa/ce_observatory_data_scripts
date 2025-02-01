@@ -281,7 +281,8 @@ plastic_packaging_sankey_flows <- rbindlist(
   mutate(product = "Packaging") %>%
   filter(year >= 2014) %>%
   mutate(material = str_to_upper(material)) %>%
-  mutate(material = gsub("OTHER", "Other", material))
+  mutate(material = gsub("OTHER", "Other", material)) # %>%
+  # filter(value != 0)
 
 write_csv(plastic_packaging_sankey_flows, 
           "sankey_all.csv")
@@ -309,9 +310,9 @@ plastic_packaging_sankey_flows_detail <- rbindlist(
 write_csv(plastic_packaging_sankey_flows_detail, 
           "sankey_detail.csv")
 
-DBI::dbWriteTable(con,
-                  "plastic_packaging_sankey_flows_detail",
-                  plastic_packaging_sankey_flows_detail,
-                  overwrite = TRUE)
+# DBI::dbWriteTable(con,
+#                   "plastic_packaging_sankey_flows_detail",
+#                   plastic_packaging_sankey_flows_detail,
+#                   overwrite = TRUE)
 
 

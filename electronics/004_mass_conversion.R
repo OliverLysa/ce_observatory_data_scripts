@@ -44,41 +44,33 @@ options(scipen = 999)
 
 # Import average mass data by UNU from WOT project
 UNU_mass <- read_csv(
-  "./cleaned_data/htbl_Key_Weight.csv") %>%
-  clean_names() %>%
-  group_by(unu_key, year) %>%
-  summarise(value = mean(average_weight)) %>%
-  rename(unu =1)
+  "./electronics/batteries_project/raw_data_inputs/htbl_Key_Weight.csv") %>%
+  group_by(UNU_Key, Year) %>%
+  summarise(average_weight = mean(AverageWeight)) %>%
+  clean_names() 
 
 # Read in interpolated inflow data and filter to consumption of units
 inflow_indicators <-
-  read_xlsx("./cleaned_data/inflow_indicators_interpolated.xlsx") %>%
-  mutate_at(c('year'), as.numeric) %>%
-  # filter(indicator == "apparent_consumption") %>%
+  read_csv("./electronics/batteries_project/cleaned_data/inflow_indicators_interpolated.csv") %>%
   na.omit() %>%
-  mutate(variable = "inflow") %>%
-  rename(unu = unu_key)
+  mutate(variable = "inflow")
 
-# Join by unu key and closest year
-# For each value in inflow_indicators year column, find the closest value in UNU_mass that is less than or equal to that x value
-by <- join_by(unu, closest(year >= year))
 # Join
-inflow_mass <- left_join(inflow_indicators, UNU_mass, by) %>%
-  mutate_at(c("value.y"), as.numeric) %>%
+inflow_mass <- left_join(inflow_indicators, 
+                         UNU_mass, 
+                         by = c("year", "unu_key")) %>%
   # calculate mass inflow in tonnes (as mass given in kg/unit in source)
-  # https://i.unu.edu/media/ias.unu.edu-en/project/2238/E-waste-Guidelines_Partnership_2015.pdf
-  mutate(mass_inflow = (value.x*value.y)/1000) %>%
-  select(c(`unu`,
-           `year.x`,
+  mutate(mass_inflow = (value*average_weight)/1000) %>%
+  select(c(unu_key,
+           year,
            mass_inflow)) %>%
-  rename(year = 2,
-         value = 3) %>%
+  rename(value = 3) %>%
   mutate(variable = "inflow") %>%
   mutate(unit = "mass")
 
 # Write xlsx to the cleaned data folder
-write_xlsx(inflow_mass, 
-           "./cleaned_data/inflow_unu_mass.xlsx")
+write_csv(inflow_mass, 
+           "./electronics/batteries_project/cleaned_data/inflow_unu_mass.csv")
 
 # *******************************************************************************
 # Extract BoM data from Babbitt 2019 - to get material formulation and component stages
@@ -227,6 +219,7 @@ BoM_data_UNU_Babbit_latest <- BoM_data_UNU_Babbit %>%
 BoM_data_UNU_Babbit_latest_percentage <- BoM_data_UNU_Babbit_latest %>% 
   group_by(product, material) %>%
   summarise(sum(value)) %>%
+  ungroup() %>%
   rename(value = 3) %>%
   mutate(freq = value / sum(value)) %>%
   select(-value) %>%
@@ -237,7 +230,10 @@ BoM_data_UNU_Babbit_latest_percentage <- BoM_data_UNU_Babbit_latest %>%
     material = gsub("Other metals", 'Other metals', material),
     material = gsub("Flat panel glass", 'Flat panel glass', material),
     material = gsub("Other glass", 'Other glass', material)) %>%
-  mutate_at(c('product'), trimws) 
+  mutate_at(c('product'), trimws) %>% 
+  left_join(UNU_colloquial, 
+          by = c("product")) %>%
+  select(-product)
 
 # *******************************************************************************
 # Extract BoM data from BEIS ICF Ecodesign report
@@ -287,10 +283,11 @@ BoM_BEIS_percentage <- left_join(BoM_BEIS_percentage,
   mutate(
     material = gsub("Electronics", 'Electronics incl. PCB', material),
     material = gsub("Aluminum", 'Aluminium', material)) %>%
-  mutate_at(c('material'), trimws) 
+  mutate_at(c('material'), trimws) %>%
+  filter(unu_key != "0102")
 
 # Drop unu_key column
-BoM_BEIS_percentage <- BoM_BEIS_percentage[-1]
+BoM_BEIS_percentage <- BoM_BEIS_percentage[-4]
 
 # Import BEIS and other preparatory study data already in percentage terms 
 BoM_BEIS_proportions <- 
@@ -321,12 +318,12 @@ BoM_BEIS_proportions_long <- BoM_BEIS_proportions %>%
 BoM_BEIS_proportions_long <- left_join(BoM_BEIS_proportions_long, 
                                  UNU_colloquial, 
                                  by = c("unu_key")) %>%
-  select(-c(unu_key)) %>%
+  # select(-c(unu_key)) %>%
   mutate(
     material = gsub("Electronics", 'Electronics incl. PCB', material),
     material = gsub("Aluminum", 'Aluminium', material)) %>%
   mutate_at(c('material'), trimws) %>%
-  rename(product = )
+  select(-product)
 
 # Bind Babbit and BEIS sources - review issue with characters
 BoM_percentage_UNU <-
@@ -344,19 +341,16 @@ BoM_percentage_UNU <-
          material != "Total") %>%
   mutate(material = gsub("Other glass","Glass other", material),
          material = gsub("Flat panel glass","Flatpanelglass", material),
-         material = gsub("Li\\-ion battery","Liion battery", material))
+         material = gsub("Li\\-ion battery","Liion battery", material)) %>%
+  pivot_wider(names_from = material,
+              values_from = freq)
 
 # Write xlsx to the cleaned data folder
 write_xlsx(BoM_percentage_UNU, 
            "./intermediate_data/BoM_percentage_UNU.xlsx")
 
-BoM_percentage_UNU <- read_xlsx(
-  "./intermediate_data/BoM_percentage_UNU.xlsx") %>%
-  mutate_at(c('material'), trimws)
-
-
 # Stacked + percent
-ggplot(na.omit(BoM_percentage_UNU), aes(fill=material, y=freq, x=product)) + 
+ggplot(na.omit(BoM_percentage_UNU), aes(fill=material, y=freq, x=unu_key)) + 
   geom_bar(position="fill", stat="identity") +
   coord_flip() +
   scale_fill_viridis_d(direction = -1) +

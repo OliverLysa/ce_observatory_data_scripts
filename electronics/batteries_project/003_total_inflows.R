@@ -64,10 +64,10 @@ reverse_forecast <- function(object)
 # *******************************************************************************
 #
 
-download.file(
-  "https://assets.publishing.service.gov.uk/media/660bc0c1e8c4421717220332/Electrical_and_electronic_equipment_placed_on_the_UK_market.ods",
-  "./raw_data/EEE_on_the_market.ods"
-)
+# download.file(
+#   "https://assets.publishing.service.gov.uk/media/660bc0c1e8c4421717220332/Electrical_and_electronic_equipment_placed_on_the_UK_market.ods",
+#   "./raw_data/EEE_on_the_market.ods"
+# )
 
 # Extract and list all sheet names
 POM_sheet_names <- list_ods_sheets(

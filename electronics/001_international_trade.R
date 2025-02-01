@@ -6,8 +6,6 @@
 
 # Package names
 
-# devtools::install_github("pvdmeulen/uktrade")
-
 packages <- c("magrittr", 
               "writexl", 
               "readxl", 
@@ -24,7 +22,8 @@ packages <- c("magrittr",
               "janitor",
               "future",
               "furrr",
-              "rjson")
+              "rjson",
+              "comtradr")
 
 # Install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
@@ -49,145 +48,96 @@ options(scipen = 999)
 # Data extraction and tidying
 # *******************************************************************************
 #
-##  Allows for code concordances to vary by year 2001-16, then uses 2016 codes (last year in concordance table) for years thereafter
 
-# Read list of CN codes from WOT (downloads data for all unique codes across all years)
+# *******************************************************************************
+# Data extraction - UKTradeInfo
+
+# Import full list of trade codes
+trade_terms <- read_xlsx(
+  "./electronics/cn_correspondence_through_24.xlsx") %>%
+  select(cn) %>%
+  unique()
+
+# Create a comma separated list easy to search in the API interface of the Data Observatory
 trade_terms <- 
-  read_xlsx("./classifications/concordance_tables/WOT_UNU_CN8_PCC_SIC.xlsx") %>%
-  # Filter out codes which do not appear in the period the UKTrade Data API covers
-  filter(Year > 2001) %>%
-  # Select the CN code column
-  select(CN) %>%
-  # Take unique codes
+  data.frame(cn = apply(trade_terms, 1, function(x) paste0(as.character(x), ',')))
+
+trade_terms <- 
+  paste(unlist(trade_terms), collapse ="") %>%
+  as.data.frame()
+
+write_csv(trade_terms, "./electronics/trade_terms_to_search.csv")
+
+# Import the data extracted from the API
+trade_all <- 
+  map_df(list.files("./electronics/trade_data/", full.names = TRUE), read_csv)
+
+# Summarise results in value, mass and unit terms grouped by year, flow type and trade code (this then obscures trade country source/destination)
+summary_trade <- trade_all %>%
+  unique() %>%
+  group_by(FlowType, 
+           Cn8,
+           Year,
+           Description) %>%
+  summarise(value = sum(Value), 
+            netmass = sum(NetMass), 
+            suppunit = sum(SuppUnit)) %>%
+  # Pivot results longer
+  pivot_longer(-c(Year, 
+                  FlowType,
+                  Description, 
+                  Cn8),
+               names_to = "Variable",
+               values_to = 'Value') %>%
+  clean_names()
+
+# Import UNU CN8 correspondence correspondence table in tabular form
+UNU_correlation <- read_xlsx(
+  "./electronics/cn_correspondence_through_24.xlsx") %>%
+  rename(cn8 = cn) %>%
+  mutate_at(c('cn8','year'), as.numeric) %>%
+  filter(year >= 2000)
+    
+# Summarise trade data by UNU
+trade_combined_UNU_cn <- left_join(# Join the correspondence codes and the trade data
+  UNU_correlation,
+     summary_trade,
+  by = c("year", "cn8")) # %>%
+  # filter(if_any(c(value), is.na)) %>%
+  # filter(year != 2024) # %>%
+  # select(1) %>%
+  # unique() %>%
+  # mutate_at(c('cn8'), trimws) %>%
+  # filter(! cn8 %in% c("852550",
+  #                     "950430"))
+
+write_csv(trade_combined_UNU_cn,
+          "./electronics/uk_tradeinfo_matched.csv")
+
+# *******************************************************************************
+# Data extraction - Comtrade
+
+# set_primary_comtrade_key(key = "1984a29ad2da49f28eab4c7d1c8d5b3d")
+
+# Import HS codes
+hs_codes <-
+  read_xlsx("./electronics/hs_correspondence_through_24.xlsx") %>%
+  mutate_at(c('year'), as.numeric) %>%
+  select(1) %>%
   unique() %>%
   # Unlist
   unlist()
-
-# Create a for loop that goes through the trade terms, extracts the data using the extractor function (in function script) based on the uktrade wrapper
-# and prints the results to a list of dataframes
-res <- list()
-for (i in seq_along(trade_terms)) {
-  res[[i]] <- extractor(trade_terms[i])
-  
-  print(i)
-  
-}
-
-# Bind the list of returned dataframes to a single dataframe
-bind <- 
-  dplyr::bind_rows(res)
-
-# If you have not used the in-built lookup codes in the uktrade R package, describe the flow-types for subsequent aggregation
-bind <- bind %>%
-  mutate(FlowTypeId = gsub(1, 'EU Imports', FlowTypeId),
-         FlowTypeId = gsub(2, 'EU Exports', FlowTypeId),
-         FlowTypeId = gsub(3, 'Non-EU Imports', FlowTypeId),
-         FlowTypeId = gsub(4, 'Non-EU Exports', FlowTypeId)) %>%
-  rename(FlowTypeDescription = FlowTypeId)
-
-# Remove the month identifier in the month ID column to be able to group by year
-# This can be removed for more time-granular data e.g. by month or quarter
-bind$MonthId <- 
-  substr(bind$MonthId, 1, 4)
-
-# Summarise results in value, mass and unit terms grouped by year, flow type and trade code (this then obscures trade country source/destination)
-summary_trade_no_country <- bind %>%
-  group_by(MonthId, 
-           FlowTypeDescription, 
-           CommodityId) %>%
-  summarise(sum(Value), 
-            sum(NetMass), 
-            sum(SuppUnit)) %>%
-  rename(Year = MonthId) %>%
-  # Pivot results longer
-  pivot_longer(-c(Year, 
-                  FlowTypeDescription, 
-                  CommodityId),
-               names_to = "Variable",
-               values_to = 'Value') %>%
-  # Convert trade code to character
-  mutate_at(c(3), as.character)
-
-# Import UNU CN8 correspondence correspondence table in tabular form
-WOT_UNU_CN8 <-
-  read_xlsx("./classifications/concordance_tables/WOT_UNU_CN8_PCC_SIC.xlsx") %>%
-  mutate_at(c("CN", "Year"), as.character)
-
-# Filter extracted trade data to only those for which codes are relevant each year to UNU classification per the concordance table
-trade_filtered_pre_2017 <- inner_join(
-  summary_trade_no_country,
-  WOT_UNU_CN8,
-  join_by("CommodityId" == "CN", 
-          "Year" == "Year")) %>%
-  select(c(1:5, 7))
-
-# Add in 2017 onwards data and bind (takes the 2016 codes and onwards)
-
-# First filter to codes for 2016 only
-WOT_UNU_CN8_2016_on <- WOT_UNU_CN8 %>%
-  filter(Year == 2016) %>%
-  select(2, 4)
-
-# Then filter the trade data to 2017 on
-trade_filtered_2017_on <- summary_trade_no_country %>%
-  mutate_at(c('Year'), as.numeric) %>%
-  filter(Year >= 2017) 
-
-trade_filtered_2017_on <- inner_join(
-  trade_filtered_2017_on,
-  WOT_UNU_CN8_2016_on,
-  join_by("CommodityId" == "CN")) 
-
-# Combined trade data at CN level
-trade_combined <-
-  rbindlist(
-    list(
-      trade_filtered_pre_2017,
-      trade_filtered_2017_on
-    ),
-    use.names = TRUE
-  )
-
-# Write xlsx file of trade data (imports and exports, summarised by UNU) - to export to DB
-write_xlsx(trade_combined, 
-           "./cleaned_data/summary_trade_CN.xlsx")
-    
-# Summarise by UNU
-trade_combined_UNU <- trade_combined %>%
-  group_by(UNU, 
-           Year, 
-           Variable, 
-           FlowTypeDescription) %>%
-  summarise(Value = sum(Value)) %>%
-  # Rename contents in variable column
-  mutate(Variable = gsub("sum\\(NetMass)", 'Mass', Variable),
-         Variable = gsub("sum\\(Value)", 'Value', Variable),
-         Variable = gsub("sum\\(SuppUnit)", 'Units', Variable))
-
-# We can use the mass data in combination with BOM data
-
-# Write xlsx file of trade data (imports and exports, summarised by UNU)
-write_xlsx(trade_combined_UNU, 
-           "./cleaned_data/summary_trade_UNU.xlsx")
-
-# Write file to database
-DBI::dbWriteTable(con, "electronics_trade_UNU", trade_combined_UNU)
-
-# *******************************************************************************
-# Alternative approach - getting trade data from comtrade
-
-# # Get ISO region code
-# reporters <- country_codes
 
 # Function to use the comtrade R package to extract trade data from the Comtrade API
 comtrade_extractor <- function(x) {
   trade_results <-
     ct_get_data(
       reporter =  c('GBR'),
-      flow_direction = "import",
+      frequency = "A",
+      flow_direction = c("export","import"),
       partner = "World",
-      start_date = 1989,
-      end_date = 2000,
+      start_date = 1977,
+      end_date = 1988,
       commodity_code = c(x)
     )
   trade_results <- trade_results %>%
@@ -199,29 +149,60 @@ comtrade_extractor <- function(x) {
 # 
 # # Create a for loop that goes through the trade codes, extracts the data using the extractor function and prints the results to a list of dataframes
 res <- list()
-for (i in seq_along(codes)) {
-  res[[i]] <- comtrade_extractor(codes[i])
+for (i in seq_along(hs_codes)) {
+  res[[i]] <- comtrade_extractor(hs_codes[i])
   
   print(i)
   
 }
 
 # 
-# # # Bind the list of returned dataframes to a single dataframe
+# # # Bind the list of returned dataframes to a single dataframe - do for each API run as limited to 12 years
+GBR_13_24 <-
+  dplyr::bind_rows(res)
+
+GBR_01_12 <-
+  dplyr::bind_rows(res)
+
 GBR_89_00 <-
   dplyr::bind_rows(res)
 
-# 
-
 # Bind datasets 
-GBR_bind <-
+comtrade_all <-
   rbindlist(
     list(
+      GBR_13_24,
+      GBR_01_12,
       GBR_89_00
     ),
     use.names = TRUE
-  )
+  ) %>%
+  rename(year = ref_year)
 
-# Write
-write_xlsx(EU_bind,
-           "./data/EU_imports_all.xlsx")
+# # Write
+# write_xlsx(comtrade_all,
+#            "./electronics/comtrade_all.xlsx")
+
+comtrade_all <- read_xlsx(
+  "./electronics/comtrade_all.xlsx") %>%
+  rename(year = period)
+
+# Import UNU CN8 correspondence correspondence table in tabular form
+UNU_HS_correlation <- read_xlsx(
+  "./electronics/hs_correspondence_through_24.xlsx") %>%
+  rename(cmd_code = hs) %>%
+  # mutate_at(c('year'), as.numeric) %>%
+  filter(year <= 2023)
+
+# Summarise trade data by UNU
+trade_combined_UNU_hs <- left_join(# Join the correspondence codes and the trade data
+  UNU_HS_correlation,
+  comtrade_all,
+  by = c("year", "cmd_code")) %>%
+  filter(qty != 0 & qty_unit_code != 8) %>%
+  drop_na(primary_value)
+
+write_xlsx(trade_combined_UNU_hs,
+           "./electronics/comtrade_matched.xlsx")
+
+

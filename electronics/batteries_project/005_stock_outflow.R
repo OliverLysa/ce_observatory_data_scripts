@@ -194,6 +194,9 @@ unu_inflow_outflow <-
             use.names = TRUE) %>%
   na.omit()
 
+unu_inflow_outflow$unu_key <- 
+  str_pad(unu_inflow_outflow$unu_key, 4, pad = "0")
+
 ## STOCK CALCULATION - based on https://github.com/Statistics-Netherlands/ewaste/blob/master/scripts/05_Make_tblAnalysis.R
 
 # Merge the two datasets covering inflows and outflow horizontally for the subsequent stock calculation
@@ -259,7 +262,8 @@ ggplot(unu_inflow_stock_outflow_total, aes(x = year, y = value, group = variable
   xlim(2000, 2040) + 
   theme_light() +
   geom_line(aes(color=variable), size= 1) +
-  theme(legend.position="bottom")
+  theme(legend.position="bottom") +
+  expand_limits(y = 0)
 
 # Write summary file
 write_csv(unu_inflow_stock_outflow_total,

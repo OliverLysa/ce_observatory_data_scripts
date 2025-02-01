@@ -37,15 +37,15 @@ options(scipen = 999)
 # *******************************************************************************
 #
 
-# Download dataset covering the years 2008-2020. 2008 appears to be the earliest available from ONS (have emailed them). Keep only the data from this source which isn't available in the later publication
-download.file(
-  "https://www.ons.gov.uk/file?uri=/businessindustryandtrade/manufacturingandproductionindustry/datasets/ukmanufacturerssalesbyproductprodcom/current/prodcomdata2020final10082021145108.xlsx",
-  "./electronics/batteries_project/raw_data_inputs/prodcom_2008_20.xlsx")
-
-# Download latest data
-download.file(
-  "https://www.ons.gov.uk/file?uri=/businessindustryandtrade/manufacturingandproductionindustry/datasets/ukmanufacturerssalesbyproductprodcom/current/ukmanufacturerssalesbyproduct2023.xlsx",
-  "./electronics/batteries_project/raw_data_inputs/prodcom_latest.xlsx")
+# # Download dataset covering the years 2008-2020. 2008 appears to be the earliest available from ONS (have emailed them). Keep only the data from this source which isn't available in the later publication
+# download.file(
+#   "https://www.ons.gov.uk/file?uri=/businessindustryandtrade/manufacturingandproductionindustry/datasets/ukmanufacturerssalesbyproductprodcom/current/prodcomdata2020final10082021145108.xlsx",
+#   "./electronics/batteries_project/raw_data_inputs/prodcom_2008_20.xlsx")
+# 
+# # Download latest data
+# download.file(
+#   "https://www.ons.gov.uk/file?uri=/businessindustryandtrade/manufacturingandproductionindustry/datasets/ukmanufacturerssalesbyproductprodcom/current/ukmanufacturerssalesbyproduct2023.xlsx",
+#   "./electronics/batteries_project/raw_data_inputs/prodcom_latest.xlsx")
 
 # *******************************************************************************
 # Data cleaning

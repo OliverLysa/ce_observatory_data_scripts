@@ -80,17 +80,17 @@ fly_tipping <- left_join(flytipping_totals, composition) %>%
   mutate(value = weight_tonnes * freq)
 
 ## Dumping rate - 0.006
-# # Polymer breakdown for littering equals WG composition in a given year - 0.4% applied to each polymer equally
+# # Polymer breakdown for littering equals WG composition in a given year - 0.6% applied to each polymer equally
 illegal_collection <- WG_packaging_composition %>%
   mutate(value = value*0.006) %>%
-  mutate(variable = "Illegal collection") 
+  mutate(variable = "Illegal collection")
 
 # Littering rate
 # Polymer breakdown for littering equals WG composition in a given year - 4% applied to each polymer equally
 # https://www.wwf.org.uk/sites/default/files/2018-03/WWF_Plastics_Consumption_Report_Final.pdf
 litter <- WG_packaging_composition %>%
   mutate(value = value*0.04) %>%
-  mutate(variable = "Littering") 
+  mutate(variable = "Littering")
 
 # LA collected - split is based on England and scaled to the UK
 # Calculated based on LACW over total waste generation (excl.) construction
@@ -159,7 +159,7 @@ Non_LA_collection <- WG_packaging_composition_excl_lit_dump %>%
 
 ## Dumping
 dumping <- illegal_collection %>%
-  mutate(variable = "Dumping") 
+  mutate(variable = "Dumping")
 
 # Exported - sent for overseas treatment (recycling)
 ## Import the defra-valpak polymer and application conversion
@@ -246,6 +246,7 @@ rejects_WDF_NPWD_combined <- rejects_WDF %>%
 
 ## Material facility rejects (import from MF script)
 material_facility_rejects <- 
+  # Takes the average of the reject rate across the two years
   averaged_mf %>%
   mutate(mean = mean/100,
          mean = 1 - mean) %>%
@@ -262,8 +263,9 @@ sorting <- overseas_recycling_polymers %>%
   # Redo the sorting calculation - We know the net figure - To get the original figure knowing the rejects rate, we need to do the following:
   # step 1. Subtract percentage losses in decimal format from 1 e.g. 1 - 0.15
   # step 2. divide the resulting value by that e.g. 150/0.85
-  mutate(rejects = total * mean,
-         sorting = rejects + total) %>%
+  mutate(mean_adjust = 1 - mean,
+         sorting = total/mean_adjust,
+         rejects = sorting - total) %>%
   select(year, material, sorting, rejects)
 
 # Total residual
