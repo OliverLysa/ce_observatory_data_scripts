@@ -13,7 +13,9 @@
 # Also in some cases, a variable is populated including with an estimation approach
 # Identify in each dataset how the material of interest is classified and map datasets to position in value chain of relevance
 
-# Temporal correlation	The congruence of the available data with the ideal data with respect to time.	[{
+## Temporal correlation ----------------------------------------------------
+
+# The congruence of the available data with the ideal data with respect to time.	[{
 #   score:1, definition:"Value relates to the correct time period.",
 # } , {
 #   score:2, definition:"Deviation of 1 to 5 years.",
@@ -23,11 +25,13 @@
 #   score:4, definition:"Deviation of more than 10 years.",
 # }]
 
+# Linked variables in the metadata catalogue
 # TIMELINESS%-%First year for which data is available
 # TIMELINESS%-%Most recent year for which data is available
 
-# 
-# Geographical correlation	The geographical relevance of the data to the studied region.	[{
+# Geographical correlation ------------------------------------------------
+
+# The geographical relevance of the data to the studied region.	[{
 #   score:1, definition:"Value is specific to the studied region.",
 # } , {
 #   score:2, definition:"Value covers the region, but is not specific.",
@@ -37,10 +41,12 @@
 #   score:4, definition:"Value relates to a very different socioeconomic region.",
 # }]
 
-# Linked variable in the metadata catalogue
-# Spatial coverage (the largest geospatial area that the source covers)/spatial specificity (the list of geographical categories making up that spatial coverage)
+# Linked variables in the metadata catalogue
+# Geographical coverage (the largest geospatial area that the source covers)
+# Geographical disaggregation, by country (the list of geographical categories making up that spatial coverage)
 
-# 
+# Other technological correlation -----------------------------------------
+
 # Other Technological Correlation	Other factors such as the relevance of the data to the technology, product, or other contextual aspects.	[{
 #   score:1, definition:"Value relates to the same product, material and process.",
 # } , {
@@ -52,12 +58,28 @@
 # }]
 # 
 
-# Input requirement mapping
-# Specific to or just covers
+# Linked variables in the metadata catalogue
+# Specific to or just covers - is it specifically named in that column? Otherwise, is it link to the named process (separate lookup)
 # Product - packaging
 # Material - Polymer
-# Process covered (based on flow number)
+# Process
 
+# Completeness ------------------------------------------------------------
+
+# The extent to which all relevant mass flows are accounted for.	[{
+#   score:1, definition:"Value includes all relevant processes/flows.",
+# } , {
+#   score:2, definition:"Value includes quantitatively main processes/flows.",
+# } , {
+#   score:3, definition:"Value includes partial important processes/flows, certainty of data gaps..",
+# } , {
+#   score:4, definition:"Only fragmented data available; important processes/mass flows are missing..",
+# }]
+
+# Add completeness to data sources
+
+# Reliability -------------------------------------------------------------
+# Also a function of any estimation required to counteract a lack of completeness 
 # Reliability	The source of the data, including documentation of how the data was generated, verification methods, and whether the data has been peer -
 #   reviewed.	[{
 #     score:1, definition:"Well-documented, consistent, and peer-reviewed data.",
@@ -68,15 +90,12 @@
 #   } , {
 #     score:4, definition:"Methodology unknown, no documentation available.",
 #   }]
-# 
-# Completeness	The extent to which all relevant mass flows are accounted for.	[{
-#   score:1, definition:"Value includes all relevant processes/flows.",
-# } , {
-#   score:2, definition:"Value includes quantitatively main processes/flows.",
-# } , {
-#   score:3, definition:"Value includes partial important processes/flows, certainty of data gaps..",
-# } , {
-#   score:4, definition:"Only fragmented data available; important processes/mass flows are missing..",
-# }]
+
+## Variables linked to 
+# Methodology documented
+# Qualitative communication of uncertainty
+# Quantitative communication of uncertainty (if applicable)
+# Stated quality assurance
+# Reproducibility via code
 
 # You can use this scoring approach to prioritise between sources or impose a cut-off
