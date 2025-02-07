@@ -1,17 +1,51 @@
+# Linkage
+# Condition
+# Aggregation
+
+## Import the sankey data with sources attached
+plastic_packaging_sankey_flows <-
+  read_csv("sankey_all.csv") %>%
+  # Add the region to the sankey for the geographical correlation
+  mutate(region = "UK") %>%
+  separate_wider_delim(data_source_id,
+                       delim = "_",
+                       too_few = "align_start",
+                       names_sep = '')
+
+# Import the metadata for those sources
+metadata <-
+  read_excel("./raw_data/data_sources.xlsx") %>%
+  setNames(gsub('.*%([m|l].*%\\d)', '\\1',names(.)))
 
 # Quality scoring ---------------------------------------------------------
 
-## Appends a quality score in an array format to the sankey
-# Scoring done at the observation level based on metadata produced at the dataset level and a quality aggregation algorithm
-# At the present time, we have close to 3,600 observations in the plastic sankey and it would be inefficient to grade each source by hand
-# Conditional statements map and classify the metadata in the metadata catalogue against the following scoring schema for each observation - reflecting what the sankey is purporting to show
-# Where one source populates the observation, the quality score reflects the quality dimensions of that one source only
-# Where multiple data sources input, we taken an average across the sources for that data source
+# Appends a quality score in an array format to the sankey
+# Scoring done at the observation level based on metadata produced at the dataset level in combination with a quality score aggregation algorithm
+# Conditional statements map and classify the metadata in the metadata catalogue against a scoring schema for each observation in a chart
+# Where one source populates the observation, the quality score reflects the quality dimensions of that one source only, including an analysis step e.g. estimation of waste based on lifespan
+# Where multiple data sources input, we taken an average across the sources for that variable or some other weighted combination approach
 
-# First, add the source to the sankey
-# Then perform the calculation
-# Also in some cases, a variable is populated including with an estimation approach
-# Identify in each dataset how the material of interest is classified and map datasets to position in value chain of relevance
+# Geographical correlation ------------------------------------------------
+
+# The geographical relevance of the data to the studied region.	[{
+#   score:1, definition:"Value is specific to the studied region.",
+# } , {
+#   score:2, definition:"Value covers (part of) the region, but is not specific to it.",
+# } , {
+#   score:3, definition:"Value relates to the same/slightly different socioeconomic region.",
+# } , {
+#   score:4, definition:"Value relates to an entirely different socioeconomic region.",
+# }]
+
+# Linked variables in the metadata catalogue
+# Geographical coverage (the largest geospatial area that the source covers)
+# Geographical disaggregation, by country (the list of geographical categories making up that spatial coverage)
+# Use a standardised terminology for the region
+
+# Join the metadata catalogue to the sankey columns
+
+plastic_packaging_sankey_flows_geographical <-
+  left_join(plastic_packaging_sankey_flows, metadata, c("data_source_id1" = "NAME%-%Identifier"))
 
 ## Temporal correlation ----------------------------------------------------
 
@@ -26,31 +60,17 @@
 # }]
 
 # Linked variables in the metadata catalogue
-# TIMELINESS%-%First year for which data is available
-# TIMELINESS%-%Most recent year for which data is available
+# TIMELINESS%-%Years covered
 
-# Geographical correlation ------------------------------------------------
-
-# The geographical relevance of the data to the studied region.	[{
-#   score:1, definition:"Value is specific to the studied region.",
-# } , {
-#   score:2, definition:"Value covers the region, but is not specific.",
-# } , {
-#   score:3, definition:"Value relates to the same/slightly different socioeconomic region.",
-# } , {
-#   score:4, definition:"Value relates to a very different socioeconomic region.",
-# }]
-
-# Linked variables in the metadata catalogue
-# Geographical coverage (the largest geospatial area that the source covers)
-# Geographical disaggregation, by country (the list of geographical categories making up that spatial coverage)
+# We calculate if observation year is equal to a year value in the metadata for that input source
+# If not, then we calculate the distance from the min/max year and classify it into an ordinal scoring based on the above categories
 
 # Other technological correlation -----------------------------------------
 
-# Other Technological Correlation	Other factors such as the relevance of the data to the technology, product, or other contextual aspects.	[{
+# Other Technological correlation	- other factors such as the relevance of the data to the technology, product, or other contextual aspects.	[{
 #   score:1, definition:"Value relates to the same product, material and process.",
 # } , {
-#   score:2, definition:"Value relates to the same prod technology or product.",
+#   score:2, definition:"Value relates to the same technology or product.",
 # } , {
 #   score:3, definition:"Value deviates from the technology or product of interest, but rough correlations can be established.",
 # } , {
@@ -62,7 +82,7 @@
 # Specific to or just covers - is it specifically named in that column? Otherwise, is it link to the named process (separate lookup)
 # Product - packaging
 # Material - Polymer
-# Process
+# Process - The process e.g. landfilling 
 
 # Completeness ------------------------------------------------------------
 
@@ -76,7 +96,7 @@
 #   score:4, definition:"Only fragmented data available; important processes/mass flows are missing..",
 # }]
 
-# Add completeness to data sources
+# Add completeness to data sources - an aggregate across product, material, technology/process
 
 # Reliability -------------------------------------------------------------
 # Also a function of any estimation required to counteract a lack of completeness 
@@ -92,10 +112,9 @@
 #   }]
 
 ## Variables linked to 
-# Methodology documented
+# Methodology documented 
 # Qualitative communication of uncertainty
 # Quantitative communication of uncertainty (if applicable)
-# Stated quality assurance
+# Stated quality assurance process
 # Reproducibility via code
 
-# You can use this scoring approach to prioritise between sources or impose a cut-off

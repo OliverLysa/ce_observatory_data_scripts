@@ -1,10 +1,9 @@
 ##### **********************
 # Author: Oliver Lysaght
-# Purpose: POM Projection
+# Purpose: POM projection for plastics
 
-# *******************************************************************************
-# Packages
-# *******************************************************************************
+# Packages ----------------------------------------------------------------
+
 # Package names
 packages <- c(
   "magrittr",
@@ -28,18 +27,14 @@ if (any(installed_packages == FALSE)) {
 # Packages loading
 invisible(lapply(packages, library, character.only = TRUE))
 
-# *******************************************************************************
-# Options and functions
-# *******************************************************************************
+# Options and functions ---------------------------------------------------
 
 # Set options
 options(warn = -1,
         scipen = 999,
         timeout = 1000)
 
-# *******************************************************************************
-# Analysis
-# *******************************************************************************
+# Import total POM ----------------------------------------------------------------
 
 pom_data_indicators <- read_ods( 
   "./raw_data/UK_Statistics_on_Waste_dataset_September_2024_accessible (1).ods",
@@ -53,6 +48,51 @@ pom_data_indicators <- read_ods(
   mutate(value = value * 1000) %>%
   mutate(variable = "Placed on market",
          type = "Outturn")
+
+# Material coefficients ---------------------------------------------------
+
+# # Detailed chart - import composition data
+# plastic_packaging_composition_breakdown <- read_xlsx( 
+#   "./cleaned_data/plastic_packaging_composition.xlsx",
+#   sheet = 1) %>%
+#   select(-`Source URL`) %>%
+#   pivot_longer(-c(Year, Category, Type),
+#                names_to = "Material sub-type",
+#                values_to = "proportion") %>%
+#   mutate(material = "Plastic") %>%
+#   clean_names() %>%
+#   dplyr::rename("application" = type) %>%
+#   filter(year == 2021)
+
+# Wider
+BOM_wider <- BOM %>%
+  pivot_wider(names_from = year, values_from = percentage) %>%
+  mutate(material1 = "Plastic")
+
+# # Create table to extrapolate the BOM
+years <- c(2024:2042)
+empty <-
+  as.data.frame(matrix(NA, ncol = length(years), nrow = 14))
+
+colnames(empty) <- years
+
+BOM_future <- empty %>%
+  mutate(material1 = "Plastic")
+
+BOM_combined <- left_join(BOM_wider, BOM_future) %>%
+  pivot_longer(-c(category, type, material, material1),
+               names_to = "year",
+               values_to = "rate") %>%
+  group_by(type, material, material1, year) %>%
+  summarise(rate = sum(rate)) %>%
+  group_by(type, material, material1) %>%
+  mutate(rate = na.approx(
+    rate,
+    na.rm = FALSE,
+    maxgap = Inf,
+    rule = 2
+  )) %>%
+  mutate_at(c('year'), as.numeric)
 
 # *******************************************************************************
 # Population as exogenous variable
@@ -216,33 +256,33 @@ projection_combined <- project_all %>%
   mutate(variable = "Waste generated") %>%
   bind_rows(project_all)
 
-# Emissions for population
-
-# Import emissions factors
-ghg_emissions <- 
-  read_excel("./raw_data/ghg-conversion-factors-2024_full_set__for_advanced_users_.xlsx",
-             sheet = "Material use",
-             range = "B70:G80") %>%
-  slice(-1) %>%
-  dplyr::rename(material = 1) %>%
-  filter(material == "Plastics: average plastics")
-
-# Produce production emissions
-production_emissions <- 
-  project_all %>%
-  mutate(emissions = 3164.7804900000001) %>%
-  mutate(value = (value * emissions)/1000) %>%
-  dplyr::mutate(variable = "Production emissions (T CO2e)",
-         .before = year) %>%
-  select(-emissions)
-
-# Bind to data
-projection_combined <- projection_combined %>%
-  bind_rows(production_emissions)
-
-# Create KPI table omitting low and high
-projection_kpi <- projection_combined %>%
-  filter(! `Level` %in% c("Low","High"))
+# # Emissions for population
+# 
+# # Import emissions factors
+# ghg_emissions <- 
+#   read_excel("./raw_data/ghg-conversion-factors-2024_full_set__for_advanced_users_.xlsx",
+#              sheet = "Material use",
+#              range = "B70:G80") %>%
+#   slice(-1) %>%
+#   dplyr::rename(material = 1) %>%
+#   filter(material == "Plastics: average plastics")
+# 
+# # Produce production emissions
+# production_emissions <- 
+#   project_all %>%
+#   mutate(emissions = 3164.7804900000001) %>%
+#   mutate(value = (value * emissions)/1000) %>%
+#   dplyr::mutate(variable = "Production emissions (T CO2e)",
+#          .before = year) %>%
+#   select(-emissions)
+# 
+# # Bind to data
+# projection_combined <- projection_combined %>%
+#   bind_rows(production_emissions)
+# 
+# # Create KPI table omitting low and high
+# projection_kpi <- projection_combined %>%
+#   filter(! `Level` %in% c("Low","High"))
 
 # *******************************************************************************
 # GDP as exogenous variable
@@ -362,25 +402,25 @@ project_all_gdp <- rbindlist(
   use.names = TRUE) %>%
   mutate(variable = "Placed on market")
 
-# Emissions for GDP
-
-# Import emissions factor
-ghg_emissions <- 
-  read_excel("./raw_data/ghg-conversion-factors-2024_full_set__for_advanced_users_.xlsx",
-             sheet = "Material use",
-             range = "B70:G80") %>%
-  slice(-1) %>%
-  dplyr::rename(material = 1) %>%
-  filter(material == "Plastics: average plastics")
-
-# Produce production emissions
-production_emissions_gdp <- 
-  project_all_gdp %>%
-  mutate(emissions = 3164.7804900000001) %>%
-  mutate(value = (value * emissions)/1000) %>%
-  dplyr::mutate(variable = "Production emissions (T CO2e)",
-         .before = year) %>%
-  select(-emissions)
+# # Emissions for GDP
+# 
+# # Import emissions factor
+# ghg_emissions <- 
+#   read_excel("./raw_data/ghg-conversion-factors-2024_full_set__for_advanced_users_.xlsx",
+#              sheet = "Material use",
+#              range = "B70:G80") %>%
+#   slice(-1) %>%
+#   dplyr::rename(material = 1) %>%
+#   filter(material == "Plastics: average plastics")
+# 
+# # Produce production emissions
+# production_emissions_gdp <- 
+#   project_all_gdp %>%
+#   mutate(emissions = 3164.7804900000001) %>%
+#   mutate(value = (value * emissions)/1000) %>%
+#   dplyr::mutate(variable = "Production emissions (T CO2e)",
+#          .before = year) %>%
+#   select(-emissions)
 
 # Add waste variable
 projection_combined_gdp <- project_all_gdp %>%
@@ -392,7 +432,8 @@ projection_all_variables <- projection_combined %>%
   bind_rows(projection_combined_gdp) %>%
   filter(! year > 2042) %>%
   filter(! (year == 2023 & type == "Outturn")) %>%
-  mutate(material = "Plastic")
+  mutate(material = "Plastic") %>%
+  rename(material1 = material)
 
 # Create KPI table omitting low and high
 projection_kpi_gdp <- projection_combined_gdp %>%
@@ -404,112 +445,55 @@ projection_kpi_all <- projection_kpi %>%
   filter(! year > 2042) %>%
   filter(! (year == 2023 & type == "Outturn"))
 
-# Detailed chart - import composition data
-plastic_packaging_composition_breakdown <- read_xlsx( 
-  "./cleaned_data/plastic_packaging_composition.xlsx",
-  sheet = 1) %>%
-  select(-`Source URL`) %>%
-  pivot_longer(-c(Year, Category, Type),
-             names_to = "Material sub-type",
-             values_to = "proportion") %>%
-  mutate(material = "Plastic") %>%
-  clean_names() %>%
-  dplyr::rename("application" = type) %>%
-  filter(year == 2021)
-
 # Convert projection into composition breakdown
-projection_detailed_future <- 
-  left_join(projection_all_variables, plastic_packaging_composition_breakdown, "material") %>%
+projection_detailed_future <- projection_all_variables %>%
+  filter(variable == "Placed on market") %>%
+  left_join(BOM_combined, "year") %>%
   clean_names() %>%
-  mutate(value = value * proportion) %>%
-  select(-c(year_y, proportion)) %>%
-  rename(year = year_x) %>%
-  group_by(variable, year, forecast_type, level, type, method, exogenous_factor, material, application, material_sub_type) %>%
-  summarise(value = sum(value)) %>%
+  mutate(value = value * rate) %>%
+  select(-c(type_x, rate, material1_y)) %>%
+  rename(application = type_y,
+         material1 = material1_x) %>%
   filter(forecast_type == "linear model, time-series components",
-       exogenous_factor == "Population") %>%
-  filter(variable != "Production emissions (T CO2e)")
+       exogenous_factor == "Population",
+       level == "Mid") 
 
 # Convert outturn into composition breakdown
 projection_detailed_outturn <- 
-  left_join(projection_all_variables, plastic_packaging_composition_breakdown, "material") %>%
+  projection_all_variables %>%
+  filter(variable == "Placed on market") %>%
+  left_join(BOM_combined, "year") %>%
   clean_names() %>%
-  mutate(value = value * proportion) %>%
-  select(-c(year_y, proportion)) %>%
-  rename(year = year_x) %>%
-  group_by(variable, year, forecast_type, level, type, method, exogenous_factor, material, application, material_sub_type) %>%
-  summarise(value = sum(value)) %>%
-  filter(type == "Outturn") %>%
-  filter(variable != "Production emissions (T CO2e)")
+  mutate(value = value * rate) %>%
+  select(-c(type_x, rate, material1_y)) %>%
+  rename(application = type_y,
+         material1 = material1_x) %>%
+  filter(year <= 2022,
+         year >= 2014) 
 
 # Bind the two tables together         
 projection_detailed_total <- projection_detailed_future %>%
-  bind_rows(projection_detailed_outturn)
+  bind_rows(projection_detailed_outturn) %>%
+  mutate(domestic_production = value * 0.5,
+         net_imports = value * 0.5) %>%
+  rename(total = value)
 
-# Calculate litter
-projection_detailed_litter <- projection_detailed_total %>%
-  filter(variable == "Waste generated") %>%
-  mutate(value = value*0.004) %>%
-  mutate(variable = "Littering") 
-
-# Calculate domestic mechanical recycling
-# Import the rates
+write_xlsx(projection_detailed_total,
+           "./cleaned_data/projection_detailed_total_vensim_input.xlsx")
+# 
+# # Calculate domestic mechanical recycling
+# # Import the rates
 vensim_rates <-
   read_excel("./plastics/scenario_model/vensim_model_input_updated.xlsx", sheet = "rate") %>%
   mutate(material = "plastic")
 
-# Create table to extrapolate 
-years <- c(2024:2042)  
-empty <-
-  as.data.frame(matrix(NA, ncol = length(years), nrow = 14))
-colnames(empty) <- years
-vensim_future <- empty %>%
-  mutate(material = "plastic") 
+# # Write table
+# DBI::dbWriteTable(con,
+#                   "plastic_projection_detailed",
+#                   projection_detailed_total_all,
+#                   overwrite = TRUE)
 
-# Construct table
-vensim_all <- 
-  left_join(vensim_rates, vensim_future) %>%
-  unique() %>%
-  select(-material) %>%
-  pivot_longer(-variable,
-               names_to = "year",
-               values_to = "rate") %>%
-  group_by(variable) %>%
-  mutate(rate = na.approx(
-                 rate,
-                 na.rm = FALSE,
-                 maxgap = Inf,
-                 rule = 2
-               )) %>%
-  pivot_wider(names_from = variable, 
-              values_from = rate) %>%
-  mutate_at(c('year'), as.numeric) %>%
-  clean_names()
-
-projection_detailed_mechanical_recycling <- projection_detailed_total %>%
-  filter(variable == "Waste generated")%>%
-  mutate(collection = value*0.996) %>%
-  left_join(vensim_all) %>%
-  mutate(formal_domestic_treatment = collection * rate_domestic,
-         sent_for_recycling = formal_domestic_treatment * rate_of_recycling,
-         mechanical_recycling = sent_for_recycling * rate_of_mechanical_recycling) %>%
-  # select(1:10, mechanical_recycling) %>%
-  # rename(value = mechanical_recycling) %>%
-  mutate(variable = "Mechanical recycling")
-
-write_xlsx(projection_detailed_mechanical_recycling,
-           "./cleaned_data/projection_detailed_mechanical_recycling.xlsx")
-
-# Bind the tables together
-projection_detailed_total_all <- projection_detailed_total %>%
-  bind_rows(projection_detailed_litter) %>%
-  bind_rows(projection_detailed_mechanical_recycling)
-
-# Write table
-DBI::dbWriteTable(con,
-                  "plastic_projection_detailed",
-                  projection_detailed_total_all,
-                  overwrite = TRUE)
+# COERCE - OLD METHOD
 
 model_output <- read_csv(
   "./cleaned_data/model_output.csv")
@@ -526,40 +510,3 @@ test_combined <- left_join(# Join the correspondence codes and the trade data
 # 
 # write_xlsx(test_combined,
 #            "./cleaned_data/test_combined.xlsx")
-
-## Vensim input for each application
-projection_vensim <- projection_detailed_total %>%
-  filter(variable == "Placed on market",
-         forecast_type == "linear model, time-series components",
-         exogenous_factor == "Population",
-         application == "Bottle",
-         material_sub_type == "PET")
-
-projection_vensim_out <- projection_detailed_total %>%
-  filter(variable == "Placed on market",
-         type == "Outturn",
-         application == "Bottle",
-         material_sub_type == "PET")
-
-total_bottle <- projection_vensim_out %>%
-  bind_rows(projection_vensim)
-
-projection_vensim_PTT <- projection_detailed_total %>%
-  filter(variable == "Placed on market",
-         forecast_type == "linear model, time-series components",
-         exogenous_factor == "Population",
-         application == "PTT",
-         material_sub_type == "PET",
-         level == "Mid")
-
-projection_vensim_out_PTT <- projection_detailed_total %>%
-  filter(variable == "Placed on market",
-         type == "Outturn",
-         application == "PTT",
-         material_sub_type == "PET")
-
-total_ptt <- projection_vensim_PTT %>%
-  bind_rows(projection_vensim_out_PTT)
-
-write_xlsx(total_ptt,
-           "./cleaned_data/total_ptt.xlsx")

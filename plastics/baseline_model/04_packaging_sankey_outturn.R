@@ -40,7 +40,8 @@ pol_pom_sankey <- POM_packaging_composition %>%
          source,
          target,
          material,
-         value)
+         value) %>%
+  mutate(data_source_id = "0047_0038")
 
 # POM > End use
 POM_1_sankey <- POM_packaging_composition %>%
@@ -52,7 +53,8 @@ POM_1_sankey <- POM_packaging_composition %>%
          source,
          target,
          material,
-         value)
+         value) %>%
+  mutate(data_source_id = "0047_0038")
 
 # End use > application
 # POM_2_sankey <- POM_packaging_composition %>%
@@ -77,7 +79,8 @@ POM_2_alt_sankey <- POM_packaging_composition %>%
          source,
          target,
          material,
-         value)
+         value) %>%
+  mutate(data_source_id = "0047_0038")
 
 ############## WASTE GENERATED
 
@@ -86,7 +89,9 @@ WG_sankey <- POM_2_alt_sankey %>%
   ungroup() %>%
   dplyr::select(-c(source)) %>%
   rename(source = target) %>%
-  mutate(target = "Waste generated", .before = material)
+  mutate(target = "Waste generated", .before = material) %>%
+  # How to handle if something is estimated?
+  mutate(data_source_id = "0047_0038")
   
 ############## COLLECTION AND LITTERING
 
@@ -94,30 +99,35 @@ WG_sankey <- POM_2_alt_sankey %>%
 LA_collection_sankey <- LA_collection %>%
   mutate(source = "Waste generated",
          target = "LA collection") %>%
-  rename(value = WG_ex_LA)
+  rename(value = WG_ex_LA) %>%
+  mutate(data_source_id = "0047_0040_0072")
 
 ## NON-LA WMC Collection
 Non_LA_collection_sankey <- Non_LA_collection %>%
   mutate(source = "Waste generated",
          target = "Non LA collection") %>%
-  rename(value = WG_ex_Non_LA)
+  rename(value = WG_ex_Non_LA) %>%
+  mutate(data_source_id = "0047_0040_0072")
 
 # LITTERING
 litter_sankey <- litter %>%
   mutate(source = "Waste generated", .before = variable) %>%
-  rename(target = variable)
+  rename(target = variable) %>%
+  mutate(data_source_id = "0047_0076_0088")
 
 ## ILLEGAL COLLECTION FOR DUMPING
 illegal_collection_sankey <- illegal_collection %>%
   mutate(source = "Waste generated", .before = variable) %>%
-  rename(target = variable)
+  rename(target = variable) %>%
+  mutate(data_source_id = "0047_0053_0088")
 
 ############## POST-COLLECTION TREATMENT
 
 # DUMPING
 dumping_sankey <- illegal_collection_sankey %>%
   mutate(source = "Illegal collection",
-         target = "Dumping")
+         target = "Dumping") %>%
+  mutate(data_source_id = "0047_0053_0088")
 
 # DOMESTIC RESIDUAL
 # LA - residual
@@ -135,7 +145,8 @@ LA_residual_sankey <- total_residual %>%
   mutate(value = total_residual * LA_share) %>%
   select(year, material, value) %>%
   mutate(source = "LA collection",
-         target = "Domestic residual treatment")
+         target = "Domestic residual treatment") %>%
+  mutate(data_source_id = "0047_0084")
 
 # Non-LA - residual
 Non_LA_residual_sankey <- total_residual %>%
@@ -152,21 +163,24 @@ Non_LA_residual_sankey <- total_residual %>%
   mutate(value = total_residual * Non_LA_share) %>%
   select(year, material, value) %>%
   mutate(source = "Non LA collection",
-         target = "Domestic residual treatment")
+         target = "Domestic residual treatment") %>%
+  mutate(data_source_id = "0047_0084")
 
 ## Residual treatment > Incineration
 incineration_sankey <- residual_split_LA %>%
   select(year, material, incineration) %>%
   rename(value = incineration) %>%
   mutate(source = "Domestic residual treatment",
-         target = "Incineration")
+         target = "Incineration") %>%
+  mutate(data_source_id = "0047_0086_0071")
 
 ## Residual treatment > landfill
 landfill_sankey <- residual_split_LA %>%
   select(year, material, landfill) %>%
   rename(value = landfill) %>%
   mutate(source = "Domestic residual treatment",
-         target = "Landfill")
+         target = "Landfill") %>%
+  mutate(data_source_id = "0047_0086_0071")
 
 # LA collection > Sorting
 LA_sorting_sankey <- sorting %>%
@@ -179,7 +193,8 @@ LA_sorting_sankey <- sorting %>%
   mutate(value = sorting * LA_share) %>%
   select(year, material, value) %>%
   mutate(source = "LA collection",
-         target = "Sorting")
+         target = "Sorting") %>%
+  mutate(data_source_id = "0047_0084_0048")
 
 # Non-LA collection > Sorting
 Non_LA_sorting_sankey <- sorting %>%
@@ -192,21 +207,24 @@ Non_LA_sorting_sankey <- sorting %>%
   mutate(value = sorting * Non_LA_share) %>%
   select(year, material, value) %>%
   mutate(source = "Non LA collection",
-         target = "Sorting")
+         target = "Sorting") %>%
+  mutate(data_source_id = "0047_0084_0048")
 
 # Sorting > Exports
 sorting_exports_sankey <- 
   overseas_recycling_polymers %>%
   mutate(source = "Sorting",
          target = "Overseas recycling") %>%
-  rename(value = tonnes)
+  rename(value = tonnes) %>%
+  mutate(data_source_id = "0047_0084")
 
 # Sorting > Domestic
 sorting_domestic_sankey <- 
   domestic_recycling_polymers %>%
   mutate(source = "Sorting",
          target = "Domestic recycling") %>%
-  rename(value = tonnes)
+  rename(value = tonnes) %>%
+  mutate(data_source_id = "0047_0084")
 
 # Sorting > waste - rejects
 sorting_rejects_sankey <-
@@ -214,7 +232,8 @@ sorting_rejects_sankey <-
   select(year, material, rejects) %>%
   rename(value = rejects) %>%
   mutate(source = "Sorting",
-         target = "Recycling rejects")
+         target = "Recycling rejects") %>%
+  mutate(data_source_id = "0047_0084_0048")
 
 ## Domestic recycling > End uses
 domestic_recycling_polymers_split <- sorting_domestic_sankey %>%
@@ -225,7 +244,8 @@ domestic_recycling_polymers_split <- sorting_domestic_sankey %>%
   mutate(prefix = "r") %>%
   unite(target, prefix, target, sep = "_", remove = TRUE)  %>%
   mutate(target = str_to_upper(target)) %>%
-  mutate(target = gsub("R_OTHER", "R_Other", target))
+  mutate(target = gsub("R_OTHER", "R_Other", target)) %>%
+  mutate(data_source_id = "0047_0084")
 
 # Import end use splits
 end_uses <- 
@@ -240,7 +260,8 @@ polymers_end_uses <- domestic_recycling_polymers_split %>%
   mutate(source = target) %>%
   select(-target) %>%
   rename(target = application) %>%
-  select(-c("share"))
+  select(-c("share")) %>%
+  mutate(data_source_id = "0047_0084")
 
 # Exports of plastic waste
 recycling_exports_destinations <- 
@@ -250,7 +271,8 @@ recycling_exports_destinations <-
   mutate(value = value * percentage) %>%
   select(year, material, value, country) %>%
   rename(target = country) %>%
-  mutate(source = "Overseas recycling")
+  mutate(source = "Overseas recycling") %>%
+  mutate(data_source_id = "0047_0084_0085")
 
 # *******************************************************************************
 # Construct the sankey stages
