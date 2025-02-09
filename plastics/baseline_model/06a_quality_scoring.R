@@ -10,12 +10,17 @@ plastic_packaging_sankey_flows <-
   separate_wider_delim(data_source_id,
                        delim = "_",
                        too_few = "align_start",
-                       names_sep = '')
+                       names_sep = '') %>%
+  mutate(row_id = row_number())
 
 # Import the metadata for those sources
 metadata <-
   read_excel("./raw_data/data_sources.xlsx") %>%
-  setNames(gsub('.*%([m|l].*%\\d)', '\\1',names(.)))
+  clean_names()
+
+for ( col in 1:ncol(metadata)){
+  colnames(metadata)[col] <-  sub("percent_percent._*", "", colnames(metadata)[col])
+}
 
 # Quality scoring ---------------------------------------------------------
 
@@ -44,8 +49,48 @@ metadata <-
 
 # Join the metadata catalogue to the sankey columns
 
-plastic_packaging_sankey_flows_geographical <-
-  left_join(plastic_packaging_sankey_flows, metadata, c("data_source_id1" = "NAME%-%Identifier"))
+plastic_packaging_sankey_flows_geographical_source_1 <-
+  left_join(plastic_packaging_sankey_flows, metadata, c("data_source_id1" = "name_identifier")) %>%
+  select(1:11,26) %>%
+  # See if a match on region
+  mutate(patterns = map_chr(strsplit(region, ", "),paste,collapse="|"),
+         match = str_detect(spatial_coverage_and_detail_geographical_coverage, patterns)) %>%
+  mutate_at(c('match'), as.character) %>%
+  mutate(geographic_score_source_1 = case_when(str_detect(match, "TRUE") ~ 1,
+                                               str_detect(match, "FALSE") ~ 2)) %>%
+  select(1:5,10,11,15)
+
+plastic_packaging_sankey_flows_geographical_source_2 <-
+  left_join(plastic_packaging_sankey_flows, metadata, c("data_source_id2" = "name_identifier")) %>%
+  select(1:11,26) %>%
+  # See if a match on region
+  mutate(patterns = map_chr(strsplit(region, ", "),paste,collapse="|"),
+       match = str_detect(spatial_coverage_and_detail_geographical_coverage, patterns)) %>%
+  mutate_at(c('match'), as.character) %>%
+  mutate(geographic_score_source_2 = case_when(str_detect(match, "TRUE") ~ 1,
+                                               str_detect(match, "FALSE") ~ 2)) %>%
+  select(11,15)
+
+plastic_packaging_sankey_flows_geographical_source_3 <-
+  left_join(plastic_packaging_sankey_flows, metadata, c("data_source_id3" = "name_identifier")) %>%
+  select(1:11,26) %>%
+  # See if a match on region
+  mutate(patterns = map_chr(strsplit(region, ", "),paste,collapse="|"),
+         match = str_detect(spatial_coverage_and_detail_geographical_coverage, patterns)) %>%
+  mutate_at(c('match'), as.character) %>%
+  mutate(geographic_score_source_3 = case_when(str_detect(match, "TRUE") ~ 1,
+                                               str_detect(match, "FALSE") ~ 2)) %>%
+  select(11,15)
+
+plastic_packaging_sankey_flows_geographical <- 
+  left_join(plastic_packaging_sankey_flows_geographical_source_1, plastic_packaging_sankey_flows_geographical_source_2, by='row_id') %>%
+  left_join(., plastic_packaging_sankey_flows_geographical_source_3, by='row_id') %>%
+  rowwise() %>% 
+  mutate(geographic_score = mean(c_across(c(geographic_score_source_1, 
+                                            geographic_score_source_2,
+                                            geographic_score_source_3)), na.rm = TRUE)) %>%
+  select(1:7,11) %>%
+  mutate(across(c('geographic_score'), round, 1))
 
 ## Temporal correlation ----------------------------------------------------
 
@@ -68,9 +113,9 @@ plastic_packaging_sankey_flows_geographical <-
 # Other technological correlation -----------------------------------------
 
 # Other Technological correlation	- other factors such as the relevance of the data to the technology, product, or other contextual aspects.	[{
-#   score:1, definition:"Value relates to the same product, material and process.",
+#   score:1, definition:"Value is specific to the product, material and process.",
 # } , {
-#   score:2, definition:"Value relates to the same technology or product.",
+#   score:2, definition:"Value covers, but is not specific to the same technology or product.",
 # } , {
 #   score:3, definition:"Value deviates from the technology or product of interest, but rough correlations can be established.",
 # } , {

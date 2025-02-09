@@ -494,7 +494,6 @@ vensim_rates <-
 #                   overwrite = TRUE)
 
 # COERCE - OLD METHOD
-
 model_output <- read_csv(
   "./cleaned_data/model_output.csv")
 
@@ -510,3 +509,22 @@ test_combined <- left_join(# Join the correspondence codes and the trade data
 # 
 # write_xlsx(test_combined,
 #            "./cleaned_data/test_combined.xlsx")
+
+# vensim_
+vensim_baseline <- read_csv(
+  "./raw_data/vensim_packaging_model_output.csv") %>%
+  filter(variable %in% c("Placed on market",
+                         "littering",
+                         "Mechanical recycling")) %>%
+  mutate(material1 = "Plastic") %>%
+  dplyr::rename(material_sub_type = material) %>%
+  mutate(type = if_else(year < 2023, "Outturn", "Projection")) %>%
+  mutate(level = if_else(year < 2023, NA, "Mid")) %>%
+  mutate(forecast_type = if_else(year < 2023, NA, "linear model, time-series components")) %>%
+  mutate(method = if_else(year < 2023, NA, "Ratio-based")) %>%
+  mutate(exogenous_factor = if_else(year < 2023, NA, "Population"))
+
+DBI::dbWriteTable(con,
+                  "plastic_projection_detailed",
+                  vensim_baseline,
+                  overwrite = TRUE)
