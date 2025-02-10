@@ -236,13 +236,6 @@ ses_project <- projection %>%
   mutate(method = "Ratio-based",
          Exogenous_factor = "Population")
 
-# ## Multivariate Model (GDP & Pop)
-# rmc2 <- read_excel("rmc.xlsx", sheet = 2) 
-# rmcts2 <- ts(rmc2,frequency=1,start=c(1998,1))
-# mvm <- tslm(RMC ~ Population + GDP, data = rmcts2)
-# summary(mvm)
-# accuracy(mvm)
-
 # Bind the projections made using population as the exogenous variable
 project_all <- rbindlist(
   list(lin_project,
@@ -255,34 +248,6 @@ project_all <- rbindlist(
 projection_combined <- project_all %>%
   mutate(variable = "Waste generated") %>%
   bind_rows(project_all)
-
-# # Emissions for population
-# 
-# # Import emissions factors
-# ghg_emissions <- 
-#   read_excel("./raw_data/ghg-conversion-factors-2024_full_set__for_advanced_users_.xlsx",
-#              sheet = "Material use",
-#              range = "B70:G80") %>%
-#   slice(-1) %>%
-#   dplyr::rename(material = 1) %>%
-#   filter(material == "Plastics: average plastics")
-# 
-# # Produce production emissions
-# production_emissions <- 
-#   project_all %>%
-#   mutate(emissions = 3164.7804900000001) %>%
-#   mutate(value = (value * emissions)/1000) %>%
-#   dplyr::mutate(variable = "Production emissions (T CO2e)",
-#          .before = year) %>%
-#   select(-emissions)
-# 
-# # Bind to data
-# projection_combined <- projection_combined %>%
-#   bind_rows(production_emissions)
-# 
-# # Create KPI table omitting low and high
-# projection_kpi <- projection_combined %>%
-#   filter(! `Level` %in% c("Low","High"))
 
 # *******************************************************************************
 # GDP as exogenous variable
@@ -402,48 +367,13 @@ project_all_gdp <- rbindlist(
   use.names = TRUE) %>%
   mutate(variable = "Placed on market")
 
-# # Emissions for GDP
-# 
-# # Import emissions factor
-# ghg_emissions <- 
-#   read_excel("./raw_data/ghg-conversion-factors-2024_full_set__for_advanced_users_.xlsx",
-#              sheet = "Material use",
-#              range = "B70:G80") %>%
-#   slice(-1) %>%
-#   dplyr::rename(material = 1) %>%
-#   filter(material == "Plastics: average plastics")
-# 
-# # Produce production emissions
-# production_emissions_gdp <- 
-#   project_all_gdp %>%
-#   mutate(emissions = 3164.7804900000001) %>%
-#   mutate(value = (value * emissions)/1000) %>%
-#   dplyr::mutate(variable = "Production emissions (T CO2e)",
-#          .before = year) %>%
-#   select(-emissions)
-
-# Add waste variable
-projection_combined_gdp <- project_all_gdp %>%
-  mutate(variable = "Waste generated") %>%
-  bind_rows(project_all_gdp) %>%
-  bind_rows(production_emissions_gdp)
-
+# Bind the tables together
 projection_all_variables <- projection_combined %>%
   bind_rows(projection_combined_gdp) %>%
   filter(! year > 2042) %>%
   filter(! (year == 2023 & type == "Outturn")) %>%
   mutate(material = "Plastic") %>%
   rename(material1 = material)
-
-# Create KPI table omitting low and high
-projection_kpi_gdp <- projection_combined_gdp %>%
-  filter(! `Level` %in% c("Low","High"))
-
-# Create overall KPI table
-projection_kpi_all <- projection_kpi %>%
-  bind_rows(projection_kpi_gdp) %>%
-  filter(! year > 2042) %>%
-  filter(! (year == 2023 & type == "Outturn"))
 
 # Convert projection into composition breakdown
 projection_detailed_future <- projection_all_variables %>%
@@ -471,46 +401,14 @@ projection_detailed_outturn <-
   filter(year <= 2022,
          year >= 2014) 
 
-# Bind the two tables together         
+# Bind the two tables together to input to the vensim model        
 projection_detailed_total <- projection_detailed_future %>%
   bind_rows(projection_detailed_outturn) %>%
   mutate(domestic_production = value * 0.5,
          net_imports = value * 0.5) %>%
   rename(total = value)
 
-write_xlsx(projection_detailed_total,
-           "./cleaned_data/projection_detailed_total_vensim_input.xlsx")
-# 
-# # Calculate domestic mechanical recycling
-# # Import the rates
-vensim_rates <-
-  read_excel("./plastics/scenario_model/vensim_model_input_updated.xlsx", sheet = "rate") %>%
-  mutate(material = "plastic")
-
-# # Write table
-# DBI::dbWriteTable(con,
-#                   "plastic_projection_detailed",
-#                   projection_detailed_total_all,
-#                   overwrite = TRUE)
-
-# COERCE - OLD METHOD
-model_output <- read_csv(
-  "./cleaned_data/model_output.csv")
-
-test_combined <- left_join(# Join the correspondence codes and the trade data
-  projection_detailed,
-  model_output,
-  by = c("variable",
-         "year",
-         "material",
-         "application",
-         "material_sub_type")) %>%
-  mutate(value_new = coalesce(value.y, value.x))
-# 
-# write_xlsx(test_combined,
-#            "./cleaned_data/test_combined.xlsx")
-
-# vensim_
+# Import baseline run from vensim to present as default on the site
 vensim_baseline <- read_csv(
   "./raw_data/vensim_packaging_model_output.csv") %>%
   filter(variable %in% c("Placed on market",
