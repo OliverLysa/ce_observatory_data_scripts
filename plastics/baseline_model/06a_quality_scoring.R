@@ -1,7 +1,3 @@
-# Linkage
-# Condition
-# Aggregation
-
 ## Import the sankey data with sources attached
 plastic_packaging_sankey_flows <-
   read_csv("sankey_all.csv") %>%
@@ -110,7 +106,7 @@ plastic_packaging_sankey_flows_geographical <-
 # We calculate if observation year is equal to a year value in the metadata for that input source
 # If not, then we calculate the distance from the min/max year and classify it into an ordinal scoring based on the above categories
 
-# Other technological correlation -----------------------------------------
+# Technological correlation -----------------------------------------
 
 # Other Technological correlation	- other factors such as the relevance of the data to the technology, product, or other contextual aspects.	[{
 #   score:1, definition:"Value is specific to the product, material and process.",
