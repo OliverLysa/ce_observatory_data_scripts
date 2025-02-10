@@ -1,3 +1,39 @@
+##### **********************
+# Purpose: Download flytipping data
+
+# *******************************************************************************
+# Packages
+# *******************************************************************************
+# Package names
+packages <- c("magrittr", 
+              "writexl", 
+              "readxl", 
+              "dplyr", 
+              "tidyverse", 
+              "readODS", 
+              "data.table", 
+              "RSelenium", 
+              "netstat", 
+              "uktrade", 
+              "httr",
+              "jsonlite",
+              "mixdist",
+              "janitor",
+              "onsr")
+
+# Install packages not yet installed
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(packages[!installed_packages])
+}
+
+# Packages loading
+invisible(lapply(packages, library, character.only = TRUE))
+
+# *******************************************************************************
+# Data
+# *******************************************************************************
+
 download.file(
   "https://assets.publishing.service.gov.uk/media/65e9d56462ff48001a87b393/Flytipping_incidents_and_actions_taken__reported_by_LAs_in_England__2012-13_to_2022-23_accessible_revised.ods",
   "./raw_data/flytipping_la.ods"
@@ -31,8 +67,8 @@ DBI::dbWriteTable(con,
                   flytipping,
                   overwrite = TRUE)
   
-# Get the weights
-flytipping_sizes <-
+# Summarise the number of events
+flytipping_types <-
   read_ods("./raw_data/flytipping_la.ods", sheet = "LA_incidents") %>%
   row_to_names(2) %>%
   select(1,3,31:44) %>%

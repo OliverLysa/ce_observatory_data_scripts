@@ -1,24 +1,25 @@
-# *******************************************************************************
-# Require packages
-# *******************************************************************************
+##### **********************
+# Purpose: Prepare data for map of packaging reprocessors and exporters
 
+# *******************************************************************************
+# Packages
+# *******************************************************************************
 # Package names
-packages <- c(
-  "magrittr",
-  "writexl",
-  "readxl",
-  "dplyr",
-  "tidyverse",
-  "readODS",
-  "data.table",
-  "janitor",
-  "xlsx",
-  "tabulizer",
-  "docxtractr",
-  "campfin",
-  "rjson",
-  "zipcodeR",
-  "ggmap")
+packages <- c("magrittr", 
+              "writexl", 
+              "readxl", 
+              "dplyr", 
+              "tidyverse", 
+              "readODS", 
+              "data.table", 
+              "RSelenium", 
+              "netstat", 
+              "uktrade", 
+              "httr",
+              "jsonlite",
+              "mixdist",
+              "janitor",
+              "RPostgreSQL")
 
 # Install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
@@ -29,7 +30,9 @@ if (any(installed_packages == FALSE)) {
 # Packages loading
 invisible(lapply(packages, library, character.only = TRUE))
 
-#### Data for mapping reprocessors and exporters
+# *******************************************************************************
+# Data
+# *******************************************************************************
 
 # Import csv file-list
 files_list <- 

@@ -1,16 +1,34 @@
-# *******************************************************************************
-# Require packages
-#********************************************************************************
+##### **********************
+# Purpose: Download official Defra packaging data
 
-require(writexl)
-require(dplyr)
-require(tidyverse)
-require(readODS)
-require(janitor)
-require(data.table)
-require(xlsx)
-require(readxl)
-require(reticulate)
+# *******************************************************************************
+# Packages
+# *******************************************************************************
+# Package names
+packages <- c("magrittr", 
+              "writexl", 
+              "readxl", 
+              "dplyr", 
+              "tidyverse", 
+              "readODS", 
+              "data.table", 
+              "RSelenium", 
+              "netstat", 
+              "uktrade", 
+              "httr",
+              "jsonlite",
+              "mixdist",
+              "janitor",
+              "onsr")
+
+# Install packages not yet installed
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(packages[!installed_packages])
+}
+
+# Packages loading
+invisible(lapply(packages, library, character.only = TRUE))
 
 # *******************************************************************************
 # Options and functions
@@ -23,7 +41,9 @@ options(scipen=999)
 source("./functions.R", 
        local = knitr::knit_global())
 
-# Defra packaging statistics
+# *******************************************************************************
+# Data
+# *******************************************************************************
 
 Defra_packaging_all <- read_ods( 
   "./raw_data/UK_Statistics_on_Waste_dataset_September_2024_accessible (1).ods",
@@ -46,9 +66,6 @@ Defra_packaging_all <- read_ods(
   mutate(variable = case_when(str_detect(variable, "packaging_waste_arising") ~ "Arisings",
                               str_detect(variable, "total_recovered_recycled") ~ "Recovered/recycled")) %>% 
   mutate_at(vars('rate','value'), funs(round(., 2)))
-
-write_xlsx(Defra_packaging_all, 
-           "./cleaned_data/Defra_packaging_all.xlsx")
 
 DBI::dbWriteTable(con,
                   "Defra_packaging",

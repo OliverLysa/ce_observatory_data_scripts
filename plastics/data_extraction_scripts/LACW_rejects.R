@@ -1,23 +1,45 @@
-## LACW Rejects
+##### **********************
+# Purpose: Download LACW rejects data
 
 # *******************************************************************************
-# Require packages
-#********************************************************************************
+# Packages
+# *******************************************************************************
+# Package names
+packages <- c("magrittr", 
+              "writexl", 
+              "readxl", 
+              "dplyr", 
+              "tidyverse", 
+              "readODS", 
+              "data.table", 
+              "RSelenium", 
+              "netstat", 
+              "uktrade", 
+              "httr",
+              "jsonlite",
+              "mixdist",
+              "janitor",
+              "onsr")
 
-require(writexl)
-require(dplyr)
-require(tidyverse)
-require(readODS)
-require(janitor)
-require(data.table)
-require(xlsx)
-require(readxl)
-require(reticulate)
+# Install packages not yet installed
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(packages[!installed_packages])
+}
+
+# Packages loading
+invisible(lapply(packages, library, character.only = TRUE))
 
 # *******************************************************************************
 # Options and functions
 # *******************************************************************************
 
+# Turn off scientific notation
+options(scipen=999)
+
+# *******************************************************************************
+# Data
+# *******************************************************************************
 
 rejects <- read_ods("./raw_data/LA_collection.ods",
                     sheet = "Table_1") %>%
@@ -28,9 +50,6 @@ rejects <- read_ods("./raw_data/LA_collection.ods",
   mutate_at(c(5), as.numeric) %>%
   group_by(financial_year) %>%
   summarise(rejects = sum(local_authority_collected_estimated_rejects_tonnes)) 
-
-write_csv(rejects,
-          "./cleaned_data/rejects.csv")
 
 DBI::dbWriteTable(con,
                   "LACW_rejects",

@@ -1,27 +1,35 @@
+# Purpose: import ONS business activity, size and location file
+
 # *******************************************************************************
 # Require packages
-#********************************************************************************
-
-require(writexl)
-require(dplyr)
-require(tidyverse)
-require(readODS)
-require(janitor)
-require(data.table)
-require(xlsx)
-require(readxl)
-require(reticulate)
-
 # *******************************************************************************
-# Options and functions
-# *******************************************************************************
+
+# Package names
+packages <- c(
+  "writexl",
+  "readxl",
+  "dplyr",
+  "tidyverse",
+  "readODS",
+  "data.table",
+  "janitor",
+  "xlsx")
+
+# Install packages not yet installed
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(packages[!installed_packages])
+}
+
+# Packages loading
+invisible(lapply(packages, library, character.only = TRUE))
 
 # Turn off scientific notation
 options(scipen=999)
 
-# Import functions
-source("./functions.R", 
-       local = knitr::knit_global())
+# *******************************************************************************
+# Data
+# *******************************************************************************
 
 # 2024
 

@@ -1,24 +1,38 @@
-# Compliance ratings
+##### **********************
+# Purpose: Compliance ratings
 
 # *******************************************************************************
-# Require packages
-#********************************************************************************
+# Packages
+# *******************************************************************************
+# Package names
+packages <- c("magrittr", 
+              "writexl", 
+              "readxl", 
+              "dplyr", 
+              "tidyverse", 
+              "readODS", 
+              "data.table", 
+              "RSelenium", 
+              "netstat", 
+              "uktrade", 
+              "httr",
+              "jsonlite",
+              "mixdist",
+              "janitor",
+              "onsr")
 
-require(writexl)
-require(dplyr)
-require(tidyverse)
-require(readODS)
-require(janitor)
-require(data.table)
-require(xlsx)
-require(readxl)
-require(reticulate)
-require(purrr)
+# Install packages not yet installed
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(packages[!installed_packages])
+}
+
+# Packages loading
+invisible(lapply(packages, library, character.only = TRUE))
 
 # *******************************************************************************
-# Options and functions
-
-#********************************************************************************
+# Data
+# *******************************************************************************
 
 # compliance ratings are used help assess the risks from a regulated facility.
 

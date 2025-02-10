@@ -1,19 +1,24 @@
 # Purpose: Upload PRN data from Lets Recycle to the Data Observatory Database
 
 # *******************************************************************************
-# Require packages and setup
+# Packages
 # *******************************************************************************
-
 # Package names
-packages <- c(
-  "writexl",
-  "readxl",
-  "dplyr",
-  "tidyverse",
-  "readODS",
-  "data.table",
-  "janitor",
-  "xlsx")
+packages <- c("magrittr", 
+              "writexl", 
+              "readxl", 
+              "dplyr", 
+              "tidyverse", 
+              "readODS", 
+              "data.table", 
+              "RSelenium", 
+              "netstat", 
+              "uktrade", 
+              "httr",
+              "jsonlite",
+              "mixdist",
+              "janitor",
+              "onsr")
 
 # Install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
@@ -24,15 +29,9 @@ if (any(installed_packages == FALSE)) {
 # Packages loading
 invisible(lapply(packages, library, character.only = TRUE))
 
-# con <- dbConnect(RPostgres::Postgres(),
-#                  dbname = 'postgres', 
-#                  host = 'aws-0-eu-west-2.pooler.supabase.com',
-#                  port = 6543,
-#                  user = 'postgres.qowfjhidbxhtdgvknybu',
-#                  password = rstudioapi::askForPassword("Database password"))
-
 # *******************************************************************************
-## Extraction
+# Data
+# *******************************************************************************
 
 prn_prices_monthly <- 
   # Read the raw data in

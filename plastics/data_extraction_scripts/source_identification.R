@@ -1,21 +1,32 @@
-#### Libraries ####
-require(writexl)
-require(httr)
-require(readODS)
-require(readxl)
-require(janitor)
-require(xlsx)
-require(tidyverse)
-require(data.table)
+# Purpose: Identify sources from data.gov that could be relevant
 
-options(warn = -1,
-        scipen=999,
-        timeout=1000)
+# *******************************************************************************
+# Require packages
+# *******************************************************************************
 
-# Table 1. Search terms/strings used to identify assets
-# 
-# While quite a number of online public catalogues exist in the UK for users to find and retrieve data public assets across geographies and topics of interest (with several of these set out in Table 18), several catalogues or repositories have sought to consolidate available data and in particular, data.gov.uk. We can see there are large number and breadth of publishers on data.gov.uk, making it a useful centralised source for data published by central government and local government.
-# https://en.wikipedia.org/wiki/Open_data_in_the_United_Kingdom
+# Package names
+packages <- c(
+  "writexl",
+  "readxl",
+  "dplyr",
+  "tidyverse",
+  "readODS",
+  "data.table",
+  "janitor",
+  "xlsx")
+
+# Install packages not yet installed
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(packages[!installed_packages])
+}
+
+# Packages loading
+invisible(lapply(packages, library, character.only = TRUE))
+
+# *******************************************************************************
+# Data
+# *******************************************************************************
 
 {r}
 # Firstly we look for any relevant organisations

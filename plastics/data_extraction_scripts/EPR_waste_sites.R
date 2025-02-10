@@ -1,30 +1,25 @@
 ##### **********************
-# Author: Oliver Lysaght
-# Purpose:
-# Inputs:  Environmental Permitting Regulations - Waste Sites Quarterly Summary
-# Required annual updates:
+# Purpose: Download Environmental Permitting Regulations - Waste Sites Quarterly Summary
 
-# Note: This dataset contains information about currently effective inert landfill sites. It does not contain details of non-inert landfill sites and large waste treatment sites.  
-
+# *******************************************************************************
+# Packages
+# *******************************************************************************
 # Package names
-packages <- c(
-  "magrittr",
-  "writexl",
-  "readxl",
-  "dplyr",
-  "tidyverse",
-  "readODS",
-  "data.table",
-  "janitor",
-  "xlsx",
-  "tabulizer",
-  "docxtractr",
-  "campfin",
-  "rjson",
-  "zipcodeR",
-  "ggmap",
-  "fuzzyjoin",
-  "DBI")
+packages <- c("magrittr", 
+              "writexl", 
+              "readxl", 
+              "dplyr", 
+              "tidyverse", 
+              "readODS", 
+              "data.table", 
+              "RSelenium", 
+              "netstat", 
+              "uktrade", 
+              "httr",
+              "jsonlite",
+              "mixdist",
+              "janitor",
+              "onsr")
 
 # Install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
@@ -34,6 +29,10 @@ if (any(installed_packages == FALSE)) {
 
 # Packages loading
 invisible(lapply(packages, library, character.only = TRUE))
+
+# *******************************************************************************
+# Data
+# *******************************************************************************
 
 # Import the data
 EPR_sites <- read_excel("./raw_data/Permitted waste operations - end June 2024.xlsx",
@@ -71,10 +70,6 @@ EPR_sites$location <-
 
 EPR_sites_final <- EPR_sites %>% 
   mutate(regime=replace_na(regime, "Other"))
-
-# Save table locally
-write_csv(EPR_sites, 
-           "./cleaned_data/EPR_sites_location.csv")
 
 # Prepare table for upload
 geo_data <- EPR_sites_final %>%

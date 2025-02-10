@@ -1,27 +1,25 @@
-# Prodcom PET
+##### **********************
+# Purpose: Download production data relating to PET
 
 # *******************************************************************************
-# Require packages
+# Packages
 # *******************************************************************************
-
 # Package names
-packages <- c(
-  "magrittr",
-  "writexl",
-  "readxl",
-  "dplyr",
-  "tidyverse",
-  "readODS",
-  "data.table",
-  "janitor",
-  "xlsx",
-  "tabulizer",
-  "docxtractr",
-  "campfin",
-  "rjson",
-  "zipcodeR",
-  "ggmap",
-  "zoo")
+packages <- c("magrittr", 
+              "writexl", 
+              "readxl", 
+              "dplyr", 
+              "tidyverse", 
+              "readODS", 
+              "data.table", 
+              "RSelenium", 
+              "netstat", 
+              "uktrade", 
+              "httr",
+              "jsonlite",
+              "mixdist",
+              "janitor",
+              "RPostgreSQL")
 
 # Install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
@@ -31,6 +29,10 @@ if (any(installed_packages == FALSE)) {
 
 # Packages loading
 invisible(lapply(packages, library, character.only = TRUE))
+
+# *******************************************************************************
+# Functions and options
+# *******************************************************************************
 
 Code <- c('22213065',
           '22213067',

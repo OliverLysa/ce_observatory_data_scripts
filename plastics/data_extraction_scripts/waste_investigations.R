@@ -1,23 +1,35 @@
-# Waste Investigations Report
+# Purpose: import Waste Investigations Report data
 
 # *******************************************************************************
 # Require packages
-#********************************************************************************
+# *******************************************************************************
 
-require(writexl)
-require(dplyr)
-require(tidyverse)
-require(readODS)
-require(janitor)
-require(data.table)
-require(xlsx)
-require(readxl)
-require(reticulate)
+# Package names
+packages <- c(
+  "writexl",
+  "readxl",
+  "dplyr",
+  "tidyverse",
+  "readODS",
+  "data.table",
+  "janitor",
+  "xlsx")
+
+# Install packages not yet installed
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(packages[!installed_packages])
+}
+
+# Packages loading
+invisible(lapply(packages, library, character.only = TRUE))
+
+# Turn off scientific notation
+options(scipen=999)
 
 # *******************************************************************************
-# Options and functions
-
-#********************************************************************************
+# Data
+# *******************************************************************************
 
 download.file(
   "https://environment.data.gov.uk/api/file/download?fileDataSetId=a15b347f-c277-4139-8988-a3ae2fd8b385&fileName=Waste_Investigations_Report.xlsx",

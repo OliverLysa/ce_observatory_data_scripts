@@ -1,26 +1,38 @@
 ##### **********************
-# Pollution inventory
+# Purpose: Pollution Inventory
 
 # *******************************************************************************
-# Require packages
-#********************************************************************************
+# Packages
+# *******************************************************************************
+# Package names
+packages <- c("magrittr", 
+              "writexl", 
+              "readxl", 
+              "dplyr", 
+              "tidyverse", 
+              "readODS", 
+              "data.table", 
+              "RSelenium", 
+              "netstat", 
+              "uktrade", 
+              "httr",
+              "jsonlite",
+              "mixdist",
+              "janitor",
+              "onsr")
 
-require(writexl)
-require(dplyr)
-require(tidyverse)
-require(readODS)
-require(janitor)
-require(data.table)
-require(xlsx)
-require(readxl)
-require(reticulate)
+# Install packages not yet installed
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(packages[!installed_packages])
+}
 
-# Turn off scientific notation
-options(scipen=999)
+# Packages loading
+invisible(lapply(packages, library, character.only = TRUE))
 
 # *******************************************************************************
-# Options and functions
-#********************************************************************************
+# Data
+# *******************************************************************************
 
 # Emissions below reporting threshold are not submitted.included here. 
 # Route name - Receiving media for the substance - air, land, controlled waters or wastewater

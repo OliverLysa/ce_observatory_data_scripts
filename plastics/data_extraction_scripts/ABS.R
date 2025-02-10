@@ -1,9 +1,5 @@
 ##### **********************
-# Author: Oliver Lysaght
-# Purpose:
-# Inputs:
-# Required annual updates:
-# The URL to download from
+# Purpose: Download ABS data
 
 # *******************************************************************************
 # Packages
@@ -33,6 +29,10 @@ if (any(installed_packages == FALSE)) {
 
 # Packages loading
 invisible(lapply(packages, library, character.only = TRUE))
+
+# *******************************************************************************
+# Data
+# *******************************************************************************
 
 ##### **********************
 # 4-digit aGVA Data Download
@@ -84,3 +84,22 @@ DBI::dbWriteTable(con,
                   "ABS",
                   aGVA_data,
                   overwrite = TRUE)
+
+# Plastic packaging relevant codes
+plastic_packaging_gva <- aGVA_data %>%
+  filter(code %in% c("2222",
+                     "2221",
+                     "2016",
+                     "2223",
+                     "2229",
+                     "2896",
+                     "3811",
+                     "3821",
+                     "4677")) %>%
+  unite(description, code, description, sep = " - ")
+
+DBI::dbWriteTable(con,
+                  "plastic_packaging_gva",
+                  plastic_packaging_gva,
+                  overwrite = TRUE)
+

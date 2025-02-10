@@ -1,17 +1,25 @@
-# *******************************************************************************
-# Require packages
-# *******************************************************************************
+##### **********************
+# Purpose: Prepare composition data for plastic packaging
 
+# *******************************************************************************
+# Packages
+# *******************************************************************************
 # Package names
-packages <- c(
-  "writexl",
-  "readxl",
-  "dplyr",
-  "tidyverse",
-  "readODS",
-  "data.table",
-  "janitor",
-  "xlsx")
+packages <- c("magrittr", 
+              "writexl", 
+              "readxl", 
+              "dplyr", 
+              "tidyverse", 
+              "readODS", 
+              "data.table", 
+              "RSelenium", 
+              "netstat", 
+              "uktrade", 
+              "httr",
+              "jsonlite",
+              "mixdist",
+              "janitor",
+              "onsr")
 
 # Install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
@@ -23,8 +31,8 @@ if (any(installed_packages == FALSE)) {
 invisible(lapply(packages, library, character.only = TRUE))
 
 # *******************************************************************************
-## Extraction
-# Plastic BOM
+# Data
+# *******************************************************************************
 
 BOM <- 
   read_excel("./cleaned_data/plastic_packaging_composition.xlsx",

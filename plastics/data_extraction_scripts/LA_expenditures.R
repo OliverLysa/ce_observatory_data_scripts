@@ -1,44 +1,38 @@
 ##### **********************
+# Purpose: Download LA expenditure data
 
 # *******************************************************************************
-# Require packages
-#********************************************************************************
+# Packages
+# *******************************************************************************
+# Package names
+packages <- c("magrittr", 
+              "writexl", 
+              "readxl", 
+              "dplyr", 
+              "tidyverse", 
+              "readODS", 
+              "data.table", 
+              "RSelenium", 
+              "netstat", 
+              "uktrade", 
+              "httr",
+              "jsonlite",
+              "mixdist",
+              "janitor",
+              "onsr")
 
-require(writexl)
-require(dplyr)
-require(tidyverse)
-require(readODS)
-require(janitor)
-require(data.table)
-require(xlsx)
-require(readxl)
-require(reticulate)
-require(readODS)
-require(ggplot2)
-require(plotly)
-require(leaflet)
-require(leafletplugins)
-require(sf)
-require(broom)
-require(netstat)
-require(ggridges)
-library(geojson)
-library(geojsonsf)
-require(jsonlite)
+# Install packages not yet installed
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(packages[!installed_packages])
+}
+
+# Packages loading
+invisible(lapply(packages, library, character.only = TRUE))
 
 # *******************************************************************************
-# Options and functions
+# Data
 # *******************************************************************************
-
-# Turn off scientific notation
-options(scipen=999)
-
-# Import functions
-source("./functions.R", 
-       local = knitr::knit_global())
-
-# *******************************************************************************
-# Options and functions
 
 # 2020-2021
 
@@ -230,71 +224,3 @@ DBI::dbWriteTable(con,
                   "map_LA_expenditures",
                   shapefile_data,
                   overwrite = TRUE)
-
-## Mapping
-
-# Define colour scale
-bins <-
-  c(
-    0,
-    100,
-    250,
-    500,
-    1000,
-    5000,
-    10000,
-    15000,
-    20000,
-    Inf
-  )
-
-pal <- colorBin("YlOrRd", 
-                domain = shapefile_data$value, 
-                bins = bins)
-
-# Set default location
-Location = c(-1.5831882907272017, 
-             52.6359374388309)
-
-# Define hover popup
-popup <- paste0(
-  "<strong>LA: </strong>",
-  shapefile_data$`Local authority`,
-  "</br>",
-  "<strong>Value: </strong>",
-  shapefile_data$value
-)
-
-leaflet() %>%
-  addPolygons(
-    data = shapefile_data,
-    fillColor = ~ pal(value),
-    popup = popup,
-    opacity = 0.01,
-    color = "white",
-    dashArray = "1",
-    fillOpacity = 0.8,
-    smoothFactor = 0.3,
-    highlightOptions = highlightOptions(
-      weight = 6,
-      color = "#666",
-      dashArray = "2",
-      fillOpacity = 0.3,
-      bringToFront = TRUE
-    )
-  ) %>%
-  # Centre map on location
-  setView(lng = Location[1], 
-          lat = Location[2], 
-          zoom = 7) %>%
-  # Add OSM basemap
-  addProviderTiles(providers$OpenStreetMap, 
-                   group = "Open Street Map") %>%
-  # Add additional basemap layers
-  addProviderTiles(providers$Esri.OceanBasemap, 
-                   group = "ESRI Ocean Basemap") %>%
-  # Add a User-Interface (UI) control to switch layers
-  addLayersControl(
-    baseGroups = c("Open Street Map", "ESRI Ocean Basemap"),
-    options = layersControlOptions(collapsed = TRUE)
-  )

@@ -1,4 +1,5 @@
-# England SUCB
+##### **********************
+# Purpose: England SUCB
 
 # *******************************************************************************
 # Require packages
@@ -29,6 +30,9 @@ if (any(installed_packages == FALSE)) {
 # Packages loading
 invisible(lapply(packages, library, character.only = TRUE))
 
+# *******************************************************************************
+# Data
+# *******************************************************************************
 
 # Download the data
 download.file("https://s3.eu-west-1.amazonaws.com/data.defra.gov.uk/Waste/Single_use_plastic_carrier_bag_England_data_2016_17_to_2023_24.csv",

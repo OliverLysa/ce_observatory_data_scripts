@@ -1,4 +1,4 @@
-## UK Stats on Waste
+# Purpose: import UK Stats on Waste data
 
 # *******************************************************************************
 # Require packages
@@ -24,8 +24,12 @@ if (any(installed_packages == FALSE)) {
 # Packages loading
 invisible(lapply(packages, library, character.only = TRUE))
 
+# Turn off scientific notation
+options(scipen=999)
+
 # *******************************************************************************
-## Extraction
+# Data
+# *******************************************************************************
 
 # Download the data
 download.file("https://assets.publishing.service.gov.uk/media/66f17b8e7aeb85342827ac1b/UK_Statistics_on_Waste_dataset_September_2024_accessible.ods",

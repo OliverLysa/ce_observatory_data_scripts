@@ -1,22 +1,25 @@
-# *******************************************************************************
-# Require packages
-# *******************************************************************************
+##### **********************
+# Purpose: Download WDF data
 
+# *******************************************************************************
+# Packages
+# *******************************************************************************
 # Package names
-packages <- c(
-  "magrittr",
-  "writexl",
-  "readxl",
-  "dplyr",
-  "tidyverse",
-  "readODS",
-  "data.table",
-  "janitor",
-  "xlsx",
-  "tabulizer",
-  "docxtractr",
-  "campfin"
-)
+packages <- c("magrittr", 
+              "writexl", 
+              "readxl", 
+              "dplyr", 
+              "tidyverse", 
+              "readODS", 
+              "data.table", 
+              "RSelenium", 
+              "netstat", 
+              "uktrade", 
+              "httr",
+              "jsonlite",
+              "mixdist",
+              "janitor",
+              "onsr")
 
 # Install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
@@ -29,14 +32,14 @@ invisible(lapply(packages, library, character.only = TRUE))
 
 # *******************************************************************************
 # Options and functions
-#********************************************************************************
+# *******************************************************************************
 
 # Turn off scientific notation
 options(scipen=999)
 
-# Import functions
-source("./scripts/functions.R", 
-       local = knitr::knit_global())
+# *******************************************************************************
+# Data
+# *******************************************************************************
 
 ## Waste collection and recycling download
 

@@ -25,6 +25,8 @@ if (any(installed_packages == FALSE)) {
 invisible(lapply(packages, library, character.only = TRUE))
 
 # *******************************************************************************
+# Data
+# *******************************************************************************
 
 # Read in the data
 packaging_data <- 

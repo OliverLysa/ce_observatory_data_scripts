@@ -1,24 +1,25 @@
-# *******************************************************************************
-# Require packages
-# *******************************************************************************
+##### **********************
+# Purpose: Download Lets Recycle data
 
+# *******************************************************************************
+# Packages
+# *******************************************************************************
 # Package names
-packages <- c(
-  "magrittr",
-  "writexl",
-  "readxl",
-  "dplyr",
-  "tidyverse",
-  "readODS",
-  "data.table",
-  "janitor",
-  "xlsx",
-  "tabulizer",
-  "docxtractr",
-  "campfin",
-  "rjson",
-  "zipcodeR",
-  "ggmap")
+packages <- c("magrittr", 
+              "writexl", 
+              "readxl", 
+              "dplyr", 
+              "tidyverse", 
+              "readODS", 
+              "data.table", 
+              "RSelenium", 
+              "netstat", 
+              "uktrade", 
+              "httr",
+              "jsonlite",
+              "mixdist",
+              "janitor",
+              "onsr")
 
 # Install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
@@ -28,6 +29,10 @@ if (any(installed_packages == FALSE)) {
 
 # Packages loading
 invisible(lapply(packages, library, character.only = TRUE))
+
+# *******************************************************************************
+# Data
+# *******************************************************************************
 
 recycling_prices <-
   read_excel("./raw_data/lets_recycle_prices.xlsx") %>%
