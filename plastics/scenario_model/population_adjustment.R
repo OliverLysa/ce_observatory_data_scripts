@@ -1,6 +1,5 @@
 ##### **********************
-# Author: Oliver Lysaght
-# Purpose: Produce a continuous plastic packaging sankey for England & Wales (2012-23)
+# Purpose: Population breakdown for projection by UK country
 
 # *******************************************************************************
 # Packages
