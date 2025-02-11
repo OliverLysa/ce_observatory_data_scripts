@@ -46,9 +46,6 @@ source("functions.R",
 # Stop scientific notation of numeric values
 options(scipen = 999)
 
-options(java.parameters = "-Xmx16000m")
-gc()
-
 # *******************************************************************************
 # Product classification
 # *******************************************************************************
@@ -74,7 +71,7 @@ trade_terms_23 <-
          HS2 <=66) %>%
   # Removing several codes from 05, 06 categories - to investigate further
   slice(-c(1:67)) %>%
-  select(HS6) %>%
+  select(HS4) %>%
   unique()
 
 trade_terms <- 
@@ -95,12 +92,13 @@ trade_terms_22 <-
   mutate(CN_CODE = gsub(" ", "", CN_CODE)) %>%
   # Create HS shorter codes to filter by
   mutate(HS2 = substr(CN_CODE, 1, 2),
+         HS4 = substr(CN_CODE, 1, 4),
          HS6 = substr(CN_CODE, 1, 6)) %>%
   dplyr::filter(nchar(as.character(HS6))==6) %>%
   # Filter to HS 2 between 50 and 66
   filter(HS2 >=50, 
          HS2 <=66) %>%
-  select(HS6) %>%
+  select(HS4) %>%
   unique()
 
 trade_terms_22 <- 
@@ -121,12 +119,13 @@ trade_terms_21 <-
   mutate(CN_CODE = gsub(" ", "", CN_CODE)) %>%
   # Create HS shorter codes to filter by
   mutate(HS2 = substr(CN_CODE, 1, 2),
+         HS4 = substr(CN_CODE, 1, 4),
          HS6 = substr(CN_CODE, 1, 6)) %>%
   dplyr::filter(nchar(as.character(HS6))==6) %>%
   # Filter to HS 2 between 50 and 66
   filter(HS2 >=50, 
          HS2 <=66) %>%
-  select(HS6) %>%
+  select(HS4) %>%
   unique()
 
 trade_terms_21 <- 
@@ -147,12 +146,13 @@ trade_terms_20 <-
   mutate(CN_CODE = gsub(" ", "", CN_CODE)) %>%
   # Create HS shorter codes to filter by
   mutate(HS2 = substr(CN_CODE, 1, 2),
+         HS4 = substr(CN_CODE, 1, 4),
          HS6 = substr(CN_CODE, 1, 6)) %>%
   dplyr::filter(nchar(as.character(HS6))==6) %>%
   # Filter to HS 2 between 50 and 66
   filter(HS2 >=50, 
          HS2 <=66) %>%
-  select(HS6) %>%
+  select(HS4) %>%
   unique()
 
 trade_terms_20 <- 
@@ -173,12 +173,13 @@ trade_terms_19 <-
   mutate(CN_CODE = gsub(" ", "", CN_CODE)) %>%
   # Create HS shorter codes to filter by
   mutate(HS2 = substr(CN_CODE, 1, 2),
+         HS4 = substr(CN_CODE, 1, 4),
          HS6 = substr(CN_CODE, 1, 6)) %>%
   dplyr::filter(nchar(as.character(HS6))==6) %>%
   # Filter to HS 2 between 50 and 66
   filter(HS2 >=50, 
          HS2 <=66) %>%
-  select(HS6) %>%
+  select(HS4) %>%
   unique()
 
 trade_terms_19 <- 
@@ -199,12 +200,13 @@ trade_terms_18 <-
   mutate(CN_CODE = gsub(" ", "", CN_CODE)) %>%
   # Create HS shorter codes to filter by
   mutate(HS2 = substr(CN_CODE, 1, 2),
+         HS4 = substr(CN_CODE, 1, 4),
          HS6 = substr(CN_CODE, 1, 6)) %>%
   dplyr::filter(nchar(as.character(HS6))==6) %>%
   # Filter to HS 2 between 50 and 66
   filter(HS2 >=50, 
          HS2 <=66) %>%
-  select(HS6) %>%
+  select(HS4) %>%
   unique()
 
 trade_terms_18 <- 
@@ -234,7 +236,9 @@ textiles_trade_data <- trade_all %>%
                values_to = "Value") %>%
   group_by(Hs2, Hs4, Hs6, Description, Year, FlowType, Variable) %>%
   dplyr::summarise(Value = sum(Value)) %>%
-  unite(Description, Hs6, Description, sep = " - ", remove = FALSE)
+  unite(Description, Hs6, Description, sep = " - ", remove = FALSE) %>%
+  ungroup() %>%
+  select(-c(Hs2, Hs4))
   
 # # Format columns for the tree filter on frontend
 #   unite(Hs4, c(Hs2,Hs4), sep = "-", remove = FALSE) %>%
@@ -246,9 +250,16 @@ DBI::dbWriteTable(con,
                   textiles_trade_data,
                   overwrite = TRUE)
 
+write_csv(textiles_trade_data, 
+          "./cleaned_data/textiles_trade_data_cn.csv")
+
 #############################
 
 # COMTRADE route
+
+trade_terms_HS4 <- 
+  trade_terms_23 %>%
+  unlist()
 
 # Function to use the comtrade R package to extract trade data from the Comtrade API
 comtrade_extractor <- function(x) {
@@ -259,10 +270,10 @@ comtrade_extractor <- function(x) {
       # Annual
       frequency = "A",
       # Imports
-      flow_direction = "import",
+      flow_direction = c("export","import"),
       partner = "World",
       start_date = 2012,
-      end_date = 2022,
+      end_date = 2023,
       commodity_code = c(x)
     )
   trade_results <- trade_results %>%
@@ -273,18 +284,33 @@ comtrade_extractor <- function(x) {
 
 # Create a for loop that goes through the trade codes, extracts the data using the extractor function and prints the results to a list of dataframes
 res <- list()
-for (i in seq_along(trade_terms_HS6)) {
-  res[[i]] <- comtrade_extractor(trade_terms_HS6[i])
+for (i in seq_along(trade_terms_HS4)) {
+  res[[i]] <- comtrade_extractor(trade_terms_HS4[i])
   
   print(i)
   
 }
 
 # Bind the list of returned dataframes to a single dataframe
-bind_com <-
+bind <-
   dplyr::bind_rows(res)
 
-# Export locally
-write_xlsx(bind_com,
-           "bind_com.xlsx")
+compiled_table <- bind  %>%
+  group_by(cmd_desc, ref_year, flow_desc) %>%
+  # Sum the values across HSs for each UNU and year to produce a regional total
+  summarise(qty = sum(qty),
+            net_wgt = sum(net_wgt),
+            primary_value = sum(primary_value)) %>%
+  mutate(net_wgt = net_wgt / 1000) %>%
+  rename(`Net weight` = net_wgt,
+         Quantity = qty,
+         `Monetary value` = primary_value) %>%
+  pivot_longer(-c(cmd_desc,ref_year,flow_desc),
+               names_to = "variable",
+               values_to = "value")
 
+# Export to database
+DBI::dbWriteTable(con,
+                  "textiles_trade_comtrade",
+                  compiled_table,
+                  overwrite = TRUE)
