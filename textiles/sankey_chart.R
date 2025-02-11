@@ -27,10 +27,6 @@ invisible(lapply(packages, library, character.only = TRUE))
 # Functions and options
 # *******************************************************************************
 
-# Import functions
-source("./scripts/functions.R", 
-       local = knitr::knit_global())
-
 # Stop scientific notation of numeric values
 options(scipen = 999)
 
@@ -45,9 +41,7 @@ textiles_percentage <- read_xlsx(
   mutate_at(c('proportion'), as.numeric)
 
 # *******************************************************************************
-# Import total mass flows
-
-# Import data
+# Import Joel data
 textiles_sankey_links <- read_excel(
   "./raw_data/textiles/Outputs_ForDistribution_v2.xlsx",
   sheet = "Flows") %>%
@@ -75,12 +69,46 @@ textiles_sankey_links <- read_excel(
   select(-c(Value, proportion)) %>%
   # Remove any 0 flows
   filter(value != 0,
-         year != 2018) %>%
+         year == 2022,
+         scenario == "BAU") %>%
   # Round
   mutate(across(c('value'), round, 2)) %>%
   mutate(region = "UK") %>%
-  write_csv(
-    "./cleaned_data/textiles_sankey_links.csv")
+  select(-scenario)
+
+# Import textiles data
+latest_textiles <- read_csv(
+  "./raw_data/textiles_combined (5).csv") %>%
+  mutate(year = 2022,
+         product = "Textiles") %>%
+  mutate(material = str_to_sentence(material)) %>%
+  mutate(region = "UK") %>%
+  mutate(source = gsub("_", " ", source),
+         target = gsub("_", " ", target))
+
+# Bind the tables together
+textiles_combined <-
+  rbindlist(
+    list(
+      textiles_sankey_links,
+      latest_textiles
+    ),
+    use.names = TRUE
+  ) %>%
+  rename(source = 1,
+         target = 2,
+         value = 3,
+         year = 4,
+         product = 5,
+         material = 6,
+         region = 7) %>%
+  mutate_at(c('year'), as.numeric) %>%
+  arrange(desc(product))
+
+DBI::dbWriteTable(con,
+                  "textiles_sankey_links",
+                  textiles_combined,
+                  overwrite = TRUE)
 
 
-
+  
