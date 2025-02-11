@@ -1,3 +1,11 @@
+# Quality scoring ---------------------------------------------------------
+
+# Appends a quality score in an array format to the sankey
+# Scoring done at the observation level based on metadata produced at the dataset level in combination with a quality score aggregation algorithm
+# Conditional statements map and classify the metadata in the metadata catalogue against a scoring schema for each observation in a chart
+# Where one source populates the observation, the quality score reflects the quality dimensions of that one source only, including an analysis step e.g. estimation of waste based on lifespan
+# Where multiple data sources input, we taken an average across the sources for that variable or some other weighted combination approach
+
 ## Import the sankey data with sources attached
 plastic_packaging_sankey_flows <-
   read_csv("sankey_all.csv") %>%
@@ -18,14 +26,6 @@ for ( col in 1:ncol(metadata)){
   colnames(metadata)[col] <-  sub("percent_percent._*", "", colnames(metadata)[col])
 }
 
-# Quality scoring ---------------------------------------------------------
-
-# Appends a quality score in an array format to the sankey
-# Scoring done at the observation level based on metadata produced at the dataset level in combination with a quality score aggregation algorithm
-# Conditional statements map and classify the metadata in the metadata catalogue against a scoring schema for each observation in a chart
-# Where one source populates the observation, the quality score reflects the quality dimensions of that one source only, including an analysis step e.g. estimation of waste based on lifespan
-# Where multiple data sources input, we taken an average across the sources for that variable or some other weighted combination approach
-
 # Geographical correlation ------------------------------------------------
 
 # The geographical relevance of the data to the studied region.	[{
@@ -44,7 +44,6 @@ for ( col in 1:ncol(metadata)){
 # Use a standardised terminology for the region
 
 # Join the metadata catalogue to the sankey columns
-
 plastic_packaging_sankey_flows_geographical_source_1 <-
   left_join(plastic_packaging_sankey_flows, metadata, c("data_source_id1" = "name_identifier")) %>%
   select(1:11,26) %>%
@@ -78,6 +77,7 @@ plastic_packaging_sankey_flows_geographical_source_3 <-
                                                str_detect(match, "FALSE") ~ 2)) %>%
   select(11,15)
 
+# Take an average for the score across the sources
 plastic_packaging_sankey_flows_geographical <- 
   left_join(plastic_packaging_sankey_flows_geographical_source_1, plastic_packaging_sankey_flows_geographical_source_2, by='row_id') %>%
   left_join(., plastic_packaging_sankey_flows_geographical_source_3, by='row_id') %>%
@@ -86,25 +86,87 @@ plastic_packaging_sankey_flows_geographical <-
                                             geographic_score_source_2,
                                             geographic_score_source_3)), na.rm = TRUE)) %>%
   select(1:7,11) %>%
-  mutate(across(c('geographic_score'), round, 1))
+  mutate(across(c('geographic_score'), round, 0))
 
 ## Temporal correlation ----------------------------------------------------
 
 # The congruence of the available data with the ideal data with respect to time.	[{
-#   score:1, definition:"Value relates to the correct time period.",
+#   score:1, definition:"Value relates to the same time period.",
 # } , {
-#   score:2, definition:"Deviation of 1 to 5 years.",
+#   score:2, definition:"Deviation of 1 to 5 years between the source data and observation.",
 # } , {
-#   score:3, definition:"Deviation of 5 to 10 years.",
+#   score:3, definition:"Deviation of 6 to 10 years between the source data and observation.",
 # } , {
-#   score:4, definition:"Deviation of more than 10 years.",
+#   score:4, definition:"Deviation of more than 10 years between the source data and observation.",
 # }]
 
 # Linked variables in the metadata catalogue
 # TIMELINESS%-%Years covered
 
-# We calculate if observation year is equal to a year value in the metadata for that input source
-# If not, then we calculate the distance from the min/max year and classify it into an ordinal scoring based on the above categories
+# Create a lookup table of the years each source covers
+timeliness_metadata <- metadata %>%
+  select(1,18) %>%
+  separate_wider_delim(timeliness_period_covered,
+                       delim = ";",
+                       too_few = "align_start",
+                       names_sep = '') %>%
+  pivot_longer(-c(name_identifier),
+               names_to = "source_year",
+               values_to = "year") %>%
+  select(-source_year) %>%
+  na.omit() %>%
+  mutate_at(c('year'), as.numeric) # %>%
+  # as.data.table()
+
+plastic_packaging_sankey_flows_temporal_source_1 <- plastic_packaging_sankey_flows %>%
+  left_join(timeliness_metadata, by = c("data_source_id1" = "name_identifier")) %>%
+  group_by(row_id) %>%
+  slice(which.min(abs(year.y - year.x))) %>%
+  mutate(difference = abs(year.y - year.x)) %>%
+  ungroup() %>%
+  mutate(temporal_score_source_1 = ifelse(difference == 0, 1,
+                                   ifelse(difference >=1 & difference <= 5, 2,
+                                   ifelse(difference >5 & difference <= 10, 3,
+                                   ifelse(difference >10, 4,
+                                          NA))))) %>%
+  select(1:5,11,14)
+
+plastic_packaging_sankey_flows_temporal_source_2 <- plastic_packaging_sankey_flows %>%
+  left_join(timeliness_metadata, by = c("data_source_id2" = "name_identifier")) %>%
+  group_by(row_id) %>%
+  slice(which.min(abs(year.y - year.x))) %>%
+  mutate(difference = abs(year.y - year.x)) %>%
+  ungroup() %>%
+  mutate(temporal_score_source_2 = ifelse(difference == 0, 1,
+                                          ifelse(difference >=1 & difference <= 5, 2,
+                                                 ifelse(difference >5 & difference <= 10, 3,
+                                                        ifelse(difference >10, 4,
+                                                               NA))))) %>%
+  select(11,14)
+
+plastic_packaging_sankey_flows_temporal_source_3 <- plastic_packaging_sankey_flows %>%
+  left_join(timeliness_metadata, by = c("data_source_id3" = "name_identifier")) %>%
+  group_by(row_id) %>%
+  slice(which.min(abs(year.y - year.x))) %>%
+  mutate(difference = abs(year.y - year.x)) %>%
+  ungroup() %>%
+  mutate(temporal_score_source_3 = ifelse(difference == 0, 1,
+                                          ifelse(difference >=1 & difference <= 5, 2,
+                                                 ifelse(difference >5 & difference <= 10, 3,
+                                                        ifelse(difference >10, 4,
+                                                               NA))))) %>%
+  select(11,14)
+
+# Take an average for the score across the sources
+plastic_packaging_sankey_flows_temporal <- 
+  left_join(plastic_packaging_sankey_flows_temporal_source_1, plastic_packaging_sankey_flows_temporal_source_2, by='row_id') %>%
+  left_join(., plastic_packaging_sankey_flows_temporal_source_3, by='row_id') %>%
+  rowwise() %>% 
+  mutate(temporal_score = mean(c_across(c(temporal_score_source_1, 
+                                          temporal_score_source_2,
+                                          temporal_score_source_3)), na.rm = TRUE)) %>%
+  select(6,10) %>%
+  mutate(across(c('temporal_score'), round, 0))
 
 # Technological correlation -----------------------------------------
 
@@ -132,7 +194,7 @@ plastic_packaging_sankey_flows_geographical <-
 # } , {
 #   score:2, definition:"Value includes quantitatively main processes/flows.",
 # } , {
-#   score:3, definition:"Value includes partial important processes/flows, certainty of data gaps..",
+#   score:3, definition:"Value includes partial important processes/flows, certainty of data gaps.",
 # } , {
 #   score:4, definition:"Only fragmented data available; important processes/mass flows are missing..",
 # }]
@@ -159,3 +221,9 @@ plastic_packaging_sankey_flows_geographical <-
 # Stated quality assurance process
 # Reproducibility via code
 
+# Join the tables together
+plastic_packaging_sankey_flows_quality_scores <- 
+  left_join(plastic_packaging_sankey_flows_geographical, plastic_packaging_sankey_flows_temporal, by='row_id')
+
+write_csv(plastic_packaging_sankey_flows_quality_scores, 
+          "sankey_all_quality_scores.csv")
