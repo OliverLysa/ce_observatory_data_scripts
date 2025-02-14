@@ -34,7 +34,7 @@ invisible(lapply(packages, library, character.only = TRUE))
 # Data
 # *******************************************************************************
 
-
+# Primary plastics
 # 39076020
 # 39076080
 # 39076100
@@ -44,7 +44,6 @@ invisible(lapply(packages, library, character.only = TRUE))
 # 39206290
 # 39206900
 
-# Import PET scrap data
 PET_primary_1 <-
   # Import data
   read_csv("./raw_data/Yearly - UK-Trade-Data - 200001 to 202406 - 39076020 to 39076900.csv") 
@@ -70,23 +69,6 @@ DBI::dbWriteTable(con, "plastic_PET_primary",
                   PET_primary,
                   overwrite = TRUE)
 
-# Import PET scrap data
-PET_scrap <-
-  # Import data
-  read_csv("./raw_data/Yearly - UK-Trade-Data - 200001 to 202407 - 39159020 to 39159080.csv") %>%
-  unite(Description, Cn8, Description, sep = " - ") %>%
-  select(1, 5:10) %>%
-  mutate(NetMass = NetMass /1000) %>%
-  mutate(across(is.numeric, round, digits=2)) %>%
-  pivot_longer(-c(Description, Year, FlowType, Country),
-               names_to = "Variable",
-               values_to = "Value") %>%
-  filter(Variable != "SuppUnit")
-
-DBI::dbWriteTable(con, "plastic_PET_scrap",
-                  PET_scrap,
-                  overwrite = TRUE)
-
 # Import all packaging scrap data
 
 trade_codes <- (c(391510,
@@ -94,6 +76,7 @@ trade_codes <- (c(391510,
                   391530,
                   391590))
 
+# Plastic waste/scrap
 plastic_waste_trade_all <-
   # Import data
   read_csv("./raw_data/Yearly - UK-Trade-Data - 200001 to 202409 - 391510 to 391590.csv") %>%
