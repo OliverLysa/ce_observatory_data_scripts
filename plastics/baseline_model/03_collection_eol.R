@@ -43,7 +43,13 @@ not_all_na <- function(x)
 
 ## Illegal collection for dumping
 
-### Flytipping of plastic packaging
+## Dumping rate - 0.006 (based on Iacovidou ) 
+# # Polymer breakdown for littering equals WG composition in a given year - 0.6% applied to each polymer equally
+illegal_collection <- WG_packaging_composition %>%
+  mutate(value = value*0.006) %>%
+  mutate(variable = "Illegal collection")
+
+### Checked against Defra fly-tipping data
 # Estimate the weight of the relevant categories
 flytipping_totals <- flytipping %>%
   clean_names() %>%
@@ -78,12 +84,6 @@ composition <-
 # Fly-tipping plastic packaging
 fly_tipping <- left_join(flytipping_totals, composition) %>%
   mutate(value = weight_tonnes * freq)
-
-## Dumping rate - 0.006
-# # Polymer breakdown for littering equals WG composition in a given year - 0.6% applied to each polymer equally
-illegal_collection <- WG_packaging_composition %>%
-  mutate(value = value*0.006) %>%
-  mutate(variable = "Illegal collection")
 
 # Littering rate
 # Polymer breakdown for littering equals WG composition in a given year - 4% applied to each polymer equally
