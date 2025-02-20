@@ -1,0 +1,26 @@
+variablename,value
+littering rate formulation pet bottle,0.01
+wmc collected formulation pet bottle,0.2
+formulation for recycling rate pet bottle,0.05
+formulation for la collected pet bottle,0.1
+rvm collected formulation pet bottle,0.7
+target percent sent of for sorting ldpe film,0.75
+target percent sent of for sorting hdpe film,0.75
+target percent sent of for sorting other film,0.75
+target percent sent of for sorting pet film,0.75
+target percent sent of for sorting pp film,0.75
+target percent sent of for sorting ps film,0.75
+target percent sent of for sorting pvc film,0.75
+target percent sent of for sorting ps bottle,0.75
+target percent sent of for sorting ps other,0.75
+target percent sent of for sorting ps ptt,0.75
+pom reduction percentage ldpe film,0.03
+pom reduction percentage hdpe film,0.03
+pom reduction percentage other film,0.03
+pom reduction percentage pet film,0.03
+pom reduction percentage pp film,0.03
+pom reduction percentage ps film,0.03
+pom reduction percentage pvc film,0.03
+pom reduction percentage ps bottle,0.03
+pom reduction percentage ps other,0.03
+pom reduction percentage ps ptt,0.03
