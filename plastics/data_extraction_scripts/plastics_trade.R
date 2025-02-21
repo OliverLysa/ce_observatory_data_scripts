@@ -1,5 +1,5 @@
 ##### **********************
-# Purpose: Download trade data
+# Purpose: Restructure trade data downloaded from the UKTradeInfo API interface in the observatory content management system
 
 # *******************************************************************************
 # Packages
