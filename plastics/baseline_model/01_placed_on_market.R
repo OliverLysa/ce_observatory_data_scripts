@@ -31,8 +31,30 @@ options(scipen = 999)
 # Data extraction
 
 ############ DEFRA PACKAGING STATISTICS
-official_defra_packaging_pom <-
-  read_xlsx("./cleaned_data/Defra_packaging_all.xlsx") %>%
+
+# Imports the latest version of the Defra UK Statistics on Waste (https://www.gov.uk/government/statistics/uk-waste-data)
+# And imports the data on packaging
+official_defra_packaging_pom <- read_ods( 
+  "./raw_data/UK_Statistics_on_Waste_dataset_September_2024_accessible (1).ods",
+  sheet = "Packaging") %>%
+  row_to_names(6) %>%
+  clean_names() %>%
+  filter(material != "Total recycling and recovery", 
+         material != "Total recycling") %>%
+  filter(! str_detect(material, 'Metal')) %>%
+  mutate(material = gsub("of which: ", "", material)) %>%
+  mutate(material = gsub("of which:", "", material)) %>%
+  pivot_longer(-c(year,material,achieved_recovery_recycling_rate),
+               names_to = "variable",
+               values_to = "value") %>%
+  mutate_at(c('achieved_recovery_recycling_rate','value'), as.numeric) %>%
+  na.omit() %>%
+  dplyr::rename(rate = 3) %>%
+  mutate(value = value * 1000) %>%
+  mutate(rate = rate * 100) %>%
+  mutate(variable = case_when(str_detect(variable, "packaging_waste_arising") ~ "Arisings",
+                              str_detect(variable, "total_recovered_recycled") ~ "Recovered/recycled")) %>% 
+  mutate_at(vars('rate','value'), funs(round(., 2))) %>%
   mutate_at(c('year'), as.numeric) %>%
   select(-rate) %>%
   filter(variable == "Arisings", material == "Plastic")
@@ -40,7 +62,7 @@ official_defra_packaging_pom <-
 ############ APPLICATION AND POLYMER COMPOSITION
 # Import data
 BOM <-
-  # Read in the absolute data
+  # Read in the absolute data (cleaned from separate pdf files published by Wrap/Valpak)
   read_excel("./cleaned_data/plastic_packaging_composition.xlsx", sheet = "compiled_mass") %>%
   clean_names() %>%
   # Pivot the table longer
@@ -90,7 +112,7 @@ POM_packaging_composition <-
 # mutate(material = str_to_upper(material)) %>%
 # mutate(material = gsub("OTHER", "Other", material))
 
-# Scale to England and Wales based on population - Final demand, GDP, GDHI or weighted population could be alternative ways
+# Scale to England and Wales based on population - Not used in the current output but kept in for illustrative purposes
 
 # Download population data
 # download.file(
