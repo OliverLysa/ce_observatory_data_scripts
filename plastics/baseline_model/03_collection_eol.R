@@ -157,7 +157,7 @@ Non_LA_collection <- WG_packaging_composition_excl_lit_dump %>%
 #######################
 ## Treatment (1st stage)
 
-## Dumping
+## Dumping - illegal collection figure defined earlier in script
 dumping <- illegal_collection %>%
   mutate(variable = "Dumping")
 
@@ -221,8 +221,9 @@ domestic_recycling_polymers <- read_xlsx("./cleaned_data/NPWD_recycling_recovery
   group_by(year,material) %>%
   summarise(tonnes = sum(tonnes, na.rm = TRUE))
 
-# Rejects
+######## Rejects
 ## Local Authority Collected Waste Estimated Rejects
+## Rejects shared variable derived from running LACW_rejects.R in the data extraction folder
 rejects_WDF <- rejects_share %>%
   mutate(year = substr(financial_year, 1, 4)) %>%
   select(year, share)
@@ -238,13 +239,13 @@ rejects_NPWD <-
   mutate(difference = gross_total - net_total,
          reject_percentage = difference/gross_total)
 
-## Combine the NPWD rejects and WDF rejects
+## Combine the NPWD rejects and WDF rejects to produce a total rejects across collection and treatment stages
 rejects_WDF_NPWD_combined <- rejects_WDF %>%
   left_join(rejects_NPWD) %>%
   mutate(total_losses = share + reject_percentage) %>%
   select(year, total_losses)
 
-## Material facility rejects (import from MF script)
+## Material facility rejects (averaged_mf imported from MF_data.R script in the data extraction folder)
 material_facility_rejects <- 
   # Takes the average of the reject rate across the two years
   averaged_mf %>%
@@ -328,7 +329,7 @@ residual_treatment <- read_ods("./raw_data/UK_Stats_Waste.ods", sheet = "Waste_T
                                   maxgap = Inf,
                                   rule = 2))
 
-## Import LACW treatment data to use instead
+## Import LACW treatment data as an alternative data point/proxy for this split (used instead of the UK Stats figures)
 residual_treatment_LA <- 
   treatment_shares_LA %>%
   pivot_wider(names_from = route, values_from = percentage) %>%
@@ -343,7 +344,7 @@ residual_treatment_LA <-
                                   maxgap = Inf,
                                   rule = 2))
 
-# Use the proportions to then split total residual into incineration and landfill
+# Use the proportions derived to then split total residual into incineration and landfill
 residual_split <- total_residual %>%
   left_join(residual_treatment, by = c("year")) %>%
   mutate(incineration = total_residual * Incineration,
@@ -357,18 +358,7 @@ residual_split_LA <- total_residual %>%
          landfill = total_residual * Landfill) %>%
   select(year, material, incineration,landfill)
 
-## RDF exports (out of sorting)  
-residual_exp_combined <-
-  read_csv("./cleaned_data/RDF_exports.csv") %>%
-  clean_names() %>%
-  group_by(year) %>%
-  summarise(value = sum(total)) %>%
-  # Calculate share that is plastic
-  mutate(plastic = value * 0.2) %>%
-  # 60% of plastic is packaging
-  mutate(plastic_packaging = plastic * 0.6)
-
-# Countries overseas recycling then goes to
+# Countries overseas recycling (figures from NPWD) then goes to
 plastic_waste_export_split <- plastic_waste_trade_all %>%
   clean_names() %>%
   filter(variable == "NetMass") %>%
@@ -387,7 +377,7 @@ exports_other <- exports_top %>%
   group_by(year) %>%
   summarise(value = sum(value)) 
 
-# Summarise the total to subtract the other from
+# Summarise the total to subtract the other from in the creation of a top 10
 exports_all_summarised <-
   plastic_waste_export_split %>%
   group_by(year) %>%
@@ -397,7 +387,7 @@ exports_all_summarised <-
   select(year, value) %>%
   mutate(country = "Other")
 
-# Finally bind the other row to the exports top table and get percentages
+# Finally bind the other row to the exports top table and get percentages for use in the sankey script
 exports_all_split <- exports_top %>%
   bind_rows(exports_all_summarised) %>%
   group_by(year) %>%
