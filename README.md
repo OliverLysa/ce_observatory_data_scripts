@@ -16,7 +16,7 @@ Data outputs from these scripts are used to populate the ce data observatory - a
 
 ## Software requirements and setup
 
-Many scripts in this repository are written in the programming language R. Please see [here](https://rstudio-education.github.io/hopr/starting.html) for more information on running R scripts and software requirements. Files are packaged within an R Project with relative file paths used to call data inputs and functions. These can be most easily navigated and ran within the R Studio IDE.
+Many scripts in this repository are written in the programming language R. Please see [here](https://rstudio-education.github.io/hopr/starting.html) for more information on running R scripts and software requirements. Files are packaged within an R Project with relative file paths used to call data inputs and functions. These can be most easily navigated and ran within the R Studio IDE. Download the whole repository for this, open the R Project within R Studio and run the scripts. 
 
 The Python programming language has also been used as part of the project. Python scripts are in some cases presented within [Jupyter Notebooks](https://jupyter.org/install) - an open source IDE that requires installing the jupyter-notebook package in your Python environment, more information about which can be found [here](https://www.python.org/downloads/). In some cases, .py Python scripts are also used. These can be viewed and modified in a code editor such as Visual Studio Code and ran within the code editor or in the terminal/command line.
 
