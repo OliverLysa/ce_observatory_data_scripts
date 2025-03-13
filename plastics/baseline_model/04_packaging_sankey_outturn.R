@@ -1,6 +1,7 @@
 ##### **********************
 # Author: Oliver Lysaght
-# Purpose: Bind tables together produced through scripts 01-03 to produce the combined flows in a plastic packaging sankey for the UK 2014-23
+# Purpose: Bind tables together produced through scripts 01-03 to create the combined flows in a plastic packaging sankey for the UK
+# Data sources are appended to the sankey for use in later quality calculation
 
 # *******************************************************************************
 # Packages
@@ -30,7 +31,7 @@ invisible(lapply(packages, library, character.only = TRUE))
 
 ############## PLACED ON MARKET - EOL
 
-# Polymer to POM
+# Polymer > POM
 pol_pom_sankey <- POM_packaging_composition %>%
   group_by(year, material) %>%
   summarise(value = sum(value)) %>%
@@ -84,38 +85,37 @@ POM_2_alt_sankey <- POM_packaging_composition %>%
 
 ############## WASTE GENERATED
 
-# Import the official arisings data and join
+# Import the official arisings data or take the POM 2 as equivalent/shorthand
 WG_sankey <- POM_2_alt_sankey %>% 
   ungroup() %>%
   dplyr::select(-c(source)) %>%
   rename(source = target) %>%
   mutate(target = "Waste generated", .before = material) %>%
-  # How to handle if something is estimated?
   mutate(data_source_id = "0047_0038")
   
 ############## COLLECTION AND LITTERING
 
-## LACW
+## WG > LACW
 LA_collection_sankey <- LA_collection %>%
   mutate(source = "Waste generated",
          target = "LA collection") %>%
   rename(value = WG_ex_LA) %>%
   mutate(data_source_id = "0047_0040_0072")
 
-## NON-LA WMC Collection
+## WG > NON-LA WMC Collection
 Non_LA_collection_sankey <- Non_LA_collection %>%
   mutate(source = "Waste generated",
          target = "Non LA collection") %>%
   rename(value = WG_ex_Non_LA) %>%
   mutate(data_source_id = "0047_0040_0072")
 
-# LITTERING
+# WG > LITTERING
 litter_sankey <- litter %>%
   mutate(source = "Waste generated", .before = variable) %>%
   rename(target = variable) %>%
   mutate(data_source_id = "0047_0076_0088")
 
-## ILLEGAL COLLECTION FOR DUMPING
+## WG > ILLEGAL COLLECTION
 illegal_collection_sankey <- illegal_collection %>%
   mutate(source = "Waste generated", .before = variable) %>%
   rename(target = variable) %>%
@@ -123,13 +123,13 @@ illegal_collection_sankey <- illegal_collection %>%
 
 ############## POST-COLLECTION TREATMENT
 
-# DUMPING
+# ILLEGAL COLLECTION > DUMPING
 dumping_sankey <- illegal_collection_sankey %>%
   mutate(source = "Illegal collection",
          target = "Dumping") %>%
   mutate(data_source_id = "0047_0053_0088")
 
-# DOMESTIC RESIDUAL
+# LA COLLECTION > DOMESTIC RESIDUAL
 # LA - residual
 LA_residual_sankey <- total_residual %>%
   left_join(waste_split, by = "year") %>%
@@ -148,7 +148,7 @@ LA_residual_sankey <- total_residual %>%
          target = "Domestic residual treatment") %>%
   mutate(data_source_id = "0047_0084")
 
-# Non-LA - residual
+# NON-LA COLLECTION > DOMESTIC RESIDUAL
 Non_LA_residual_sankey <- total_residual %>%
   left_join(waste_split, by = "year") %>%
   ungroup() %>%
@@ -166,7 +166,7 @@ Non_LA_residual_sankey <- total_residual %>%
          target = "Domestic residual treatment") %>%
   mutate(data_source_id = "0047_0084")
 
-## Residual treatment > Incineration
+## RESIDUAL TREATMENT > INCINERATION
 incineration_sankey <- residual_split_LA %>%
   select(year, material, incineration) %>%
   rename(value = incineration) %>%
@@ -174,7 +174,7 @@ incineration_sankey <- residual_split_LA %>%
          target = "Incineration") %>%
   mutate(data_source_id = "0047_0086_0071")
 
-## Residual treatment > landfill
+## RESIDUAL TREATMENT > LANDFILL
 landfill_sankey <- residual_split_LA %>%
   select(year, material, landfill) %>%
   rename(value = landfill) %>%
@@ -182,7 +182,7 @@ landfill_sankey <- residual_split_LA %>%
          target = "Landfill") %>%
   mutate(data_source_id = "0047_0086_0071")
 
-# LA collection > Sorting
+# LA COLLECTION > SORTING
 LA_sorting_sankey <- sorting %>%
   left_join(waste_split, by = "year") %>%
   ungroup() %>%
@@ -196,7 +196,7 @@ LA_sorting_sankey <- sorting %>%
          target = "Sorting") %>%
   mutate(data_source_id = "0047_0084_0048")
 
-# Non-LA collection > Sorting
+# NON-LA COLLECTION > SORTING
 Non_LA_sorting_sankey <- sorting %>%
   left_join(waste_split, by = "year") %>%
   ungroup() %>%
@@ -210,7 +210,7 @@ Non_LA_sorting_sankey <- sorting %>%
          target = "Sorting") %>%
   mutate(data_source_id = "0047_0084_0048")
 
-# Sorting > Exports
+# SORTING > EXPORTS
 sorting_exports_sankey <- 
   overseas_recycling_polymers %>%
   mutate(source = "Sorting",
@@ -218,7 +218,7 @@ sorting_exports_sankey <-
   rename(value = tonnes) %>%
   mutate(data_source_id = "0047_0084")
 
-# Sorting > Domestic
+# SORTING > DOMESTIC
 sorting_domestic_sankey <- 
   domestic_recycling_polymers %>%
   mutate(source = "Sorting",
@@ -226,7 +226,7 @@ sorting_domestic_sankey <-
   rename(value = tonnes) %>%
   mutate(data_source_id = "0047_0084")
 
-# Sorting > waste - rejects
+# SORTING > RECYCLING REJECTS
 sorting_rejects_sankey <-
   sorting %>%
   select(year, material, rejects) %>%
@@ -235,7 +235,7 @@ sorting_rejects_sankey <-
          target = "Recycling rejects") %>%
   mutate(data_source_id = "0047_0084_0048")
 
-## Domestic recycling > End uses
+## DOMESTIC RECYCLING > END USES
 domestic_recycling_polymers_split <- sorting_domestic_sankey %>%
   group_by(year, material) %>%
   summarise(value = sum(value)) %>%
@@ -277,7 +277,7 @@ recycling_exports_destinations <-
 # *******************************************************************************
 # Construct the sankey stages
 
-### Bind the sankey stages together
+### Bind the 19 sankey flows together in the main sankey (what is shown without further clicking on nodes for detail - these are added below)
 plastic_packaging_sankey_flows <- rbindlist(
   list(
     pol_pom_sankey,
@@ -300,25 +300,31 @@ plastic_packaging_sankey_flows <- rbindlist(
     incineration_sankey,
     domestic_recycling_polymers_split),
   use.names = TRUE) %>%
+  # Add product
   mutate(product = "Packaging") %>%
+  # Filter to years greater than 2014
   filter(year >= 2014) %>%
   mutate(material = str_to_upper(material)) %>%
   mutate(material = gsub("OTHER", "Other", material)) # %>%
   # filter(value != 0)
 
+# Write file locally
 write_csv(plastic_packaging_sankey_flows, 
           "sankey_all.csv")
 
+# Preview sankey
 plastic_packaging_sankey_flows |>
   e_charts() |>
   e_sankey(source, target, value) |>
   e_title("Sankey chart")
 
+# Write 1st table to the database
 DBI::dbWriteTable(con,
                   "plastic_packaging_sankey_flows",
                   plastic_packaging_sankey_flows,
                   overwrite = TRUE)
 
+# Construct the detail table (viewed upon clicking the nodes overseas recycling or material outputs from domestic recycling)
 plastic_packaging_sankey_flows_detail <- rbindlist(
   list(
     polymers_end_uses,
@@ -329,9 +335,11 @@ plastic_packaging_sankey_flows_detail <- rbindlist(
   mutate(material = str_to_upper(material)) %>%
   mutate(material = gsub("OTHER", "Other", material))
 
+# Write locally
 write_csv(plastic_packaging_sankey_flows_detail, 
           "sankey_detail.csv")
 
+# Write to the database
 # DBI::dbWriteTable(con,
 #                   "plastic_packaging_sankey_flows_detail",
 #                   plastic_packaging_sankey_flows_detail,
