@@ -1,6 +1,6 @@
 ##### **********************
 # Author: Oliver Lysaght
-# Purpose: Bind tables together to produce the flows in a plastic packaging sankey for the UK 2014-23
+# Purpose: Bind tables together produced through scripts 01-03 to produce the combined flows in a plastic packaging sankey for the UK 2014-23
 
 # *******************************************************************************
 # Packages
