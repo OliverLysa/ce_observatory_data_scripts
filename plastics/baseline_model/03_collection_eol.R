@@ -329,6 +329,30 @@ residual_treatment <- read_ods("./raw_data/UK_Stats_Waste.ods", sheet = "Waste_T
                                   maxgap = Inf,
                                   rule = 2))
 
+## Treatment shares
+treatment_shares_LA <- read_ods("./raw_data/LA_collection.ods",
+                                sheet = "Table_2a") %>%
+  row_to_names(6) %>%
+  clean_names() %>%
+  slice(1:10) %>%
+  filter(!grepl('percentage', na)) %>%
+  select(1:24) %>%
+  rename(route = 1) %>%
+  pivot_longer(-route, 
+               names_to = "year",
+               values_to = "value") %>%
+  mutate(year = substr(year, 2, 5)) %>%
+  mutate(route = gsub("Incineration with EfW", "Incineration", route)) %>%
+  mutate(route = gsub("Incineration without EfW 1", "Incineration", route)) %>%
+  mutate_at(c('year','value'), as.numeric) %>%
+  filter(!grepl('Recycled|Other', route)) %>%
+  group_by(route, year) %>%
+  summarise(value = sum(value)) %>%
+  ungroup() %>%
+  group_by(year) %>%
+  mutate(percentage = (value / sum(value))) %>%
+  select(route, year, percentage)
+
 ## Import LACW treatment data as an alternative data point/proxy for this split (used instead of the UK Stats figures)
 residual_treatment_LA <- 
   treatment_shares_LA %>%
