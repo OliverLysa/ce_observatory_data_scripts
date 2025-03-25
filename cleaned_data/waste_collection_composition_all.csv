@@ -1,0 +1,111 @@
+collection_route,waste_type,freq
+recycling,AHPs,8.845176651566001e-4
+recycling,Aluminium foil,2.180182653979822e-4
+recycling,Avoidable food waste,0.033628944401094214
+recycling,Carpet & underlay,2.562571406994929e-6
+recycling,Carrier bags,8.228094094530093e-4
+recycling,Cartons (including Tetrapak),0.011143784162758802
+recycling,Clothing,0.016110323744833566
+recycling,"Consumable liquids, fats & oils",2.3092832389373468e-5
+recycling,Ferrous aerosols,5.586604202073537e-5
+recycling,Ferrous drink cans,0.005153460410478546
+recycling,Ferrous food cans,0.043689346520112235
+recycling,Furniture,0.0033847126373619694
+recycling,HDPE bottles,0.009507345180833045
+recycling,Household batteries,0.0016440160739697124
+recycling,Large WEEE,0.03003020517687059
+recycling,Mattresses,1.7592095472587863e-4
+recycling,"News, mags, brochures, catalogues & directories",0.12188658750936932
+recycling,Non-ferrous aerosols,4.3059172393879705e-5
+recycling,Non-ferrous drink cans,0.018034600821949576
+recycling,Non-ferrous food cans,0.0029315311489611848
+recycling,Non-packaging glass,0.0049855410148057265
+recycling,Non-packaging plastic film,5.595317222834675e-4
+recycling,Non-recylable paper,0.005996281312174976
+recycling,Non-treated wood,0.022949077838506738
+recycling,Other card,0.027560985751782324
+recycling,Other dense plastic non-packaging,0.008057510291895366
+recycling,Other dense plastic packaging,0.003612773720053101
+recycling,Other ferrous non-packaging,3.7797891423954025e-4
+recycling,Other ferrous packaging,4.6873918798703065e-05
+recycling,Other household hazardous waste,0.0011848964406593022
+recycling,Other misc combustible,6.0070380056982324e-5
+recycling,Other misc non-combustible,0
+recycling,Other non-clothing textiles,0
+recycling,Other non-ferrous,3.861436154528712e-5
+recycling,Other organic (tier 3),0
+recycling,Other packaging plastic film,0.0010723294707071626
+recycling,Other plastic bottles,0.009932202803612638
+recycling,Other recyclable paper,0.06434839427566962
+recycling,Other sanitary,0
+recycling,PET bottles,0.01895462962976467
+recycling,Packaging glass,0.1706090307064916
+recycling,Packaging paper,0.016480886727557625
+recycling,Paints and varnishes,5.307884701004984e-5
+recycling,Pet excrement and bedding,0
+recycling,Plasterboard,0.006663153286787814
+recycling,Polystyrene,0.001044143660929314
+recycling,"Pots, tubs & trays",0.008760406437364672
+recycling,Rubble,0.0818973874944839
+recycling,"Shoes, bags & belts",2.633077475350264e-4
+recycling,Small WEEE,0.007647296493055246
+recycling,Soil,0.003069890283914535
+recycling,Thick and corrugated card,0.03057229840163625
+recycling,Thin card,0.08313748745492591
+recycling,Treated wood,0.07850492795901366
+recycling,Unavoidable food waste,0.04218830795120171
+residual,AHPs,0.07108602675288797
+residual,Aluminium foil,0.005973380347543549
+residual,Avoidable food waste,0.219227753078568
+residual,Carpet & underlay,0.017427032147512466
+residual,Carrier bags,0.008058110491858641
+residual,Cartons (including Tetrapak),0.0027057656287049958
+residual,Clothing,0.022827701520671474
+residual,"Consumable liquids, fats & oils",0.011689654358516351
+residual,Ferrous aerosols,0.0013267171403599125
+residual,Ferrous drink cans,8.04836169902989e-4
+residual,Ferrous food cans,0.0064088407007381
+residual,Furniture,0.027745932936940998
+residual,HDPE bottles,0.004760102779121979
+residual,Household batteries,9.81152433632032e-4
+residual,Large WEEE,0.005626445098374935
+residual,Mattresses,0.010715403717786637
+residual,"News, mags, brochures, catalogues & directories",0.028746740957658168
+residual,Non-ferrous aerosols,0.001201275178651835
+residual,Non-ferrous drink cans,0.00343561363487464
+residual,Non-ferrous food cans,6.280970004819109e-4
+residual,Non-packaging glass,0.004105877350337118
+residual,Non-packaging plastic film,0.018411853414883182
+residual,Non-recylable paper,0.05144939256418808
+residual,Non-treated wood,0.0063349913361796534
+residual,Other card,0.007116981929622143
+residual,Other dense plastic non-packaging,0.030590603500437605
+residual,Other dense plastic packaging,0.009061836474075555
+residual,Other ferrous non-packaging,0.01011309486831391
+residual,Other ferrous packaging,0.0011602040943054716
+residual,Other household hazardous waste,0.0022906755671678945
+residual,Other misc combustible,0.03057059021024528
+residual,Other misc non-combustible,0.025427280234327488
+residual,Other non-clothing textiles,0.02697907292574899
+residual,Other non-ferrous,0.0012076845533829485
+residual,Other organic (tier 3),1.0913824805697681e-4
+residual,Other packaging plastic film,0.034809533928751454
+residual,Other plastic bottles,0.0016045449822638493
+residual,Other recyclable paper,0.012106691817601361
+residual,Other sanitary,0.0026269884086299157
+residual,PET bottles,0.00726836094596659
+residual,Packaging glass,0.027147417404753873
+residual,Packaging paper,0.003205180345621391
+residual,Paints and varnishes,0.002346193744696933
+residual,Pet excrement and bedding,0.04136478191654546
+residual,Plasterboard,0.00249146015040929
+residual,Polystyrene,0.0031465327457490706
+residual,"Pots, tubs & trays",0.021082228826505525
+residual,Rubble,0.01644298793176304
+residual,"Shoes, bags & belts",0.013417104342176463
+residual,Small WEEE,0.007320315511056831
+residual,Soil,0.007674995662244436
+residual,Thick and corrugated card,0.00893943873505708
+residual,Thin card,0.02062135450084298
+residual,Treated wood,0.009002047725115245
+residual,Unavoidable food waste,0.0810759810281893
