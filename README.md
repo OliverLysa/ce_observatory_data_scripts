@@ -24,4 +24,4 @@ The javascript programming language has also been used for some scripts. With no
 
 ## Feedback
 
-If you would like to learn more about the project or identify any issues, please contact: Oliver Lysaght (oliverlysaght\@icloud.com)
+If you identify any issues, please contact: Oliver Lysaght (oliverlysaght\@icloud.com)
