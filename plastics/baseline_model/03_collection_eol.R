@@ -44,7 +44,7 @@ not_all_na <- function(x)
 ## Illegal collection for dumping
 
 ## Dumping rate - 0.006 (based on Iacovidou ) 
-# # Polymer breakdown for littering equals WG composition in a given year - 0.6% applied to each polymer equally
+# # Polymer breakdown for dumping equals WG composition in a given year - 0.6% applied to each polymer equally
 illegal_collection <- WG_packaging_composition %>%
   mutate(value = value*0.006) %>%
   mutate(variable = "Illegal collection")
