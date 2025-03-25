@@ -28,9 +28,11 @@ invisible(lapply(packages, library, character.only = TRUE))
 options(scipen = 999)
 
 # *******************************************************************************
-# Data extraction
+# Analysis
+# *******************************************************************************
 
-############ DEFRA PACKAGING STATISTICS
+###############
+# FLOW GROUP 1
 
 # Imports the latest version of the Defra UK Statistics on Waste (https://www.gov.uk/government/statistics/uk-waste-data)
 # And imports the data on packaging
