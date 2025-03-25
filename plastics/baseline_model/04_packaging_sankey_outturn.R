@@ -310,13 +310,7 @@ plastic_packaging_sankey_flows <- rbindlist(
 
 # Write file locally
 write_csv(plastic_packaging_sankey_flows, 
-          "sankey_all.csv")
-
-# Preview sankey
-plastic_packaging_sankey_flows |>
-  e_charts() |>
-  e_sankey(source, target, value) |>
-  e_title("Sankey chart")
+          "./cleaned_data/sankey_all.csv")
 
 # Write 1st table to the database
 DBI::dbWriteTable(con,
