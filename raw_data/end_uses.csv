@@ -1,0 +1,18 @@
+﻿material,application,share
+pet,Sheet manufacture,0.25
+pet,Bottles,0.7
+pet,Fibre,0.05
+hdpe,Packaging,0.5
+hdpe,Construction,0.3
+hdpe,Horticulture,0.1
+hdpe,Household items,0.05
+hdpe,Mixed PO applications,0.05
+pp,Automotive,0.4
+pp,Packaging,0.4
+pp,Horticulture,0.15
+pp,Mixed PO applications,0.05
+ldpe,Construction films,0.4
+ldpe,Plastic bags & sacks,0.25
+ldpe,Agricultural films,0.1
+ldpe,Packaging,0.15
+ldpe,Mixed PO applications,0.1
