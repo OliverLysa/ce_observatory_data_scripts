@@ -394,19 +394,35 @@ projection_detailed_total <- projection_detailed_future %>%
 
 # Import baseline run from vensim to present as default on the site
 vensim_baseline <- read_csv(
-  "./raw_data/vensim_packaging_model_output.csv") %>%
-  filter(variable %in% c("Placed on market",
+  "./raw_data/model_output.csv") %>%
+  filter(variable %in% c("Total POM",
                          "littering",
                          "Mechanical recycling")) %>%
   mutate(material1 = "Plastic") %>%
+  filter(level == "Central") %>%
   dplyr::rename(material_sub_type = material) %>%
   mutate(type = if_else(year < 2023, "Outturn", "Projection")) %>%
   mutate(level = if_else(year < 2023, NA, "Mid")) %>%
   mutate(forecast_type = if_else(year < 2023, NA, "linear model, time-series components")) %>%
   mutate(method = if_else(year < 2023, NA, "Ratio-based")) %>%
-  mutate(exogenous_factor = if_else(year < 2023, NA, "Population"))
+  mutate(exogenous_factor = if_else(year < 2023, NA, "Population")) %>%
+  mutate(material_sub_type = gsub("pet", "PET", material_sub_type)) %>%
+  mutate(material_sub_type = gsub("Pet", "PET", material_sub_type)) %>%
+  mutate(variable = gsub("Total POM", "Placed on market", variable))
+
+trial <- vensim_baseline %>%
+  pivot_wider(names_from = level,
+              values_from = value) %>%
+  rename(Outturn = 10) %>%
+  mutate(value = coalesce(Mid, Outturn)) %>%
+  select(-c(10,11)) %>%
+  replace(is.na(.), "NULL") %>%
+  mutate(value = if_else(value < 0, 0, value)) %>%
+  dplyr::rename(material = material_sub_type)
+
+write.csv(trial, "plastic_scenario_detailed.csv")
 
 DBI::dbWriteTable(con,
-                  "plastic_projection_detailed",
-                  vensim_baseline,
+                  "plastic_scenario_detailed",
+                  trial,
                   overwrite = TRUE)
