@@ -301,7 +301,7 @@ rejects_WDF_NPWD_combined <- rejects_WDF %>%
   select(year, total_losses)
 
 MF_data_out_21 <-   # Read in file
-  read_excel("./raw_data/material_facilities/MF_Data_January_to_December_2021.xlsx",
+  read_excel("./raw_data/MF_Data_January_to_December_2021.xlsx",
              sheet = "Output") %>%
   clean_names() %>%
   group_by(material_type_if_som) %>%
@@ -309,7 +309,7 @@ MF_data_out_21 <-   # Read in file
             mean_non = mean(total_non_recyclable_materials_percent, na.rm = TRUE))
 
 MF_data_out_20 <-   # Read in file
-  read_excel("./raw_data/material_facilities/MF_Data_January_to_December_2020.xlsx",
+  read_excel("./raw_data/MF_Data_January_to_December_2020.xlsx",
              sheet = "Output") %>%
   clean_names() %>%
   group_by(material_type_if_som) %>%
