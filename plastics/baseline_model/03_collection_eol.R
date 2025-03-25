@@ -44,6 +44,7 @@ not_all_na <- function(x)
 #######################
 # FLOW GROUP 4 - Illegal collection and dumping 
 # # Polymer breakdown for dumping equals WG composition in a given year - 0.6% applied to each polymer equally
+# WG variable defiend in script 02
 illegal_collection <- WG_packaging_composition %>%
   mutate(value = value*0.006) %>%
   mutate(variable = "Illegal collection")
@@ -222,15 +223,7 @@ Non_LA_collection <- WG_packaging_composition_excl_lit_dump %>%
 # FLOW GROUP 8
 
 # Exported - sent for overseas treatment (recycling)
-## Import the defra-valpak polymer and application conversion
-# HDPE bottle - 1 to 1 match
-# PET bottles - 1 to 1 match
-# Mixed - bottles - takes polymer breakdown for equivalent years' bottles excl. HDPE and PET
-# PTT - takes polymer breakdown from equivalent years' PTT polymer BOM
-# Packaging film - takes polymer breakdown from equivalent years' film BOM
-# Other - takes polymer breakdown from equivalent years' 'other' BOM
-# 100% packaging - percentage for all categories but other
-# Other - Split of other
+## Import the defra-valpak polymer and application conversion table
 defra_eol_valpak_conversion_table <-
   read_excel("./plastics/baseline_model/conversion-tables/defra_recycling_valpak_conversion2.xlsx") %>%
   select(-ROW_CHECK) %>%
@@ -307,7 +300,28 @@ rejects_WDF_NPWD_combined <- rejects_WDF %>%
   mutate(total_losses = share + reject_percentage) %>%
   select(year, total_losses)
 
-## Material facility rejects (averaged_mf imported from MF_data.R script in the data extraction folder)
+MF_data_out_21 <-   # Read in file
+  read_excel("./raw_data/material_facilities/MF_Data_January_to_December_2021.xlsx",
+             sheet = "Output") %>%
+  clean_names() %>%
+  group_by(material_type_if_som) %>%
+  summarise(mean_target_all = mean(total_target_materials_percent, na.rm = TRUE),
+            mean_non = mean(total_non_recyclable_materials_percent, na.rm = TRUE))
+
+MF_data_out_20 <-   # Read in file
+  read_excel("./raw_data/material_facilities/MF_Data_January_to_December_2020.xlsx",
+             sheet = "Output") %>%
+  clean_names() %>%
+  group_by(material_type_if_som) %>%
+  summarise(mean_target_all = mean(total_target_materials_percent, na.rm = TRUE),
+            mean_non = mean(total_non_recyclable_materials_percent, na.rm = TRUE))
+
+averaged_mf <- MF_data_out_20 %>%
+  bind_rows(MF_data_out_21) %>%
+  filter(material_type_if_som == "Plastic") %>%
+  summarise(mean = mean(mean_target_all))
+
+## Material facility rejects
 material_facility_rejects <- 
   # Takes the average of the reject rate across the two years
   averaged_mf %>%
