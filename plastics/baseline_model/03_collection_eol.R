@@ -1,6 +1,6 @@
 ##### **********************
 # Author: Oliver Lysaght
-# Purpose:Calculate collection and treatment routes for plastic packaging.
+# Purpose:Calculate collection and treatment routes for plastic packaging to input to the baseline MFA
 
 # *******************************************************************************
 # Packages
@@ -38,18 +38,36 @@ not_all_na <- function(x)
   any(!is.na(x))
 
 # *******************************************************************************
+# Analysis
+# *******************************************************************************
+
 #######################
-# Collection stage
-
-## Illegal collection for dumping
-
-## Dumping rate - 0.006 (based on Iacovidou ) 
+# FLOW GROUP 4 - Illegal collection and dumping 
 # # Polymer breakdown for dumping equals WG composition in a given year - 0.6% applied to each polymer equally
 illegal_collection <- WG_packaging_composition %>%
   mutate(value = value*0.006) %>%
   mutate(variable = "Illegal collection")
 
-### Checked against Defra fly-tipping data
+# Import fly-tipping data to sense-check against
+flytipping_all <-
+  read_ods("./raw_data/flytipping_la.ods", sheet = "LA_incidents") %>%
+  select(1,3,16:30) %>%
+  row_to_names(2)
+
+flytipping <- flytipping_all %>%
+  dplyr::filter(!grepl('Total', `LA Name`)) %>%
+  pivot_longer(-c(Year, `LA Name`),
+               names_to = "type",
+               values_to = "value") %>%
+  mutate(Year = str_remove(Year, "-.+")) %>%
+  mutate_at(c('value','Year'), as.numeric) %>%
+  na.omit() %>%
+  rename(Year = 1,
+         LA = 2,
+         type = 3,
+         value = 4) %>%
+  mutate_at(c('LA'), trimws)
+
 # Estimate the weight of the relevant categories
 flytipping_totals <- flytipping %>%
   clean_names() %>%
@@ -85,6 +103,12 @@ composition <-
 fly_tipping <- left_join(flytipping_totals, composition) %>%
   mutate(value = weight_tonnes * freq)
 
+## Dumping - illegal collection figure defined earlier in script
+dumping <- illegal_collection %>%
+  mutate(variable = "Dumping")
+
+#######################
+# FLOW GROUP 3
 # Littering rate
 # Polymer breakdown for littering equals WG composition in a given year - 4% applied to each polymer equally
 # https://www.wwf.org.uk/sites/default/files/2018-03/WWF_Plastics_Consumption_Report_Final.pdf
@@ -92,6 +116,8 @@ litter <- WG_packaging_composition %>%
   mutate(value = value*0.04) %>%
   mutate(variable = "Littering")
 
+#######################
+# FLOW GROUP 2
 collection_flows_LA <- read_ods("./raw_data/LA_collection.ods",
                              sheet = "Table_1") %>%
   row_to_names(3) %>%
@@ -118,7 +144,7 @@ LA_collected <- collection_flows_LA %>%
   select(-financial_year) %>%
   rename(LA = value)
 
-# England generation
+# England waste generation
 waste_gen_england <- read_ods("./raw_data/UK_Stats_Waste.ods",
                       sheet= "Waste_Gen_Eng_2010-22") %>%
   row_to_names(6) %>%
@@ -138,7 +164,7 @@ waste_gen_england <- read_ods("./raw_data/UK_Stats_Waste.ods",
   mutate(region = "England",
          variable = "generation")
 
-# Import total waste collected data from Defra
+# Import total waste collected data from Defra (excl. construction)
 total_waste_collected <- 
   waste_gen_england %>%
   filter(type == "Total",
@@ -193,11 +219,7 @@ Non_LA_collection <- WG_packaging_composition_excl_lit_dump %>%
   select(year, material, WG_ex_Non_LA)
 
 #######################
-## Treatment (1st stage)
-
-## Dumping - illegal collection figure defined earlier in script
-dumping <- illegal_collection %>%
-  mutate(variable = "Dumping")
+# FLOW GROUP 8
 
 # Exported - sent for overseas treatment (recycling)
 ## Import the defra-valpak polymer and application conversion
@@ -259,7 +281,9 @@ domestic_recycling_polymers <- read_xlsx("./cleaned_data/NPWD_recycling_recovery
   group_by(year,material) %>%
   summarise(tonnes = sum(tonnes, na.rm = TRUE))
 
-######## Rejects
+#######################
+# FLOW GROUP 7
+
 ## Local Authority Collected Waste Estimated Rejects
 ## Rejects shared variable derived from running LACW_rejects.R in the data extraction folder
 rejects_WDF <- rejects_share %>%
@@ -307,7 +331,8 @@ sorting <- overseas_recycling_polymers %>%
          rejects = sorting - total) %>%
   select(year, material, sorting, rejects)
 
-# Total residual
+#######################
+# FLOW GROUP 6
 # WG - recycling - dumping
 total_residual <- 
   WG_packaging_composition_excl_lit_dump %>%
@@ -317,8 +342,7 @@ total_residual <-
   select(year, material, total_residual)
 
 #######################
-## Treatment (2nd stage)
-
+# FLOW GROUP 9
 ## Get split of residual treatment into incineration or landfill - England used as data available through 2022
 residual_treatment <- read_ods("./raw_data/UK_Stats_Waste.ods", sheet = "Waste_Tre_Eng_2010-22") %>%
   row_to_names(7) %>%
@@ -419,6 +443,24 @@ residual_split_LA <- total_residual %>%
   mutate(incineration = total_residual * Incineration,
          landfill = total_residual * Landfill) %>%
   select(year, material, incineration,landfill)
+
+#######################
+# FLOW GROUP 10
+
+# Plastic waste/scrap
+plastic_waste_trade_all <-
+  # Import data
+  read_csv("./raw_data/Yearly - UK-Trade-Data - 200001 to 202409 - 391510 to 391590.csv") %>%
+  unite(Description, Cn8, Description, sep = " - ") %>%
+  select(1, 5:10) %>%
+  mutate(NetMass = NetMass /1000) %>%
+  mutate(across(is.numeric, round, digits=2)) %>%
+  pivot_longer(-c(Description, Year, FlowType, Country),
+               names_to = "Variable",
+               values_to = "Value") %>%
+  filter(Variable != "SuppUnit") %>%
+  group_by(Year, Variable, Description, FlowType, Country) %>%
+  summarise(sum = sum(Value))
 
 # Countries overseas recycling (figures from NPWD) then goes to
 plastic_waste_export_split <- plastic_waste_trade_all %>%
