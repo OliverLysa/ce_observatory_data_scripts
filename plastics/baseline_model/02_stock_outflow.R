@@ -35,6 +35,9 @@ options(scipen = 999)
 # *******************************************************************************
 # Import data
 
+###############
+# FLOW GROUP 1
+
 ## Import the WG data modelled in excel using a sales-lifetime approach and split by polymer and region
 WG <- 
   read_excel("./plastics/baseline_model/stock_outflow_excel_model.xlsx") %>%
