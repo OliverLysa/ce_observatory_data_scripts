@@ -358,7 +358,7 @@ total_residual <-
 #######################
 # FLOW GROUP 9
 ## Get split of residual treatment into incineration or landfill - England used as data available through 2022
-residual_treatment <- read_ods("./raw_data/UK_Stats_Waste.ods", sheet = "Waste_Tre_Eng_2010-22") %>%
+residual_treatment <- read_ods("./raw_data/UK_Statistics_on_Waste_dataset_September_2024_accessible (1).ods", sheet = "Waste_Tre_Eng_2010-22") %>%
   row_to_names(7) %>%
   clean_names() %>%
   select(-11) %>%
