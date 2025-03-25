@@ -10,7 +10,7 @@ A collection of scripts to:
 
 3.  export cleaned data outputs to a PostGreSQL database.
 
-Data outputs from these scripts are used to populate the ce data observatory - a dashboard providing, for specific resource-product-industry categories, a detailed description of current baseline material and monetary flows as well as wider impacts. Alongside, the means to make comparison with alternative circular economy configurations is provided for through systems dynamics modelling.
+Data outputs from these scripts are used to populate the ce data observatory - a dashboard providing, for specific resource-product-industry categories, a detailed description of current baseline material and monetary flows as well as wider impacts. Alongside, the means to make comparison with alternative circular economy configurations is provided for through scenario models.
 
 # How to use
 
