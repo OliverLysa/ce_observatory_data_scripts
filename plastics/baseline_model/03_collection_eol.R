@@ -92,6 +92,24 @@ litter <- WG_packaging_composition %>%
   mutate(value = value*0.04) %>%
   mutate(variable = "Littering")
 
+collection_flows_LA <- read_ods("./raw_data/LA_collection.ods",
+                             sheet = "Table_1") %>%
+  row_to_names(3) %>%
+  select(1,2,5,6,21:23) %>%
+  clean_names() %>%
+  filter(authority_type != "Collection") %>%
+  mutate_at(c(5:7), as.numeric) %>%
+  group_by(financial_year,region) %>%
+  summarise(recycling = sum(local_authority_collected_waste_sent_for_recycling_composting_reuse_tonnes),
+            residual = sum(local_authority_collected_waste_not_sent_for_recycling_tonnes),
+            rejects = sum(local_authority_collected_estimated_rejects_tonnes)) %>%
+  select(-rejects) %>%
+  pivot_longer(-c(financial_year,region),
+               names_to = "collection_route",
+               values_to = "tonnages") %>%
+  group_by(financial_year) %>%
+  summarise(value = sum(tonnages))
+
 # LA collected - split is based on England and scaled to the UK
 # Calculated based on LACW over total waste generation (excl.) construction
 # Import total LA collected from Defra statistics
@@ -99,6 +117,26 @@ LA_collected <- collection_flows_LA %>%
   mutate(year = substr(financial_year, 1, 4)) %>%
   select(-financial_year) %>%
   rename(LA = value)
+
+# England generation
+waste_gen_england <- read_ods("./raw_data/UK_Stats_Waste.ods",
+                      sheet= "Waste_Gen_Eng_2010-22") %>%
+  row_to_names(6) %>%
+  clean_names() %>%
+  select(-22) %>%
+  slice(-1) %>%
+  unite(ewc_stat, na_2, na_3, sep = " - ") %>%
+  rename(year = 1,
+         type = 3) %>%
+  pivot_longer(-c(year, ewc_stat, type),
+               names_to = "category",
+               values_to = "value") %>%
+  mutate_at(c('value'), as.numeric) %>%
+  na.omit() %>%
+  mutate(category = gsub("_", " ", category)) %>%
+  mutate(category = str_to_sentence(category)) %>%
+  mutate(region = "England",
+         variable = "generation")
 
 # Import total waste collected data from Defra
 total_waste_collected <- 
