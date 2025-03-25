@@ -1,26 +1,94 @@
-variablename,value
-littering rate formulation pet bottle,0.01
-wmc collected formulation pet bottle,0.2
-formulation for recycling rate pet bottle,0.05
-formulation for la collected pet bottle,0.1
-rvm collected formulation pet bottle,0.7
-target percent sent of for sorting ldpe film,0.75
-target percent sent of for sorting hdpe film,0.75
-target percent sent of for sorting other film,0.75
-target percent sent of for sorting pet film,0.75
-target percent sent of for sorting pp film,0.75
-target percent sent of for sorting ps film,0.75
-target percent sent of for sorting pvc film,0.75
-target percent sent of for sorting ps bottle,0.75
-target percent sent of for sorting ps other,0.75
-target percent sent of for sorting ps ptt,0.75
-pom reduction percentage ldpe film,0.03
-pom reduction percentage hdpe film,0.03
-pom reduction percentage other film,0.03
-pom reduction percentage pet film,0.03
-pom reduction percentage pp film,0.03
-pom reduction percentage ps film,0.03
-pom reduction percentage pvc film,0.03
-pom reduction percentage ps bottle,0.03
-pom reduction percentage ps other,0.03
-pom reduction percentage ps ptt,0.03
+policy,variablename,level,material,application,value,comment, ,,,,, 
+DRS,littering rate formulation,central,pet,bottle,0.75,The value corresponds to a percentage reduction,,,,,,
+DRS,littering rate formulation,low,pet,bottle,0.65,The value corresponds to a percentage reduction,,,,,,
+DRS,littering rate formulation,high,pet,bottle,0.85,The value corresponds to a percentage reduction,,,,,,
+DRS,formulation for recycling rate,central,pet,bottle,0.5,The value corresponds to a percentage reduction,,,,,,
+DRS,formulation for recycling rate,low,pet,bottle,0.2,The value corresponds to a percentage reduction,,,,,,
+DRS,formulation for recycling rate,high,pet,bottle,0.7,The value corresponds to a percentage reduction,,,,,,
+DRS,wmc collected formulation,central,pet,bottle,0.15,Value corresponds to the level resulting after policy introduction,,,,,,
+DRS,wmc collected formulation,low,pet,bottle,0.23,Value corresponds to the level resulting after policy introduction,,,,,,
+DRS,wmc collected formulation,high,pet,bottle,0.08,Value corresponds to the level resulting after policy introduction,,,,,,
+DRS,formulation for la collected,central,pet,bottle,0.1,Value corresponds to the level resulting after policy introduction,,,,,,
+DRS,formulation for la collected,low,pet,bottle,0.12,Value corresponds to the level resulting after policy introduction,,,,,,
+DRS,formulation for la collected,high,pet,bottle,0.07,Value corresponds to the level resulting after policy introduction,,,,,,
+DRS,rvm collected formulation,low,pet,bottle,0.65,Value corresponds to the level resulting after policy introduction,,,,,,
+DRS,rvm collected formulation,high,pet,bottle,0.85,Value corresponds to the level resulting after policy introduction,,,,,,
+DRS,rvm collected formulation,central,pet,bottle,0.75,Value corresponds to the level resulting after policy introduction,,,,,,
+EPR 2A,target percent sent for sorting,central,ldpe,film,0.75,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2A,target percent sent for sorting,low,ldpe,film,0.7,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2A,target percent sent for sorting,high,ldpe,film,0.8,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2A,target percent sent for sorting,central,hdpe,film,0.75,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2A,target percent sent for sorting,low,hdpe,film,0.7,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2A,target percent sent for sorting,high,hdpe,film,0.8,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2A,target percent sent for sorting,central,other,film,0.75,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2A,target percent sent for sorting,low,other,film,0.7,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2A,target percent sent for sorting,high,other,film,0.8,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2A,target percent sent for sorting,central,pet,film,0.75,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2A,target percent sent for sorting,low,pet,film,0.7,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2A,target percent sent for sorting,high,pet,film,0.8,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2A,target percent sent for sorting,central,pp,film,0.75,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2A,target percent sent for sorting,low,pp,film,0.7,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2A,target percent sent for sorting,high,pp,film,0.8,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2A,target percent sent for sorting,central,ps,film,0.75,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2A,target percent sent for sorting,low,ps,film,0.7,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2A,target percent sent for sorting,high,ps,film,0.8,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2A,target percent sent for sorting,central,pvc,film,0.75,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2A,target percent sent for sorting,low,pvc,film,0.7,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2A,target percent sent for sorting,high,pvc,film,0.8,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2B,target percent sent for sorting,central,ps,bottle,0.75,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2B,target percent sent for sorting,low,ps,bottle,0.7,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2B,target percent sent for sorting,high,ps,bottle,0.8,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2B,target percent sent for sorting,central,ps,other,0.75,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2B,target percent sent for sorting,low,ps,other,0.7,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2B,target percent sent for sorting,high,ps,other,0.8,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2B,target percent sent for sorting,central,ps,ptt,0.75,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2B,target percent sent for sorting,low,ps,ptt,0.7,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2B,target percent sent for sorting,high,ps,ptt,0.8,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2C,target percent sent for sorting,central,pvc,bottle,0.75,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2C,target percent sent for sorting,low,pvc,bottle,0.7,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2C,target percent sent for sorting,high,pvc,bottle,0.8,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2C,target percent sent for sorting,central,pvc,ptt,0.75,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2C,target percent sent for sorting,low,pvc,ptt,0.7,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2C,target percent sent for sorting,high,pvc,ptt,0.8,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2C,target percent sent for sorting,central,pvc,other,0.75,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2C,target percent sent for sorting,low,pvc,other,0.7,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2C,target percent sent for sorting,high,pvc,other,0.8,Value corresponds to quantity sent for sorting following policy introduction,,,,,,
+EPR 2A,pom reduction percentage,central,ldpe,film,0.03,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2A,pom reduction percentage,low,ldpe,film,0.02,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2A,pom reduction percentage,high,ldpe,film,0.04,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2A,pom reduction percentage,central,hdpe,film,0.03,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2A,pom reduction percentage,low,hdpe,film,0.02,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2A,pom reduction percentage,high,hdpe,film,0.04,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2A,pom reduction percentage,central,other,film,0.03,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2A,pom reduction percentage,low,other,film,0.02,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2A,pom reduction percentage,high,other,film,0.04,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2A,pom reduction percentage,central,pet,film,0.03,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2A,pom reduction percentage,low,pet,film,0.02,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2A,pom reduction percentage,high,pet,film,0.04,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2A,pom reduction percentage,central,pp,film,0.03,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2A,pom reduction percentage,low,pp,film,0.02,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2A,pom reduction percentage,high,pp,film,0.04,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2A,pom reduction percentage,central,ps,film,0.03,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2A,pom reduction percentage,low,ps,film,0.02,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2A,pom reduction percentage,high,ps,film,0.04,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2A,pom reduction percentage,central,pvc,film,0.03,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2A,pom reduction percentage,low,pvc,film,0.02,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2A,pom reduction percentage,high,pvc,film,0.04,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2B,pom reduction percentage,central,ps,bottle,0.03,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2B,pom reduction percentage,low,ps,bottle,0.02,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2B,pom reduction percentage,high,ps,bottle,0.04,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2B,pom reduction percentage,central,ps,other,0.03,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2B,pom reduction percentage,low,ps,other,0.02,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2B,pom reduction percentage,high,ps,other,0.04,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2B,pom reduction percentage,central,ps,ptt,0.03,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2B,pom reduction percentage,low,ps,ptt,0.02,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2B,pom reduction percentage,high,ps,ptt,0.04,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2C,pom reduction percentage,central,pvc,bottle,0.03,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2C,pom reduction percentage,low,pvc,bottle,0.02,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2C,pom reduction percentage,high,pvc,bottle,0.04,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2C,pom reduction percentage,central,pvc,ptt,0.03,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2C,pom reduction percentage,low,pvc,ptt,0.02,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2C,pom reduction percentage,high,pvc,ptt,0.04,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2C,pom reduction percentage,central,pvc,other,0.03,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2C,pom reduction percentage,low,pvc,other,0.02,Value corresponds to percentage reduction in placed on market,,,,,,
+EPR 2C,pom reduction percentage,high,pvc,other,0.04,Value corresponds to percentage reduction in placed on market,,,,,,
