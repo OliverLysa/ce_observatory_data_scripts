@@ -350,8 +350,8 @@ project_all_gdp <- rbindlist(
   mutate(variable = "Placed on market")
 
 # Bind the tables together
-projection_all_variables <- projection_combined %>%
-  bind_rows(projection_combined_gdp) %>%
+projection_all_variables <- project_all %>%
+  bind_rows(project_all_gdp) %>%
   filter(! year > 2042) %>%
   filter(! (year == 2023 & type == "Outturn")) %>%
   mutate(material = "Plastic") %>%
@@ -420,9 +420,3 @@ trial <- vensim_baseline %>%
   mutate(value = if_else(value < 0, 0, value)) %>%
   dplyr::rename(material = material_sub_type)
 
-write.csv(trial, "plastic_scenario_detailed.csv")
-
-DBI::dbWriteTable(con,
-                  "plastic_scenario_detailed",
-                  trial,
-                  overwrite = TRUE)
