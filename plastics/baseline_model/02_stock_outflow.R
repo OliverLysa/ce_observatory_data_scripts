@@ -13,8 +13,7 @@ packages <- c(
   "readODS",
   "tidyverse",
   "data.table",
-  "janitor",
-)
+  "janitor")
 
 # Install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
