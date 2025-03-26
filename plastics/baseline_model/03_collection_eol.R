@@ -287,11 +287,6 @@ rejects <- read_ods("./raw_data/LA_collection.ods",
   group_by(financial_year) %>%
   summarise(rejects = sum(local_authority_collected_estimated_rejects_tonnes)) 
 
-DBI::dbWriteTable(con,
-                  "LACW_rejects",
-                  rejects,
-                  overwrite = TRUE)
-
 # Calculate rejects as a percentage
 collection_flows_LA <- read_ods("./raw_data/LA_collection.ods",
                                 sheet = "Table_1") %>%
