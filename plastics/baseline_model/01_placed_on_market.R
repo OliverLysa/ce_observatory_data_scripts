@@ -13,7 +13,8 @@ packages <- c("writexl",
               "tidyverse",
               "data.table",
               "janitor",
-              "xlsx")
+              "xlsx",
+              "zoo")
 
 # Install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
