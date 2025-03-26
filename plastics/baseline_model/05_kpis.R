@@ -68,8 +68,3 @@ overseas_recycling <-
 KPI_all <-
   left_join(POM_WG_KPI, domestic_recycling, by=c('year','material')) %>%
   left_join(., overseas_recycling, by=c('year','material'))
-
-DBI::dbWriteTable(con,
-                  "packaging_KPIs",
-                  KPI_all,
-                  overwrite = TRUE)
