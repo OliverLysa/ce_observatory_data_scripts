@@ -312,12 +312,6 @@ plastic_packaging_sankey_flows <- rbindlist(
 write_csv(plastic_packaging_sankey_flows, 
           "./cleaned_data/sankey_all.csv")
 
-# Write 1st table to the database
-DBI::dbWriteTable(con,
-                  "plastic_packaging_sankey_flows",
-                  plastic_packaging_sankey_flows,
-                  overwrite = TRUE)
-
 # Construct the detail table (viewed upon clicking the nodes overseas recycling or material outputs from domestic recycling)
 plastic_packaging_sankey_flows_detail <- rbindlist(
   list(
@@ -332,11 +326,5 @@ plastic_packaging_sankey_flows_detail <- rbindlist(
 # Write locally
 write_csv(plastic_packaging_sankey_flows_detail, 
           "sankey_detail.csv")
-
-# Write to the database
-# DBI::dbWriteTable(con,
-#                   "plastic_packaging_sankey_flows_detail",
-#                   plastic_packaging_sankey_flows_detail,
-#                   overwrite = TRUE)
 
 
