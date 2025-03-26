@@ -452,8 +452,3 @@ plastic_packaging_sankey_flows_quality_scores <-
   unite(quality, quality, final, sep = "") %>%
   select(-c(row_id, region)) %>%
   mutate(product = "Packaging")
-# 
-# DBI::dbWriteTable(con,
-#                   "plastic_packaging_sankey_flows",
-#                   plastic_packaging_sankey_flows_quality_scores,
-#                   overwrite = TRUE)
