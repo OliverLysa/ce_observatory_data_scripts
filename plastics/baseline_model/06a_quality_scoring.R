@@ -3,7 +3,7 @@
 # Appends a quality score in an array format to the sankey
 # Scoring done at the observation level based on metadata produced at the dataset level in combination with a quality score aggregation function
 # Conditional statements map and classify the metadata in the metadata catalogue against a scoring schema in relation to each observation in a chart
-# Where one source populates the observation, the quality score reflects the quality dimensions of that one source only, including an analysis step e.g. estimation of waste based on lifespan
+# Where one source populates the observation, the quality score reflects the quality dimensions of that one source only
 # Where multiple data sources input, we taken an average across the sources for that variable or some other weighted combination approach
 
 ## Import the sankey data with sources attached
