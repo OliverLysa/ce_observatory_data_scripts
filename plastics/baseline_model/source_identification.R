@@ -1,4 +1,5 @@
 # Purpose: Identify sources from data.gov that could be relevant
+# Author: Oliver Lysaght
 
 # *******************************************************************************
 # Require packages
