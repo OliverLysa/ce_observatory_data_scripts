@@ -1,4 +1,5 @@
 # Quality scoring ---------------------------------------------------------
+# Author: Oliver Lysaght
 
 # Appends a quality score in an array format to the sankey
 # Scoring done at the observation level based on metadata produced at the dataset level in combination with a quality score aggregation function
