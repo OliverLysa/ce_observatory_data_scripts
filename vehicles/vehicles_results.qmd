@@ -1,0 +1,1501 @@
+---
+title: "Vehicles Results"
+format:
+  html:
+    toc: true
+    anchor-sections: true
+    smooth-scroll: true
+    link-external-icon: false
+    link-external-newwindow: false
+    footnotes-hover: true
+    page-layout: full
+    code-copy: true
+    code-fold: true
+    code-summary: "Show the R code used to make this"
+    code-tools:
+      source: true
+      toggle: true
+    code-block-bg: true
+---
+
+```{r echo=FALSE, include=FALSE, warning=FALSE}
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = FALSE,
+  cache = FALSE
+)
+
+require(writexl)
+require(httr)
+require(readODS)
+require(readxl)
+require(janitor)
+require(xlsx)
+require(tidyverse)
+require(data.table)
+require(ggplot2)
+require(plotly)
+require(highcharter)
+require(netstat)
+require(ggridges)
+require(jsonlite)
+require(mixdist)
+require(DT)
+require(shiny)
+require(shinyWidgets)
+require(comtradr)
+require(zoo)
+require(gamlss)
+require(docxtractr)
+require(rstatix)
+require(fable)
+require(dplyr)
+require(tidyr)
+require(htmlwidgets)
+require(scales)
+require(forecast)
+require(fabletools)
+require(fable)
+require(feasts)
+require(zoo)
+require(logofGamma)
+require(viridis)
+
+options(scipen = 999)
+
+substrRight <- function(x, n){
+  substr(x, nchar(x)-n+1, nchar(x))
+}
+
+```
+
+This page compiles data on material flows and stocks for UK light vehicles, with a focus on cars.
+
+# Placed on the Market
+
+::::: {.callout-note collapse="false" icon="false"}
+## Placed on the Market
+
+## Importing UK POM data covering 2014-2024
+
+```{r}
+# df_VEH0160 - first time registrations
+
+# Download data
+# download.file(
+#   "https://assets.publishing.service.gov.uk/media/68494ad7aae47e0d6c06e078/df_VEH0160_UK.csv",
+#   "./raw_data/df_VEH0160_UK.csv")
+
+df_VEH0160_UK <- read.csv("./raw_data/df_VEH0160_UK.csv") %>%
+  clean_names() %>%
+  pivot_longer(-c(body_type,
+                                  make,
+                                  gen_model,
+                                  model,
+                                  fuel),
+                               names_to = "period",
+                               values_to = 'value',
+                               values_transform = as.numeric) %>%
+  mutate(period = gsub("x|q", "", period)) %>%
+  mutate(year = substr(period, 1, 4)) %>%
+  mutate(quarter = substrRight(period, 1)) %>%
+  select(-period) %>%
+  mutate(fuel = gsub(" \\(diesel\\)", "", fuel),
+         fuel = gsub(" \\(petrol\\)", "", fuel)) %>%
+  filter(body_type == "Cars") %>%
+# Sums registration in the year across quarters
+  group_by(body_type,
+           fuel, 
+           year) %>%
+  summarise(value = sum(value, na.rm = TRUE))
+
+datatable(df_VEH0160_UK,
+          rownames = FALSE,
+          extensions = "Buttons", 
+            options = list(paging = TRUE,
+                           scrollX=FALSE, 
+                           searching = TRUE,
+                           ordering = TRUE,
+                           dom = 'Bfrtip',
+                           buttons = c('copy', 'csv', 'excel', 'pdf'),
+                           pageLength=10, 
+                           lengthMenu=c(5,10,50)))
+```
+
+## Importing GB POM data 2001-2024
+
+We import GB data on registrations. This goes back to 2001, so we adopt the scope of GB for this initial analysis to be later expanded to the UK.
+
+```{r}
+# df_VEH0160 - first time registrations
+
+# Download data
+# download.file(
+#   "https://assets.publishing.service.gov.uk/media/68494ad774fe8fe0cbb4676d/df_VEH0160_GB.csv",
+#   "./raw_data/df_VEH0160_GB.csv")
+
+df_VEH0160_GB <- read.csv("./raw_data/df_VEH0160_GB.csv") %>%
+  clean_names() %>%
+  pivot_longer(-c(body_type,
+                                  make,
+                                  gen_model,
+                                  model,
+                                  fuel),
+                               names_to = "period",
+                               values_to = 'value',
+                               values_transform = as.numeric) %>%
+  mutate(period = gsub("x|q", "", period)) %>%
+  mutate(year = substr(period, 1, 4)) %>%
+  mutate(quarter = substrRight(period, 1)) %>%
+  select(-period) %>%
+  mutate(fuel = gsub(" \\(diesel\\)", "", fuel),
+         fuel = gsub(" \\(petrol\\)", "", fuel)) %>%
+  filter(body_type == "Cars") %>%
+# Sums registration in the year across quarters
+  group_by(body_type,
+           fuel, 
+           year) %>%
+  summarise(value = sum(value, na.rm = TRUE))
+
+plot_ly(
+  data = df_VEH0160_GB,
+  x = ~year,
+  y = ~value,
+  color = ~fuel,
+  type = 'bar'
+) %>%
+  layout(
+    barmode = 'stack',
+    xaxis = list(title = 'Year'),
+    yaxis = list(title = 'Units'),
+    plot_bgcolor = '#ffffff',
+    paper_bgcolor = '#ffffff'
+  )
+
+datatable(df_VEH0160_GB,
+          rownames = FALSE,
+          extensions = "Buttons", 
+            options = list(paging = TRUE,
+                           scrollX=FALSE, 
+                           searching = TRUE,
+                           ordering = TRUE,
+                           dom = 'Bfrtip',
+                           buttons = c('copy', 'csv', 'excel', 'pdf'),
+                           pageLength=10, 
+                           lengthMenu=c(5,10,50)))
+```
+
+## Backcasting units
+
+For robust lifespan driven POM-outflow modelling, a long time series e.g. plus 30 years of continuous POM data is recommended. Therefore we next backcast the data, split by vehicle fuel type. We do this by first defining an 'introduction year' for that product group.
+
+```{r}
+back_values_presentation <- read_csv("./raw_data/IntroductionYear.csv") %>%
+  select(1:2)
+
+DT::datatable(back_values_presentation,
+          rownames = FALSE,
+          extensions = "Buttons", 
+            options = list(paging = TRUE,
+                           scrollX=FALSE, 
+                           searching = TRUE,
+                           ordering = TRUE,
+                           dom = 'Bfrtip',
+                           buttons = c('copy', 'csv', 'excel', 'pdf'),
+                           pageLength=10, 
+                           lengthMenu=c(5,10,50)))
+```
+
+Then we do an interpolation between the introduction year and first year for which we have measured data - 2001. We blend an exponential interpolation and linear interpolation to give a reasonable path.
+
+```{r, fig.height= 8}
+# Import the initial values by fuel
+back_values <- read_csv("./raw_data/IntroductionYear.csv") %>%
+  select(-introduction_year) %>%
+  pivot_longer(-c(fuel),
+               names_to = "year",
+               values_to = "value") %>%
+  clean_names() %>%
+  mutate_at(c('year'), as.numeric)
+
+# Define a function for interpolation approach
+blend_interp <- function(x, y, weight = 0.5) {
+  # Ensure weight is between 0 (pure linear) and 1 (pure exponential)
+  weight <- min(max(weight, 0), 1)
+  
+  # Linear interpolation
+  y_lin <- zoo::na.approx(y, x = x, na.rm = FALSE)
+
+  # Log-linear (exponential) interpolation
+  y_log <- ifelse(y <= 0, NA, y)
+  y_exp <- exp(zoo::na.approx(log(y_log), x = x, na.rm = FALSE))
+
+  # Blend the two
+  y_blend <- (1 - weight) * y_lin + weight * y_exp
+  return(y_blend)
+}
+
+# Do straight line interpolation between the intro year and first year for which we have data
+backcasted_values <- df_VEH0160_GB %>%
+  mutate_at(c('year'), as.numeric) %>%
+  ungroup() %>%
+  select(-body_type) %>%
+  # Filter to the main fuel type
+  filter(fuel %in% c("Petrol","Diesel","Battery electric","Hybrid electric","Plug-in hybrid electric")) %>%
+  # Remove some anomalous values
+  mutate(value = case_when(
+    fuel == "Plug-in hybrid electric" & year >= 2001 & year <= 2002 ~ 0,
+    TRUE ~ value
+  )) %>%
+  bind_rows(back_values) %>%
+  arrange(fuel,year) %>%
+  group_by(fuel) %>%
+  mutate(value = blend_interp(year, value, weight = 0.1)) %>%
+  # mutate(value = zoo::na.approx(value, na.rm=FALSE)) %>%
+  # mutate(value = if_else(value <= 0, NA_real_, value)) %>%
+  # mutate(value = exp(zoo::na.approx(log(value), na.rm = FALSE))) %>%
+  mutate(across(everything(), ~replace_na(., 0))) %>%
+  filter(! year < 1930)
+
+plot_ly(
+  data = backcasted_values,
+  x = ~year,
+  y = ~value,
+  color = ~fuel,
+  type = 'bar'
+) %>%
+  layout(
+    barmode = 'stack',
+    xaxis = list(title = 'Year'),
+    yaxis = list(title = 'Units'),
+    plot_bgcolor = '#ffffff',
+    paper_bgcolor = '#ffffff',
+    legend = list(orientation = 'h', y = -0.2)
+  )
+
+```
+
+## Projection to 2040 of POM units
+
+### Calculating historic relationship between POM units and exogenous determinant
+
+To consider the potential levels of POM and E-waste generated into the future, we next project out the values for each vehicle type to 2040. We do this using population as an exogenous variable, and first calculating the ratio of historic POM to population i.e. per capita car consumption.[^1] We use population data from the ONS.
+
+```{r}
+## Calculate units to population ratio and TS forecast ------------------------------------------------
+
+# Calculate ratio of POM to population 
+# Import the baseline data
+# download.file(
+#   "https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/populationestimatestimeseriesdataset/current/pop.csv",
+#   "./raw_data/population_outturn.csv"
+# )
+
+# --- Import and clean ---
+population_outturn <- 
+  read_csv("./raw_data/population_outturn.csv") %>%
+  slice(-c(1:6)) %>%
+  clean_names() %>%
+  select(1, 3) %>%
+  rename_with(~ str_remove(., "_p.*"), everything()) %>%
+  rename(year = 1, population = 2) %>%
+  mutate(across(c(year, population), as.numeric))
+
+# Fit ARIMA and forecast 2024 population as missing because not yet published
+fit <- auto.arima(population_outturn$population)
+pop_forecast <- forecast(fit, h = 1)
+
+# Append forecast
+next_year <- max(population_outturn$year, na.rm = TRUE) + 1
+forecast_row <- data.frame(
+  year = next_year,
+  population = as.numeric(pop_forecast$mean)
+)
+
+population_outturn <- bind_rows(population_outturn, forecast_row)
+
+# Create a ratio of units POM to population (outturn)
+population_ratio <-
+  dplyr::left_join(
+    backcasted_values,
+    population_outturn,
+    by =join_by("year")) %>%
+  na.omit() %>%
+  # Calculate per capita vehicle use
+  mutate(pom_per_capita = value/population) %>%
+  select(year, fuel, pom_per_capita)
+
+plot_ly(
+  data = population_ratio,
+  x = ~year,
+  y = ~pom_per_capita,
+  color = ~fuel,
+  type = 'scatter',
+  mode = 'lines'
+) %>%
+  layout(
+    yaxis = list(title = "Units per capita"),
+    xaxis = list(title = "Year"),
+    plot_bgcolor = "white",
+    paper_bgcolor = "white"
+  )
+```
+
+### Hierarchical time-series forecast of this ratio
+
+We then perform a hierarchical time-series projection of the per-capita ratio to population using a 'naive' approach. A naive approach or 'random walk' takes the value in the last year in the time-series for which we have data as a constant, and likely represents a relatively conservative approach. We forecast the ratio to 2040.
+
+```{r}
+# # Create a hierarchical ts tibble object
+ts_tibble <- population_ratio %>%
+  mutate(product_group = "vehicles") %>%
+  tsibble::as_tsibble(, key = fuel, index = year) %>%
+  fabletools::aggregate_key(fuel, value = sum(pom_per_capita))
+ 
+# # Forecast the tibble
+forecast <- ts_tibble %>%
+  filter(!is_aggregated(fuel)) %>%
+  model(ets = NAIVE(value)) %>%
+  reconcile(bu = bottom_up(ets)) %>%
+  forecast(h = 16)
+
+# Convert to dataframe
+forecast_dt <- forecast %>%
+  as.data.frame() %>%
+  select(1:3,5) %>%
+  mutate(fuel = map_chr(fuel, ~ .[[1]] %>% str_c(collapse = ", "))) %>%
+  filter(.model == "bu")
+
+# Summarize the forecast across all unu_keys
+forecast_sum <- forecast_dt %>%
+  group_by(year) %>%
+  summarise(total_mean = sum(.mean, na.rm = TRUE), .groups = "drop")
+
+# Plot the total
+plot_dt <- ggplot(forecast_sum, aes(x = year, y = total_mean)) +
+  geom_line(color = "steelblue") +
+  labs(y = "Units", title = "Projected per-capita light vehicle consumption (units) across fuel types based on Naive approach") +
+  theme_bw()
+
+ggplotly(plot_dt)
+```
+
+### Multiply the forecasted ratio by population projection
+
+We multiply the time-series forecast of the per capita POM by the population projection to produce the final projection in unit terms.
+
+#### View data as small multiples
+
+```{r, fig.height= 12}
+## Calculating TS forecast using population projection ---------------------------------------------------
+
+# download.file(
+#   "https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/populationandmigration/populationprojections/datasets/tablea12principalprojectiongbsummary/2022based/gbpppsummary.xlsx",
+#   "./raw_data/population_projections.xlsx"
+# )
+
+# Import projection and tidy
+pop_projection <- 
+  read_excel("./raw_data/population_projections.xlsx",
+             sheet = "PERSONS") %>%
+  row_to_names(6) %>%
+  slice(1) %>%
+  pivot_longer(-Components,
+               names_to = "year",
+               values_to = "value") %>%
+  mutate(year = str_remove(year, " .*")) %>%
+  mutate_at(c('year','value'), as.numeric) %>%
+  na.omit() %>%
+  mutate(value = value * 1000) %>%
+  select(-Components)
+
+# Produce projection by multiplying the projected ratio by the exogenous variable
+pom_projected <- pop_projection %>%
+  left_join(forecast_dt, "year") %>%
+  mutate(value_proj = value * .mean) %>%
+  na.omit() %>%
+  select(1,3,6)
+
+# Convert the negative values to 0
+pom_projected$value_proj <- pmax(pom_projected$value_proj, 0)
+
+pom_projected <- pom_projected %>%
+  rename("value" = value_proj)
+
+# NAIEVE / RW() returns a random walk model, which is equivalent to an ARIMA(0,1,0) model with an optional drift coefficient included using drift()
+# TSLM Fit a linear model with time series components
+# When the relationship between past and future values in a time series is non-linear, NNETAR can be a good choice. Traditional linear models like ARIMA might not be able to capture such non-linearities effectively.
+# Bind the datasets
+POM_extended <- backcasted_values %>%
+  bind_rows(pom_projected)
+
+facet_projection <- ggplot(POM_extended, aes(x=year,y=value, color = fuel)) +
+  geom_line() +
+  labs(y = "Units") +
+  theme_bw() +
+  facet_wrap(vars(fuel), nrow = 3, scale = "free")
+
+ggplotly(facet_projection)
+```
+
+#### View total across vehicles
+
+```{r, fig.height= 8}
+plot_ly(
+  data = POM_extended,
+  x = ~year,
+  y = ~value,
+  color = ~fuel,
+  type = 'bar'
+) %>%
+  layout(
+    barmode = 'stack',
+    xaxis = list(title = 'Year'),
+    yaxis = list(title = 'Units'),
+    plot_bgcolor = '#ffffff',
+    paper_bgcolor = '#ffffff',
+    legend = list(orientation = 'h', y = -0.2)
+  )
+
+```
+
+We can use different assumptions about the population growth rate, as well as alternative exogenous variables to explore different levels of future POM with this approach. We can also use different time-series forecasting approaches for projecting the per-capita ratio into the future. You can view and download the whole time-series in tonnages terms, including the backcasted, observed, and projected values using the naive multiplication method in the table below.
+
+```{r}
+POM_extended_final <- POM_extended %>%
+  mutate(across(where(is.numeric), ~round(., 2)))
+  
+DT::datatable(POM_extended_final,
+          rownames = FALSE,
+          extensions = "Buttons", 
+            options = list(paging = TRUE,
+                           scrollX=FALSE, 
+                           searching = TRUE,
+                           ordering = TRUE,
+                           dom = 'Bfrtip',
+                           buttons = c('copy', 'csv', 'excel', 'pdf'),
+                           pageLength=10, 
+                           lengthMenu=c(5,10,50)))
+```
+
+#### Alternative time-series forecasting methods
+
+We present the impact on POM projections derived while applying various time-series forecasting approaches to the POM per capita ratio, below. These all still follow the method of applying the time-series forecasting approaches to per-capita consumption paired with official population projections. We can see that the choice of time-series forecasting approach has an impact on the figures. An approach sometimes used is to average across the projections from different methods. Different hierarchical reconciliation methods can also be used, whether bottom-up, top-down, middle-out or 'mint'. A bottom-up approach is used here.
+
+::: {.callout-important collapse="true" icon="false"}
+## Time series linear model
+
+```{r}
+forecast_fuel <- ts_tibble %>%
+  filter(!is_aggregated(fuel)) %>%
+  model(ets = TSLM(value)) %>%
+  # Bottom up approach
+  reconcile(bu = bottom_up(ets)) %>%
+  forecast(h = 16)
+
+# Convert to dataframe
+forecast_dt <- forecast_fuel %>%
+  as.data.frame() %>%
+  select(1:3,5) %>%
+  mutate(fuel = map_chr(fuel, ~ .[[1]] %>% str_c(collapse = ", "))) %>%
+  filter(.model == "bu")
+
+# Summarize the forecast across all vehicles
+forecast_sum <- forecast_dt %>%
+  group_by(year) %>%
+  summarise(total_mean = sum(.mean, na.rm = TRUE), .groups = "drop")
+
+# Plot the total
+plot_TS <- ggplot(forecast_sum, aes(x = year, y = total_mean)) +
+  geom_line(color = "steelblue") +
+  labs(y = "Units", title = "Projected per-capita car consumption across all fuel types") +
+  theme_bw()
+
+ggplotly(plot_TS)
+
+# Import projection and tidy
+pop_projection <- 
+  read_excel("./raw_data/population_projections.xlsx",
+             sheet = "PERSONS") %>%
+  row_to_names(6) %>%
+  slice(1) %>%
+  pivot_longer(-Components,
+               names_to = "year",
+               values_to = "value") %>%
+  mutate(year = str_remove(year, " .*")) %>%
+  mutate_at(c('year','value'), as.numeric) %>%
+  na.omit() %>%
+  mutate(value = value * 1000) %>%
+  select(-Components)
+
+# Produce projection by multiplying the projected ratio by the exogenous variable
+pom_projected <- pop_projection %>%
+  left_join(forecast_dt, "year") %>%
+  mutate(value_proj = value * .mean) %>%
+  na.omit() %>%
+  select(1,3,6)
+
+# Convert the negative values to 0
+pom_projected$value_proj <- pmax(pom_projected$value_proj, 0)
+
+pom_projected <- pom_projected %>%
+  rename("value" = value_proj)
+
+# NAIEVE / RW() returns a random walk model, which is equivalent to an ARIMA(0,1,0) model with an optional drift coefficient included using drift()
+# TSLM Fit a linear model with time series components
+# When the relationship between past and future values in a time series is non-linear, NNETAR can be a good choice. Traditional linear models like ARIMA might not be able to capture such non-linearities effectively.
+# Bind the datasets
+POM_extended2 <- backcasted_values %>%
+  bind_rows(pom_projected)
+
+plot_ly(
+  data = POM_extended2,
+  x = ~year,
+  y = ~value,
+  color = ~fuel,
+  type = "bar"
+) %>%
+  layout(
+    barmode = "stack",  # or try "group" for side-by-side bars
+    xaxis = list(title = "Year"),
+    yaxis = list(title = "Units"),
+    plot_bgcolor = "#ffffff",
+    paper_bgcolor = "#ffffff",
+    legend = list(orientation = "h", y = -0.2)
+  )
+```
+:::
+
+::: {.callout-caution collapse="true" icon="false"}
+## Random walk with drift
+
+```{r}
+forecast_fuel <- ts_tibble %>%
+  filter(!is_aggregated(fuel)) %>%
+  model(ets = RW(value ~ drift())) %>%
+  # Bottom up approach
+  reconcile(bu = bottom_up(ets)) %>%
+  forecast(h = 16)
+
+# Convert to dataframe
+forecast_dt <- forecast_fuel %>%
+  as.data.frame() %>%
+  select(1:3,5) %>%
+  mutate(fuel = map_chr(fuel, ~ .[[1]] %>% str_c(collapse = ", "))) %>%
+  filter(.model == "bu")
+
+# Summarize the forecast across all vehicles
+forecast_sum <- forecast_dt %>%
+  group_by(year) %>%
+  summarise(total_mean = sum(.mean, na.rm = TRUE), .groups = "drop")
+
+# Plot the total
+plot_TS <- ggplot(forecast_sum, aes(x = year, y = total_mean)) +
+  geom_line(color = "steelblue") +
+  labs(y = "Units", title = "Projected per-capita car consumption across all fuel types") +
+  theme_bw()
+
+ggplotly(plot_TS)
+
+# Import projection and tidy
+pop_projection <- 
+  read_excel("./raw_data/population_projections.xlsx",
+             sheet = "PERSONS") %>%
+  row_to_names(6) %>%
+  slice(1) %>%
+  pivot_longer(-Components,
+               names_to = "year",
+               values_to = "value") %>%
+  mutate(year = str_remove(year, " .*")) %>%
+  mutate_at(c('year','value'), as.numeric) %>%
+  na.omit() %>%
+  mutate(value = value * 1000) %>%
+  select(-Components)
+
+# Produce projection by multiplying the projected ratio by the exogenous variable
+pom_projected <- pop_projection %>%
+  left_join(forecast_dt, "year") %>%
+  mutate(value_proj = value * .mean) %>%
+  na.omit() %>%
+  select(1,3,6)
+
+# Convert the negative values to 0
+pom_projected$value_proj <- pmax(pom_projected$value_proj, 0)
+
+pom_projected <- pom_projected %>%
+  rename("value" = value_proj)
+
+# NAIEVE / RW() returns a random walk model, which is equivalent to an ARIMA(0,1,0) model with an optional drift coefficient included using drift()
+# TSLM Fit a linear model with time series components
+# When the relationship between past and future values in a time series is non-linear, NNETAR can be a good choice. Traditional linear models like ARIMA might not be able to capture such non-linearities effectively.
+# Bind the datasets
+POM_extended2 <- backcasted_values %>%
+  bind_rows(pom_projected)
+
+# Chart the data
+plot_ly(
+  data = POM_extended2,
+  x = ~year,
+  y = ~value,
+  color = ~fuel,
+  type = "bar"
+) %>%
+  layout(
+    barmode = "stack",  # or try "group" for side-by-side bars
+    xaxis = list(title = "Year"),
+    yaxis = list(title = "Units"),
+    plot_bgcolor = "#ffffff",
+    paper_bgcolor = "#ffffff",
+    legend = list(orientation = "h", y = -0.2)
+  )
+```
+:::
+
+The remainder of this document uses the naive forecast approach for the moment.
+
+## Converting the POM data into material flows in mass
+
+First, we multiply the vehicle units by a bill of materials in kg terms to calculate the tonnage flows of different components.
+
+### Vehicles weights
+
+```{r}
+vehicle_weights <- read_csv("./cleaned_data/final_output.csv") %>%
+  select(-Type) %>%
+  clean_names()
+
+vehicle_weights <- left_join(POM_extended_final, vehicle_weights, by=c("fuel","year")) %>%
+  mutate(weight_tonnes = value.x * value.y) %>%
+  filter(weight_tonnes != 0) %>%
+  select(fuel, year, weight_tonnes)
+
+DT::datatable(vehicle_weights,
+          rownames = FALSE,
+          extensions = "Buttons", 
+            options = list(paging = TRUE,
+                           scrollX=FALSE, 
+                           searching = TRUE,
+                           ordering = TRUE,
+                           dom = 'Bfrtip',
+                           buttons = c('copy', 'csv', 'excel', 'pdf'),
+                           pageLength=10, 
+                           lengthMenu=c(5,10,50)))
+```
+
+### Component level
+
+```{r}
+# Component level --------------------------------------------
+composition <- read_excel("./raw_data/Book2.xlsx",
+                          sheet = "Cars_components_weight_for OL_%") %>%
+  select(-c(1:2)) %>%
+  na.omit() %>%
+  pivot_longer(-c(1:2),
+               names_to = "fuel",
+               values_transform = as.numeric) %>%
+  clean_names()
+
+inflow_detail <- left_join(vehicle_weights, composition, by=c("fuel")) %>%
+  mutate(weight_tonnes = (weight_tonnes * value)) %>%
+  # remove categories for which there is nothing
+  filter(weight_tonnes != 0) %>%
+  clean_names() %>%
+  select(fuel,
+         year,
+         component_1,
+         component_2,
+         weight_tonnes)
+
+plot_ly(
+  data = inflow_detail,
+  x = ~year,
+  y = ~weight_tonnes,
+  color = ~component_1,
+  type = "bar"
+) %>%
+  layout(
+    barmode = "stack",
+    yaxis = list(title = "weight_tonnes"),
+    xaxis = list(title = "year"),
+    plot_bgcolor = "white",
+    paper_bgcolor = "white"
+  ) %>%
+  layout(
+    xaxis = list(range = c(1960, 2040))  # set x-axis limits
+  )
+
+datatable(inflow_detail,
+          rownames = FALSE,
+          extensions = "Buttons", 
+            options = list(paging = TRUE,
+                           scrollX=FALSE, 
+                           searching = TRUE,
+                           ordering = TRUE,
+                           dom = 'Bfrtip',
+                           buttons = c('copy', 'csv', 'excel', 'pdf'),
+                           pageLength=10, 
+                           lengthMenu=c(5,10,50)))
+```
+
+### Material level
+
+```{r}
+# Material level ----------------------------------------------------------
+
+materials <- read_excel("./raw_data/Book2.xlsx",
+                            sheet = "Material BOM_cars_for OL") %>%
+  mutate_at(vars(4:81), as.numeric)%>%
+  pivot_longer(-c(1:3),
+               names_to = "component_2",
+               values_to = "share") %>%
+  na.omit() %>%
+  mutate(share = share/100)
+
+inflow_material <- left_join(inflow_detail, materials, by=c("fuel","component_2")) %>%
+  mutate(material_tonnes = weight_tonnes*share) %>%
+  filter(material_tonnes != 0) %>%
+  group_by(fuel,
+           year,
+           component_1,
+           component_2,
+           material_group,
+           material) %>%
+  summarise(material_tonnes = sum(material_tonnes, na.rm = TRUE)) %>%
+  mutate_at(c('year'), as.numeric)
+
+plot_ly(
+  data = inflow_material,
+  x = ~year,
+  y = ~material_tonnes,
+  color = ~material_group,
+  type = 'bar'
+) %>%
+  layout(
+    barmode = 'stack',
+    yaxis = list(title = "material_tonnes"),
+    xaxis = list(title = "year"),
+    plot_bgcolor = "white",
+    paper_bgcolor = "white"
+  ) %>%
+  layout(
+    xaxis = list(range = c(1990, 2040))  # set x-axis limits
+  )
+
+datatable(inflow_material,
+          rownames = FALSE,
+          extensions = "Buttons", 
+            options = list(paging = TRUE,
+                           scrollX=FALSE, 
+                           searching = TRUE,
+                           ordering = TRUE,
+                           dom = 'Bfrtip',
+                           buttons = c('copy', 'csv', 'excel', 'pdf'),
+                           pageLength=10, 
+                           lengthMenu=c(5,10,50)))
+
+# inflow_material_product <- inflow_material %>%
+#   ungroup() %>%
+#   mutate(detail = "Product",
+#          product = "Car") %>%
+#   select(year, detail, product, fuel, material_tonnes) %>%
+#   group_by(year, detail, product, fuel) %>%
+#   summarise(value = sum(material_tonnes))
+# 
+# inflow_material_component <- inflow_material %>%
+#   ungroup() %>%
+#   mutate(detail = "Component") %>%
+#   select(year, detail, component_1, component_2, material_tonnes) %>%
+#   group_by(year, detail, component_1, component_2) %>%
+#   summarise(value = sum(material_tonnes))
+# 
+# inflow_material_material <- inflow_material %>%
+#   ungroup() %>%
+#   mutate(detail = "Material") %>%
+#   select(year, detail, material_group, material, material_tonnes) %>%
+#   group_by(year, detail, material_group, material) %>%
+#   summarise(value = sum(material_tonnes))
+# 
+# combined <- rbindlist(
+#     list(
+#       inflow_material_product,
+#       inflow_material_component,
+#       inflow_material_material
+#     ),
+#     use.names = FALSE
+#   ) %>%
+#   rename(filter_1 = 3,
+#          filter_2 = 4)
+# 
+# write.csv(combined, "./cleaned_data/combined_POM.csv")
+```
+:::::
+
+[^1]: Other exogenous variables such as relating to the economy like Gross Domestic Product (GDP) or Gross Domestic Household Income (GDHI), or a combination of population and economic variables like per-capita GDP might be shown to have a stronger historical relationship with POM and be used alternatively. A correlation analysis between the exogenous variablesand POM time-series could help confirm this.
+
+# Waste generated
+
+::: {.callout-tip collapse="true" icon="false"}
+## Waste generated
+
+We specify the lifespans for the vehicles using a 2 parameter Weibull distribution.
+
+```{r}
+# Import lifespan data
+lifespans_table <- 
+  read_excel("./raw_data/lifespans.xlsx") %>%
+  mutate_at(c("shape", "scale"), as.numeric) %>%
+  mutate(mean = scale*exp(logOfGamma::gammaln(1+1/shape)),
+         median = scale*(log(2))^(1/shape))
+
+datatable(lifespans_table,
+          rownames = FALSE,
+          extensions = "Buttons", 
+            options = list(paging = TRUE,
+                           scrollX=FALSE, 
+                           searching = TRUE,
+                           ordering = TRUE,
+                           dom = 'Bfrtip',
+                           buttons = c('copy', 'csv', 'excel', 'pdf'),
+                           pageLength=10, 
+                           lengthMenu=c(5,10,50))) %>%
+  formatRound(columns = c("mean","median"), digits = 2)
+```
+
+The chart below presents the waste generated results based on these lifespan assumptions and POM data.
+
+```{r}
+# Import lifespan data
+lifespans <- 
+  read_excel("./raw_data/lifespans.xlsx")
+
+# Merge preferred inflow measure and lifespan data by unu_key
+inflow_weibull <-
+  left_join(inflow_detail,
+        lifespans,
+        by = c("fuel")) %>%
+  rename(value = weight_tonnes)
+
+# Set up dataframe for outflow calculation based on Balde et al 2016. Create empty columns for all years in range of interest
+year_first <- min(as.integer(inflow_weibull$year))
+year_last <- max(as.integer(inflow_weibull$year))
+years <- c(year_first:year_last)
+empty <-
+  as.data.frame(matrix(NA, ncol = length(years), nrow = nrow(inflow_weibull)))
+colnames(empty) <- years
+
+# Add the empty columns to inflow weibull dataframe and remove the empty
+inflow_weibull_outflow <- cbind(inflow_weibull, empty)
+rm(empty)
+
+for (i in year_first:year_last) {
+  # Time difference between target year and year of inflow
+  inflow_weibull_outflow$WEEE_POM_dif <- i - inflow_weibull_outflow$year
+
+  # Identify valid rows (products old enough to be generating waste)
+  valid_rows <- which(inflow_weibull_outflow$WEEE_POM_dif >= 0)
+
+  age <- inflow_weibull_outflow$WEEE_POM_dif[valid_rows]
+
+  # Compute CDF differences for discrete waste allocation
+  cdf_upper <- pweibull(
+    age + 0.5,
+    shape = inflow_weibull_outflow[["shape"]][valid_rows],
+    scale = inflow_weibull_outflow[["scale"]][valid_rows]
+  )
+
+  cdf_lower <- pweibull(
+    age - 0.5,
+    shape = inflow_weibull_outflow[["shape"]][valid_rows],
+    scale = inflow_weibull_outflow[["scale"]][valid_rows]
+  )
+
+  year_fraction <- cdf_upper - cdf_lower
+
+  weee <- year_fraction * inflow_weibull_outflow[["value"]][valid_rows]
+
+  inflow_weibull_outflow[valid_rows, as.character(i)] <- weee
+}
+
+row_sums_outflow <- rowSums(
+  inflow_weibull_outflow[, as.character(year_first:year_last)],
+  na.rm = TRUE
+)
+
+# Check that cumulative waste does not exceed POM (value), allowing small tolerance for rounding
+stopifnot(all(row_sums_outflow <= inflow_weibull_outflow$value + 1e-6))
+
+# Identify any rows where waste exceeds inflow (if any)
+which_exceed <- which(row_sums_outflow > inflow_weibull_outflow$value + 1e-6)
+
+# View those rows (if needed)
+# inflow_weibull_outflow[which_exceed, ]
+
+# Make long format while including the year placed on market
+# This tells us the quantity of WG with that year POM which can be joined then to a POM composition table
+inflow_weibull_long <- inflow_weibull_outflow %>%
+  select(-c(shape, scale, value, WEEE_POM_dif)) %>%
+  rename(year_pom = year) %>%
+  pivot_longer(-c(year_pom, fuel, component_1, component_2),
+               names_to = "year",
+               values_to = "value") %>%
+  na.omit()
+
+# Make long format aggregating by year outflow (i.e. suppressing year POM)
+inflow_weibull_long_outflow_summary <- inflow_weibull_long %>%
+  group_by(year, fuel, component_2) %>%
+  summarise(value =
+              sum(value))
+
+outflow_material <- left_join(inflow_weibull_long_outflow_summary, materials, by=c("fuel","component_2")) %>%
+  mutate(material_tonnes = value*share) %>%
+  filter(material_tonnes != 0) %>%
+  group_by(fuel,
+           year,
+           component_2,
+           material_group,
+           material) %>%
+  summarise(material_tonnes = sum(material_tonnes, na.rm = TRUE)) %>%
+  mutate_at(c('year'), as.numeric)
+
+write.csv(outflow_material, "outflow_material.csv")
+
+plot_ly(
+  data = outflow_material,
+  x = ~year,
+  y = ~material_tonnes,
+  color = ~material,
+  type = 'bar'
+) %>%
+  layout(
+    barmode = 'stack',
+    yaxis = list(title = "material_tonnes"),
+    xaxis = list(title = "year"),
+    plot_bgcolor = "white",
+    paper_bgcolor = "white"
+  ) %>%
+  layout(
+    xaxis = list(range = c(1990, 2040))  # set x-axis limits
+  )
+
+datatable(outflow_material,
+          rownames = FALSE,
+          extensions = "Buttons", 
+            options = list(paging = TRUE,
+                           scrollX=FALSE, 
+                           searching = TRUE,
+                           ordering = TRUE,
+                           dom = 'Bfrtip',
+                           buttons = c('copy', 'csv', 'excel', 'pdf'),
+                           pageLength=10, 
+                           lengthMenu=c(5,10,50))) %>%
+  formatRound(columns = "material_tonnes", digits = 10)
+
+# # Make long format aggregating by year outflow (i.e. suppressing year POM)
+# inflow_weibull_long_outflow_summary_upload <- inflow_weibull_long %>%
+#   group_by(year) %>%
+#   dplyr::summarise(value =
+#               sum(value))
+# 
+# outflow_material_upload <- left_join(inflow_weibull_long_outflow_summary, materials, by=c("fuel","component_2")) %>%
+#   mutate(material_tonnes = value*share) %>%
+#   filter(material_tonnes != 0) %>%
+#   group_by(fuel,
+#            year,
+#            component_1,
+#            component_2,
+#            material,
+#            material_group) %>%
+#   summarise(material_tonnes = sum(material_tonnes, na.rm = TRUE)) %>%
+#   mutate_at(c('year'), as.numeric)
+# 
+# outflow_material_product <- outflow_material_upload %>%
+#   ungroup() %>%
+#   mutate(detail = "Product",
+#          product = "Car") %>%
+#   select(year, detail, product, fuel, material_tonnes) %>%
+#   group_by(year, detail, product, fuel) %>%
+#   summarise(value = sum(material_tonnes))
+# 
+# outflow_material_component <- outflow_material_upload %>%
+#   ungroup() %>%
+#   mutate(detail = "Component") %>%
+#   select(year, detail, component_1, component_2, material_tonnes) %>%
+#   group_by(year, detail, component_1, component_2) %>%
+#   summarise(value = sum(material_tonnes))
+# 
+# outflow_material_material <- outflow_material_upload %>%
+#   ungroup() %>%
+#   mutate(detail = "Material") %>%
+#   select(year, detail, material_group, material, material_tonnes) %>%
+#   group_by(year, detail, material_group, material) %>%
+#   summarise(value = sum(material_tonnes))
+# 
+# combined_outflow <- rbindlist(
+#     list(
+#       outflow_material_product,
+#       outflow_material_component,
+#       outflow_material_material
+#     ),
+#     use.names = FALSE
+#   ) %>%
+#   rename(filter_1 = 3,
+#          filter_2 = 4)
+# 
+# write.csv(combined_outflow, "./cleaned_data/combined_outflow.csv")
+```
+
+Next we account for the impact of varying GDP. Alternatively could be accounting for new car purchases also.
+
+```{r}
+# discrete-time analog of a proportional hazards model with a time-varying covariate (GDP).
+# --- Inputs assumed available ---
+# inflow_detail: your inflow table
+# lifespans: has columns 'fuel', 'shape', 'scale'
+# gdp: has columns 'year' and (optionally) 'country' and 'gdp_pc' (or 'gdp_index')
+# If country-specific GDP is needed, make sure inflow_detail also has 'country' and join by c("year","country")
+
+# gamma <- 0.35   # elasticity: >0 pulls disposal earlier in high-GDP years
+# gdp_col <- "gdp_pc"  # name of GDP column to use for weights
+# 
+# # ---- Merge lifespan + inflow (as you had) ----
+# inflow_weibull <-
+#   left_join(inflow_detail, lifespans, by = c("fuel")) %>%
+#   rename(value = weight_tonnes)
+# 
+# # ---- Bring in GDP for outflow-year weighting ----
+# # If you have country in your data, do: left_join by c("year","country") later.
+# # Here we just need GDP by outflow year, so keep a vector we can index by year.
+# year_first <- min(as.integer(inflow_weibull$year))
+# year_last  <- max(as.integer(inflow_weibull$year))
+# years <- year_first:year_last
+# 
+# # Build a GDP vector per (calendar) outflow year; default to 1 if missing
+# gdp_by_year <- gdp |>
+#   filter(year %in% years) |>
+#   select(year, !!gdp_col) |>
+#   distinct()
+# 
+# # reference GDP for scaling (e.g., mean over the horizon)
+# gdp_ref <- mean(gdp_by_year[[gdp_col]], na.rm = TRUE)
+# 
+# # Outflow-year weights: higher GDP -> bigger weight -> more disposal assigned there
+# # w_y = (GDP_y / GDP_ref)^gamma
+# w_lookup <- setNames(
+#   ifelse(is.na(gdp_by_year[[gdp_col]]), 1,
+#          (gdp_by_year[[gdp_col]] / gdp_ref)^gamma),
+#   gdp_by_year$year
+# )
+# 
+# # Default weight = 1 for any year without GDP
+# w_vec <- setNames(rep(1, length(years)), years)
+# overlap_years <- intersect(names(w_lookup), names(w_vec))
+# w_vec[overlap_years] <- w_lookup[overlap_years]
+# 
+# # ---- Build a matrix of baseline disposal fractions (no GDP yet) ----
+# # We'll store FRACTIONS first (sum to <=1 due to discretization tails), then weight & renormalize.
+# frac_mat <- matrix(0, nrow = nrow(inflow_weibull), ncol = length(years),
+#                    dimnames = list(NULL, as.character(years)))
+# 
+# # Temporary holder to compute per-year age and fractions
+# inflow_weibull_outflow <- inflow_weibull
+# 
+# for (i in years) {
+#   # age of each cohort when disposed in calendar year i
+#   inflow_weibull_outflow$WEEE_POM_dif <- i - inflow_weibull_outflow$year
+#   valid_rows <- which(inflow_weibull_outflow$WEEE_POM_dif >= 0)
+# 
+#   if (length(valid_rows) == 0) next
+# 
+#   age <- inflow_weibull_outflow$WEEE_POM_dif[valid_rows]
+# 
+#   cdf_upper <- pweibull(
+#     age + 0.5,
+#     shape = inflow_weibull_outflow[["shape"]][valid_rows],
+#     scale = inflow_weibull_outflow[["scale"]][valid_rows]
+#   )
+# 
+#   cdf_lower <- pweibull(
+#     age - 0.5,
+#     shape = inflow_weibull_outflow[["shape"]][valid_rows],
+#     scale = inflow_weibull_outflow[["scale"]][valid_rows]
+#   )
+# 
+#   year_fraction <- pmax(0, cdf_upper - cdf_lower)  # numeric safety
+# 
+#   frac_mat[valid_rows, as.character(i)] <- year_fraction
+# }
+# 
+# # ---- Apply GDP weights by outflow year and renormalize per cohort ----
+# # Weighted fractions: multiply each column (year) by its GDP weight
+# frac_w <- sweep(frac_mat, 2, w_vec[colnames(frac_mat)], `*`)
+# 
+# # Row-normalize so each cohort's fractions sum to 1 (if there is any mass)
+# row_totals <- rowSums(frac_w, na.rm = TRUE)
+# row_totals[row_totals == 0] <- 1  # avoid divide-by-zero for zero-mass rows
+# frac_w_norm <- frac_w / row_totals
+# 
+# # ---- Convert fractions to tonnage by multiplying cohort inflow value ----
+# # (value is inflow tonnage for that cohort)
+# tonnage_mat <- frac_w_norm * inflow_weibull$value
+# 
+# # Put back into your dataframe shape if you want wide-years columns:
+# inflow_weibull_outflow <- cbind(inflow_weibull, as.data.frame(tonnage_mat))
+# 
+# # Optional accounting checks
+# row_sums_outflow <- rowSums(tonnage_mat, na.rm = TRUE)
+# stopifnot(all(row_sums_outflow <= inflow_weibull$value + 1e-6))
+# which_exceed <- which(row_sums_outflow > inflow_weibull$value + 1e-6)
+# 
+# # ---- Long formats as before ----
+# inflow_weibull_long <- inflow_weibull_outflow %>%
+#   select(-c(shape, scale)) %>%              # keep 'value' now represents inflow; years are tonnage
+#   rename(year_pom = year, inflow_value = value) %>%
+#   pivot_longer(cols = all_of(as.character(years)),
+#                names_to = "year",
+#                values_to = "value") %>%
+#   mutate(year = as.integer(year)) %>%
+#   filter(!is.na(value), value > 0)
+# 
+# inflow_weibull_long_outflow_summary <- inflow_weibull_long %>%
+#   group_by(year, fuel, component_2) %>%
+#   summarise(value = sum(value), .groups = "drop")
+
+```
+:::
+
+# Stocks
+
+:::: {.callout-important collapse="true" icon="false"}
+## Stocks
+
+EEE stocks refer to the quantity of equipment (functioning and non-functioning) in the economy.
+
+## Modelled
+
+These are modelled based on the difference between cumulative POM and cumulative E-WG over time.
+
+```{r}
+
+# Import the inflow data
+inflow_material_stock_calc <- inflow_material %>%
+  group_by(year, fuel, material) %>%
+  summarise(inflow = sum(material_tonnes, na.rm = TRUE))
+
+# Make long format aggregating by year outflow (i.e. suppressing year POM)
+outflow_material_stock_calc <- outflow_material %>%
+  group_by(year, fuel, material) %>%
+  summarise(outflow = sum(material_tonnes))
+
+# Summarise to total inflow per year
+inflow_total <- inflow_material %>%
+  group_by(year) %>%
+  summarise(value = sum(material_tonnes), .groups = "drop") %>%
+  mutate(flow_type = "Inflow")
+
+# Summarise to total outflow per year
+outflow_total <- outflow_material %>%
+  group_by(year) %>%
+  dplyr::summarise(value = sum(material_tonnes), .groups = "drop") %>%
+  mutate(flow_type = "Outflow")
+
+# Combine
+combined_total <- bind_rows(inflow_total, outflow_total)
+
+plot_ly(
+  data = combined_total,
+  x = ~year,
+  y = ~value,
+  color = ~flow_type,
+  type = 'scatter',
+  mode = 'lines+markers'
+) %>%
+  layout(
+    title = "Total Inflow and Outflow Over Time",
+    xaxis = list(title = "Year"),
+    yaxis = list(title = "Total Tonnes"),
+    legend = list(title = list(text = "Flow Type")),
+    plot_bgcolor = "white",
+    paper_bgcolor = "white"
+  ) %>%
+  layout(
+    xaxis = list(range = c(2000, 2040))  # set x-axis limits
+  )
+
+# # Merge the two datasets covering inflows and outflow horizontally for the subsequent stock calculation
+inflow_outflow_merge <-
+  merge(inflow_material_stock_calc,
+        outflow_material_stock_calc,
+    by = c("fuel", "year","material"),
+    all.y = TRUE
+  ) %>%
+  mutate(inflow = replace_na(inflow, 0))
+
+# # Calculate the stock (historic POM - historic waste) in weight and units by calculating the cumulative sums and then subtracting from each other
+
+# Calculate cumulative sums per group
+tbl_stock <- data.table(inflow_outflow_merge)
+tbl_stock[, inflow_cumsum := cumsum(inflow), by = list(fuel,material)]
+tbl_stock[, outflow_cumsum := cumsum(outflow), by = list(fuel,material)]
+
+# Calculate stock by year subtracting cumulative outflows from cumulative inflows
+tbl_stock$stock <-
+  tbl_stock$inflow_cumsum - tbl_stock$outflow_cumsum
+# Convert into dataframe
+tbl_stock <- as.data.frame(tbl_stock)
+
+# Remove negative stock values by incorporating the negative stock value into WEEE (occurring because of the apparent consumption approach)
+selection <- which (tbl_stock$stock < 0)
+if (length(selection) > 0) {
+  tbl_stock[selection, "outflow"] <-
+    tbl_stock[selection, "outflow"] - tbl_stock[selection, "stock"]
+  tbl_stock[selection, "stock"] <- 0
+}
+
+# Select columns of interest
+stock <- tbl_stock %>%
+  select(c("fuel",
+           "material",
+           "year",
+           "stock"))
+
+write.csv(stock, "stock_material.csv")
+
+plot_ly(
+  data = stock,
+  x = ~year,
+  y = ~stock,
+  color = ~material,
+  type = 'bar'
+) %>%
+  layout(
+    barmode = 'stack',
+    title = "Total Stock Over Time",
+    yaxis = list(title = "Material_tonnes"),
+    xaxis = list(title = "year"),
+    plot_bgcolor = "white",
+    paper_bgcolor = "white"
+  ) %>%
+  layout(
+    xaxis = list(range = c(1990, 2024))  # set x-axis limits
+  )
+
+datatable(stock,
+          rownames = FALSE,
+          extensions = "Buttons", 
+            options = list(paging = TRUE,
+                           scrollX=FALSE, 
+                           searching = TRUE,
+                           ordering = TRUE,
+                           dom = 'Bfrtip',
+                           buttons = c('copy', 'csv', 'excel', 'pdf'),
+                           pageLength=10, 
+                           lengthMenu=c(5,10,50))) %>%
+  formatRound(columns = "stock", digits = 10)
+```
+
+## Measured
+
+This presents DfT registration register/stock data in units converted into material tonnages. We can parameterise the assumptions in our model against this e.g. by introducing the constraint that the modelled stock of newly registered vehicles should not exceed the measured stock of vehicles tracked by the UK government.
+
+```{r}
+# Import the data
+stock_data_ultimate_specs <- read.csv("./cleaned_data/stock_data_ultimate_specs.csv") %>%
+  rename(year = data_year,
+         value = weight_tonnes)
+
+# Get top 19 brands by value per year
+top_brands <- stock_data_ultimate_specs %>%
+  group_by(year, make) %>%
+  summarise(value = sum(value), .groups = "drop") %>%
+  group_by(year) %>%
+  slice_max(order_by = value, n = 19) %>%
+  ungroup()
+
+# Total value of the top brands
+top_summarised <- top_brands %>%
+  group_by(year) %>%
+  summarise(value = sum(value), .groups = "drop")
+
+# Total value of all brands
+total_summarised <- stock_data_ultimate_specs %>%
+  group_by(year) %>%
+  summarise(value = sum(value), .groups = "drop")
+
+# Get "Other" by subtracting top from total
+other <- total_summarised %>%
+  left_join(top_summarised, by = "year", suffix = c("_total", "_top")) %>%
+  mutate(value = value_total - value_top, make = "Other") %>%
+  select(year, make, value)
+
+# Combine and reorder make by value within year
+combined <- bind_rows(top_brands, other) %>%
+  group_by(year) %>%
+  arrange((value), .by_group = TRUE) %>%
+  ungroup() %>%
+  mutate(make = factor(make, levels = unique(make)))
+
+all_makes <- unique(combined$make)
+
+palette_colors <- viridis(length(all_makes), option = "turbo")
+color_map <- setNames(palette_colors, all_makes)
+
+# Build the plot trace-by-trace with consistent colors
+years <- sort(unique(combined$year))
+p <- plot_ly()
+
+for (yr in years) {
+  df_year <- combined %>%
+    filter(year == yr) %>%
+    arrange(desc(value))  # ascending, so largest plotted last = bottom of stack
+
+  for (i in seq_len(nrow(df_year))) {
+    row <- df_year[i, ]
+    p <- p %>%
+      add_trace(
+        x = row$year,
+        y = row$value,
+        name = row$make,
+        type = 'bar',
+        showlegend = yr == years[1],  # legend once only
+        legendgroup = row$make,
+        marker = list(color = color_map[[as.character(row$make)]])
+      )
+  }
+}
+
+# Final layout
+p %>%
+  layout(
+    barmode = 'stack',
+    xaxis = list(title = "Year", type = "category"),
+    yaxis = list(title = "Weight tonnes"),
+    plot_bgcolor = "white",
+    paper_bgcolor = "white"
+  )
+
+```
+
+::: {.callout-note collapse="true" icon="false"}
+## Lifespans
+
+The chart presents the distribution of age of vehicles in the UK stock.
+
+```{r, cache.lazy=TRUE}
+# Download data
+# download.file(
+#  "https://assets.publishing.service.gov.uk/media/68494acf91c75fd63dd3a3ae/df_VEH0124_AM.csv",
+#  "./raw_data/0124_AM.csv"
+# )
+
+# Download data
+# download.file(
+#  "https://assets.publishing.service.gov.uk/media/68494acf782e42a839d3a3ad/df_VEH0124_NZ.csv",
+#  "./raw_data/0124_NZ.csv"
+# )
+
+# Read CSV - for licensed and SORNd by year of manufacture
+VEH0124_AM <-
+  read_csv("./raw_data/0124_AM.csv", col_names = T) 
+
+# Read CSV - for licensed and SORNd by year of manufacture
+VEH0124_NZ <-
+  read_csv("./raw_data/0124_NZ.csv", col_names = T) 
+
+# Create data to chart
+VEH0124 <- rbindlist(
+  list(
+    VEH0124_AM,
+    VEH0124_NZ),
+  use.names = TRUE) %>%
+  pivot_longer(-c(BodyType, 
+                  Make,
+                  GenModel,
+                  Model,
+                  YearFirstUsed,
+                  YearManufacture,
+                  LicenceStatus),
+               names_to = "DataYear",
+               values_to = 'Value',
+               values_transform = as.numeric) %>%
+  na.omit(Value) %>%
+  filter(YearManufacture != "[x]") %>%
+  mutate_at(c('YearManufacture','DataYear'), as.numeric) %>%
+  mutate(Age = DataYear - YearManufacture)
+
+VEH0124_anim <- VEH0124 %>%
+  group_by(BodyType, DataYear, Age) %>%
+  summarise(Value = sum(Value)) %>%
+  filter(Age <= 75,
+         BodyType == "Cars")
+
+avg_lifespan <- VEH0124_anim %>%
+  group_by(DataYear) %>%
+  summarise(
+    avg_age = sum(Age * Value) / sum(Value)
+  )
+
+VEH0124_anim_with_avg <- VEH0124_anim %>%
+  left_join(avg_lifespan, by = "DataYear")
+
+# Get max Y value for positioning text
+max_y <- max(VEH0124_anim$Value)
+
+# Create text label trace data
+avg_lifespan_text <- avg_lifespan %>%
+  mutate(
+    x = 50,  # Place it somewhere to the left (Age axis)
+    y = max_y * 0.8,  # Near the top of the chart
+    label = paste0("Avg age: ", round(avg_age, 1), " yrs")
+  )
+
+plotly_animated <- plot_ly() %>%
+  # Line plot
+  add_trace(
+    data = VEH0124_anim,
+    x = ~Age,
+    y = ~Value,
+    frame = ~DataYear,
+    type = 'scatter',
+    mode = 'lines',
+    color = ~as.factor(DataYear),
+    line = list(width = 3),
+    showlegend = FALSE,
+    name = "Age Distribution"
+  ) %>%
+  # Text annotation trace
+  add_trace(
+    data = avg_lifespan_text,
+    x = ~x,
+    y = ~y,
+    text = ~label,
+    frame = ~DataYear,
+    type = "scatter",
+    mode = "text",
+    textposition = "top left",
+    showlegend = FALSE,
+    hoverinfo = "none"
+  ) %>%
+  layout(
+    title = list(text = "Distribution of UK cars by age in the registered stock"),
+    xaxis = list(title = "Age"),
+    yaxis = list(title = "Value")
+    # <- removed updatemenus
+  ) %>%
+  animation_opts(
+    frame = 1200,
+    transition = 300,
+    redraw = TRUE
+  ) %>%
+  animation_slider(currentvalue = list(prefix = "Year: "))
+
+plotly_animated
+```
+:::
+::::
+
+# Improvements
+
+## **Data inputs**
+
+-   **Projections:**
+    -   Projections to vary further by fuel type, accounting for expected penetration of new fuel types e.g. BEVs due to policy drivers
