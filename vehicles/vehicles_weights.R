@@ -156,7 +156,7 @@ ultimate_specs_weights_fuel <- fread("./raw_data/ultimatespecs.csv") %>%
   filter(!grepl("motorhome|van|bus|Limousine|minivan", body, ignore.case = TRUE)) %>%
   # Remove 
   # Flag outliers within each group
-  group_by(fuel_type, year) %>%
+  group_by(fuel_type, brand) %>%
   # Use MAD to remove outliers on the upper side
   mutate(
     med = median(kg, na.rm = TRUE),
@@ -186,6 +186,8 @@ ultimate_specs_weights_fuel <- fread("./raw_data/ultimatespecs.csv") %>%
     )
   ) %>%
   filter(! fuel_type %in% c("LPG or CNG","-"))
+
+# Key issue we are joining at a brand level - so takes average across the body types
 
 # # Import the EV specifications data
 # ev_specifications <- fread("./raw_data/cars.csv") %>%
@@ -222,7 +224,7 @@ ultimate_specs_weights_fuel <- fread("./raw_data/ultimatespecs.csv") %>%
 #   # Keep relevant columns
 #   select(year, brand, fuel_type, average_weight, product)
 
-# Extend the coverage of the data -----------------------------------------
+# Extend the coverage of the data so we have weights figures for all years in the POM data -----------------------------------------
 
 # We make a version without fuel detail for joining to stock data without fuel detail
 
@@ -266,7 +268,7 @@ years <- data.frame(
 # Cross brand x fuel_type x year
 brand_fuel_year_grid <- crossing(brands, fuel_types, years)
 
-# Extend backwards and forwards -------------------------------------------
+## Extend backwards and forwards -------------------------------------------
 
 all_weights <- brand_year_grid %>%
   left_join(ultimate_specs_weights, by = c("product", "brand", "year")) %>%
@@ -286,11 +288,17 @@ all_weights <- brand_year_grid %>%
     }
   ) %>%
   ungroup() %>% 
-  mutate(brand = str_replace_all(brand, "-", " "),
-         brand = str_to_upper(brand)) %>% 
+  mutate(
+    brand = str_replace_all(brand, "-", " "),
+    brand = str_to_upper(brand),
+    brand = case_when(
+      brand == "MERCEDES BENZ" ~ "MERCEDES",
+      TRUE ~ brand
+    )
+  ) %>%
   rename(Make = brand, YearManufacture = year)
 
-## By fuel type ------------------------------------------------------------
+### By fuel type ------------------------------------------------------------
 
 all_weights_fuel <- brand_fuel_year_grid %>%
   left_join(ultimate_specs_weights_fuel, by = c("product", "brand", "year", "fuel_type")) %>%
@@ -319,13 +327,17 @@ all_weights_fuel <- brand_fuel_year_grid %>%
   mutate(
     brand = str_replace_all(brand, "-", " "),
     brand = str_to_upper(brand),
-    fuel_type = na_if(fuel_type, "")
+    fuel_type = na_if(fuel_type, ""),
+    brand = case_when(
+      brand == "MERCEDES BENZ" ~ "MERCEDES",
+      TRUE ~ brand
+    )
   ) %>%
   rename(Make = brand, YearManufacture = year) %>%
   unique() %>%
   na.omit()
 
-# Join to the stock data --------------------------------------------------
+# Join to the stock data to get weights in the stock --------------------------------------------------
 # Only for the total - not broken down by fuel
 
 # Read CSV - for licensed and SORNd by year of manufacture
@@ -402,7 +414,7 @@ df_VEH0160_GB <- read.csv("./raw_data/df_VEH0160_GB.csv") %>%
          fuel = gsub(" \\(petrol\\)", "", fuel)) %>%
   filter(body_type == "Cars") %>%
   # Sums registration in the year across quarters
-  group_by(
+  group_by(make,
            year,
            fuel) %>%
   dplyr::summarise(value = sum(value, na.rm = TRUE)) %>%
@@ -416,7 +428,7 @@ pom_data_GB <- df_VEH0160_GB %>%
     YearManufacture = as.integer(YearManufacture)
   ) %>%
   left_join(all_weights, by = c("Make", "YearManufacture")) %>%
-  na.omit(Value) %>%
+  drop_na(value) %>%
   clean_names() %>%
   rename(year = year_manufacture) %>%
   mutate(weight_tonnes = (value * average_weight)/1000) %>%
@@ -430,28 +442,6 @@ pom_data_per_unit_weight_GB <- pom_data_GB %>%
   dplyr::summarise(number = sum(number, na.rm = TRUE),
             weight_tonnes = sum(weight_tonnes, na.rm = TRUE)) %>%
   mutate(per_unit_weight = weight_tonnes/number)
-
-# Plot the data
-ggplot(pom_data_per_unit_weight_GB, aes(x = year, y = per_unit_weight)) +
-  geom_line(size = 1.2) +
-  geom_point(size = 2) +
-  scale_color_manual(values = c("GB" = "#1f77b4", "UK" = "#ff7f0e")) +
-  scale_linetype_manual(values = c("GB" = "solid", "UK" = "dashed")) +
-  labs(
-    title = "Average Weight of Vehicles Registered for the First Time",
-    subtitle = "GB, source: DFT, Ultimate Specs",
-    x = "Year",
-    y = "Average Weight (metric tonnes per vehicle)",
-  ) +
-  theme_minimal(base_size = 14) +
-  theme(
-    plot.title = element_text(face = "bold"),
-    legend.position = "top",
-    panel.grid.minor = element_blank()
-  ) +
-  scale_y_continuous(limits = c(0, 2)) +
-  scale_x_continuous(breaks = seq(min(2000), max(2025), 5),
-                     expand = expansion(mult = c(0.1, 0.1)))
 
 # Step 2: Perform the join using Make, YearManufacture and fuel
 pom_data_GB_fuel <- df_VEH0160_GB %>%
@@ -471,7 +461,7 @@ pom_data_GB_fuel <- df_VEH0160_GB %>%
 
 # Get the per vehicle weights
 pom_data_per_unit_weight_GB_fuel <- pom_data_GB_fuel %>%
-  group_by(year, fuel) %>%
+  group_by(fuel, year) %>%
   summarise(
     number = sum(number, na.rm = TRUE),
     weight_tonnes = sum(weight_tonnes, na.rm = TRUE),
@@ -503,6 +493,49 @@ ggplot(pom_data_per_unit_weight_GB_fuel, aes(x = year, y = per_unit_weight, colo
     # breaks = seq(min(pom_data_per_unit_weight_GB_fuel$year), max(pom_data_per_unit_weight_GB_fuel$year), 5),
     expand = expansion(mult = c(0.1, 0.1))
   )
+
+# Get the per vehicle weights
+pom_data_per_unit_weight_GB_fuel <- pom_data_GB_fuel %>%
+  filter(!(fuel == "Battery electric" & year < 2008)) %>%
+  group_by(year) %>%
+  summarise(
+    number = sum(number, na.rm = TRUE),
+    weight_tonnes = sum(weight_tonnes, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(per_unit_weight = weight_tonnes / number) 
+
+write_csv(pom_data_per_unit_weight_GB_fuel, "./cleaned_data/pom_data_per_unit_weight_GB_fuel.csv")
+
+# Add a label to each dataset to distinguish in the plot
+pom_data_GB_combined <- bind_rows(
+  pom_data_per_unit_weight_GB %>% mutate(source = "GB_total"),
+  pom_data_per_unit_weight_GB_fuel %>% mutate(source = "GB_fuel")
+)
+
+# Plot both on the same chart
+ggplot(pom_data_GB_combined, aes(x = year, y = per_unit_weight, color = source, linetype = source)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 2) +
+  scale_color_manual(values = c("GB_total" = "#1f77b4", "GB_fuel" = "#ff7f0e")) +
+  scale_linetype_manual(values = c("GB_total" = "solid", "GB_fuel" = "dashed")) +
+  labs(
+    title = "Average Weight of Vehicles Registered for the First Time",
+    subtitle = "GB, source: DFT, Ultimate Specs",
+    x = "Year",
+    y = "Average Weight (metric tonnes per vehicle)",
+    color = "Data Source",
+    linetype = "Data Source"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold"),
+    legend.position = "top",
+    panel.grid.minor = element_blank()
+  ) +
+  scale_y_continuous(limits = c(0, 2)) +
+  scale_x_continuous(breaks = seq(min(2000), max(2025), 5),
+                     expand = expansion(mult = c(0.1, 0.1)))
 
 # write.csv(pom_data_per_unit_weight_GB_fuel, "./cleaned_data/pom_data_per_unit_weight_GB_fuel.csv")
 
@@ -655,6 +688,7 @@ ggplot(final_output, aes(x = Year, y = Value, color = Type)) +
     "Backcast" = "blue",
     "Forecast" = "red"
   ))
+
 # UK data -----------------------------------------------------------------
 
 #read csv for uk pom data
@@ -735,3 +769,42 @@ ggplot(plot_df, aes(x = year, y = per_unit_weight,
   scale_y_continuous(limits = c(0, 2)) +
   scale_x_continuous(breaks = seq(min(2000), max(2025), 5),
                      expand = expansion(mult = c(0.1, 0.1)))
+
+# Weights by brand --------------------------------------------------------
+
+# Trends in weight by brand
+pom_data_per_unit_weight_GB_make <- pom_data_GB_fuel %>%
+  group_by(year, make) %>%
+  dplyr::summarise(number = sum(number, na.rm = TRUE),
+                   weight_tonnes = sum(weight_tonnes, na.rm = TRUE)) %>%
+  mutate(per_unit_weight = weight_tonnes/number)
+
+# Find top 20 makes across all years by total units
+top_makes <- pom_data_GB %>%
+  group_by(make) %>%
+  summarise(total_units = sum(number, na.rm = TRUE), .groups = "drop") %>%
+  slice_max(order_by = total_units, n = 30) %>%
+  pull(make)
+
+# Keep only those makes in your main dataset
+pom_data_per_unit_weight_GB_make_top20 <- pom_data_per_unit_weight_GB_make %>%
+  filter(make %in% top_makes)
+
+# Plot
+ggplot(pom_data_per_unit_weight_GB_make_top20, 
+       aes(x = year, y = per_unit_weight, group = make, color = make)) +
+  geom_line(size = 0.8, alpha = 0.6) +
+  geom_point(size = 1.8, alpha = 0.8) +
+  geom_smooth(se = FALSE, method = "loess", color = "black", size = 1) +  # smoothed line
+  facet_wrap(~ make, scales = "free_y") +
+  labs(
+    title = "Average Per-Unit Weight of POM (Top 30 Makes by Units)",
+    x = "Year",
+    y = "Per-Unit Weight (tonnes)"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position = "none",
+    strip.text = element_text(size = 10)
+  ) +
+  expand_limits(y = 0)
